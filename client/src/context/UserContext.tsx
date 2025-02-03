@@ -74,7 +74,11 @@ export const UserProvider = ({ children }: UserProviderProps) => {
   const updateUser = async (id: number, user: User) => {
     try {
       const response = await updateUserRequest(id, user);
-      setUsers(users.map((u) => (u.id === id ? response : u)));
+      if (response) {
+        setUsers(users.map((u) => (u.id === id ? response : u)));
+        return response;
+      }
+      return null;
     } catch (error) {
       console.error("Error updating user:", error);
       throw error;

@@ -5,6 +5,7 @@ import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
 
 const TableOne = ({ users }: { users: any }) => {
+  console.log(users);
   const navigate = useNavigate();
   const { deleteUser } = useUsers();
 

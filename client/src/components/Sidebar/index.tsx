@@ -2,6 +2,8 @@ import React, { useEffect, useRef, useState } from "react";
 import { NavLink, useLocation } from "react-router-dom";
 import SidebarLinkGroup from "./SidebarLinkGroup";
 import Logo from "../../images/logo/logo.svg";
+// import DashboardIcon from "../../images/icons/dashboard.svg";
+// import UsersIcon from "../../images/icons/users.svg";
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -54,6 +56,20 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
       document.querySelector("body")?.classList.remove("sidebar-expanded");
     }
   }, [sidebarExpanded]);
+
+  const navigation = [
+    {
+      path: "/dashboard",
+      name: "Dashboard",
+      // icon: <DashboardIcon />,
+    },
+    {
+      path: "/users",
+      name: "Users",
+      // icon: <UsersIcon />,
+    },
+    // ... other navigation items
+  ];
 
   return (
     <aside

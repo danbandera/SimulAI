@@ -9,10 +9,10 @@ import {
 
 const router = Router();
 
-router.get("/api/users", getUsers);
-router.post("/api/users", createUser);
-router.get("/api/users/:id", getUser);
-router.put("/api/users/:id", updateUser);
-router.delete("/api/users/:id", deleteUser);
+router.get("/users", getUsers);
+router.post("/users", createUser);
+router.get("/users/:id", getUser);
+router.put("/users/:id", updateUser);
+router.delete("/users/:id", deleteUser);
 
 export default router;

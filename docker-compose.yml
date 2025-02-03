@@ -12,8 +12,8 @@ services:
     volumes:
       - .:/app
       - /app/node_modules
-    depends_on:
-      - mysql
+    # depends_on:
+    #   - supabase
 
   # Frontend service
   client:
@@ -28,15 +28,25 @@ services:
     depends_on:
       - api
 
-  mysql:
-    image: mysql:8
-    environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
-    ports:
-      - "3306:3306"
-    volumes:
-      - mysql-data:/var/lib/mysql
-      - ./database/db.sql:/docker-entrypoint-initdb.d/db.sql
-volumes:
-  mysql-data:
+  # supabase:
+  #   image: supabase/supabase:latest
+  #   ports:
+  #     - "5432:5432"
+  #   environment:
+  #     - POSTGRES_PASSWORD=${DB_PASSWORD}
+  #     - POSTGRES_DATABASE=${DB_NAME}
+  #   volumes:
+  #     - ./database/db.sql:/docker-entrypoint-initdb.d/db.sql
+  #   command: start
+#   mysql:
+#     image: mysql:8
+#     environment:
+#       MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+#       MYSQL_DATABASE: ${DB_NAME}
+#     ports:
+#       - "3306:3306"
+#     volumes:
+#       - mysql-data:/var/lib/mysql
+#       - ./database/db.sql:/docker-entrypoint-initdb.d/db.sql
+# volumes:
+#   mysql-data:

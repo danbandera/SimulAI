@@ -20,6 +20,7 @@ const EditUser: React.FC = () => {
     const loadUser = async () => {
       try {
         const userData = await getUser(Number(id));
+        console.log(userData);
         setFormData({
           name: userData.name,
           email: userData.email,

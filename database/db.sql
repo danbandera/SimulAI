@@ -1,16 +1,12 @@
--- Cambiar el plugin de autenticación a mysql_native_password
--- ALTER USER 'root'@'%' IDENTIFIED WITH mysql_native_password BY '${DB_PASSWORD}';
--- FLUSH PRIVILEGES;
-
--- Crear la base de datos si no existe
+-- Crear la base de datos para supabase
 CREATE DATABASE IF NOT EXISTS users;
 
--- Crear la tabla tasks si no existe
-CREATE TABLE IF NOT EXISTS users (
-  id INTEGER PRIMARY KEY AUTO_INCREMENT,
+-- Crear la tabla users para supabase
+CREATE TABLE users (
+  id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   role VARCHAR(255) NOT NULL,
-  email VARCHAR(255) NOT NULL,
+  email VARCHAR(255) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );

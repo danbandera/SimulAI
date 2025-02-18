@@ -4,7 +4,7 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 import userRoutes from "./routes/user.routes.js";
-
+import scenarioRoutes from "./routes/scenario.routes.js";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -22,6 +22,7 @@ app.use(express.json());
 
 // API routes
 app.use("/api", userRoutes);
+app.use("/api", scenarioRoutes);
 
 // Serve static files in production
 if (process.env.NODE_ENV === "production") {

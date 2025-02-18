@@ -1,20 +1,37 @@
 import { useNavigate } from "react-router-dom";
-import { useUsers } from "../../context/UserContext";
+import { useScenarios } from "../../context/ScenarioContext";
 import { toast } from "react-hot-toast";
 import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
 
-const TableOne = ({ users }: { users: any }) => {
-  console.log(users);
-  const navigate = useNavigate();
-  const { deleteUser } = useUsers();
+interface User {
+  id: number;
+  name: string;
+  email: string;
+}
 
-  const handleEdit = (e: React.MouseEvent, userId: number) => {
+interface Scenario {
+  id: number;
+  title: string;
+  description: string;
+  status: string;
+  assigned_user: User;
+  created_user: User;
+  created_at: string;
+  updated_at?: string;
+}
+
+const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
+  console.log(scenarios);
+  const navigate = useNavigate();
+  const { deleteScenario } = useScenarios();
+
+  const handleEdit = (e: React.MouseEvent, scenarioId: number) => {
     e.preventDefault(); // Prevent the Link navigation
-    navigate(`/users/edit/${userId}`);
+    navigate(`/scenarios/edit/${scenarioId}`);
   };
 
-  const handleDelete = async (e: React.MouseEvent, userId: number) => {
+  const handleDelete = async (e: React.MouseEvent, scenarioId: number) => {
     e.preventDefault(); // Prevent the Link navigation
 
     const result = await Swal.fire({
@@ -28,7 +45,7 @@ const TableOne = ({ users }: { users: any }) => {
 
     if (result.isConfirmed) {
       try {
-        await deleteUser(userId);
+        await deleteScenario(scenarioId);
         Swal.fire({
           title: "¡Eliminado!",
           text: "El usuario ha sido eliminado.",
@@ -47,23 +64,35 @@ const TableOne = ({ users }: { users: any }) => {
   return (
     <div className="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
       <h4 className="mb-6 text-xl font-semibold text-black dark:text-white px-5">
-        Usuarios
+        Scenarios
       </h4>
 
       <div className="flex flex-col">
-        <div className="grid grid-cols-3 rounded-sm bg-gray-2 dark:bg-meta-4 sm:grid-cols-5">
+        <div className="grid grid-cols-3 rounded-sm bg-gray-2 dark:bg-meta-4 sm:grid-cols-7">
           <div className="p-2.5 xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Nombre
+              Title
             </h5>
           </div>
           <div className="p-2.5 text-center xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Email
+              Description
             </h5>
           </div>
           <div className="p-2.5 text-center xl:p-5">
-            <h5 className="text-sm font-medium uppercase xsm:text-base">Rol</h5>
+            <h5 className="text-sm font-medium uppercase xsm:text-base">
+              Status
+            </h5>
+          </div>
+          <div className="p-2.5 text-center xl:p-5">
+            <h5 className="text-sm font-medium uppercase xsm:text-base">
+              Assigned To
+            </h5>
+          </div>
+          <div className="p-2.5 text-center xl:p-5">
+            <h5 className="text-sm font-medium uppercase xsm:text-base">
+              Created By
+            </h5>
           </div>
           <div className="hidden p-2.5 text-center sm:block xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
@@ -77,38 +106,50 @@ const TableOne = ({ users }: { users: any }) => {
           </div>
         </div>
 
-        {users.map((user: any, key: any) => (
+        {scenarios.map((scenario, key) => (
           <div
-            className={`grid grid-cols-3 sm:grid-cols-5 ${
-              key === users.length - 1
+            className={`grid grid-cols-3 sm:grid-cols-7 ${
+              key === scenarios.length - 1
                 ? ""
                 : "border-b border-stroke dark:border-strokedark"
             }`}
             key={key}
           >
             <div className="flex items-center gap-3 p-2.5 xl:p-5">
-              <p className="hidden text-black dark:text-white sm:block">
-                {user.name}
+              <Link
+                to={`/scenarios/${scenario.id}`}
+                className="hidden text-black dark:text-white hover:text-primary dark:hover:text-primary sm:block"
+              >
+                {scenario.title}
+              </Link>
+            </div>
+
+            <div className="flex items-center justify-center p-2.5 xl:p-5">
+              <p className="text-black dark:text-white">
+                {scenario.description}
               </p>
             </div>
 
             <div className="flex items-center justify-center p-2.5 xl:p-5">
-              <p className="text-black dark:text-white">{user.email}</p>
+              <p className="text-meta-3">{scenario.status}</p>
             </div>
 
             <div className="flex items-center justify-center p-2.5 xl:p-5">
-              <p className="text-meta-3">
-                {user.role === "1"
-                  ? "Admin"
-                  : user.role === "2"
-                  ? "Company"
-                  : "User"}
+              <p className="text-black dark:text-white">
+                {scenario.assigned_user?.name || "Unassigned"}
               </p>
             </div>
+
+            <div className="flex items-center justify-center p-2.5 xl:p-5">
+              <p className="text-black dark:text-white">
+                {scenario.created_user?.name || "Unknown"}
+              </p>
+            </div>
+
             <div className="flex items-center justify-center p-2.5 xl:p-5">
               <Link
                 to="#"
-                onClick={(e) => handleEdit(e, user.id)}
+                onClick={(e) => handleEdit(e, scenario.id)}
                 className="inline-flex items-center justify-center rounded-md bg-primary py-2 px-4 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
               >
                 Editar
@@ -117,7 +158,7 @@ const TableOne = ({ users }: { users: any }) => {
             <div className="flex items-center justify-center p-2.5 xl:p-5">
               <Link
                 to="#"
-                onClick={(e) => handleDelete(e, user.id)}
+                onClick={(e) => handleDelete(e, scenario.id)}
                 className="inline-flex items-center justify-center rounded-md bg-danger py-2 px-4 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
               >
                 Eliminar
@@ -130,4 +171,4 @@ const TableOne = ({ users }: { users: any }) => {
   );
 };
 
-export default TableOne;
+export default TableScenarios;

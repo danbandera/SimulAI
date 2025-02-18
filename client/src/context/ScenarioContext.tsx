@@ -1,0 +1,120 @@
+import { createContext, useContext, useState, ReactNode } from "react";
+import { toast } from "react-hot-toast";
+import {
+  getScenarioRequest,
+  getScenariosRequest,
+  createScenarioRequest,
+  updateScenarioRequest,
+  deleteScenarioRequest,
+} from "../api/scenarios.api";
+
+interface Scenario {
+  id?: number;
+  title: string;
+  description: string;
+  status: string;
+  users: number[];
+  created_at?: string;
+  updated_at?: string;
+}
+
+interface ScenarioContextValue {
+  scenarios: Scenario[];
+  loadScenarios: () => Promise<void>;
+  createScenario: (scenario: Scenario) => Promise<void>;
+  deleteScenario: (id: number) => Promise<void>;
+  getScenario: (id: number) => Promise<Scenario>;
+  updateScenario: (id: number, scenario: Scenario) => Promise<void>;
+}
+
+interface ScenarioProviderProps {
+  children: ReactNode;
+}
+
+const ScenarioContext = createContext<ScenarioContextValue | undefined>(
+  undefined,
+);
+
+export const useScenarios = () => {
+  const context = useContext(ScenarioContext);
+  if (!context) {
+    throw new Error("useScenarios must be used within a ScenarioProvider");
+  }
+  return context;
+};
+
+export const ScenarioProvider = ({ children }: ScenarioProviderProps) => {
+  const [scenarios, setScenarios] = useState<Scenario[]>([]);
+
+  const loadScenarios = async () => {
+    try {
+      const response = await getScenariosRequest();
+      setScenarios(response);
+    } catch (error) {
+      console.error("Error loading scenarios:", error);
+      toast.error("Error loading scenarios");
+    }
+  };
+
+  const createScenario = async (scenario: Scenario) => {
+    try {
+      const response = await createScenarioRequest(scenario);
+      setScenarios([...scenarios, response]);
+      toast.success("Scenario created successfully");
+    } catch (error) {
+      console.error("Error creating scenario:", error);
+      toast.error("Error creating scenario");
+      throw error;
+    }
+  };
+
+  const deleteScenario = async (id: number) => {
+    try {
+      await deleteScenarioRequest(id);
+      setScenarios(scenarios.filter((scenario) => scenario.id !== id));
+      toast.success("Scenario deleted successfully");
+    } catch (error) {
+      console.error("Error deleting scenario:", error);
+      toast.error("Error deleting scenario");
+      throw error;
+    }
+  };
+
+  const getScenario = async (id: number) => {
+    try {
+      const response = await getScenarioRequest(id);
+      return response;
+    } catch (error) {
+      console.error("Error getting scenario:", error);
+      toast.error("Error getting scenario");
+      throw error;
+    }
+  };
+
+  const updateScenario = async (id: number, scenario: Scenario) => {
+    try {
+      const response = await updateScenarioRequest(id, scenario);
+      setScenarios(scenarios.map((s) => (s.id === id ? response : s)));
+      toast.success("Scenario updated successfully");
+    } catch (error) {
+      console.error("Error updating scenario:", error);
+      toast.error("Error updating scenario");
+      throw error;
+    }
+  };
+
+  return (
+    <ScenarioContext.Provider
+      value={{
+        scenarios,
+        loadScenarios,
+        createScenario,
+        deleteScenario,
+        getScenario,
+        updateScenario,
+      }}
+    >
+      {children}
+    </ScenarioContext.Provider>
+  );
+};

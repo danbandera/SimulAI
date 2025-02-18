@@ -12,7 +12,7 @@ export default defineConfig({
         target:
           process.env.NODE_ENV === "production"
             ? "http://localhost:10000"
-            : "http://api:4000",
+            : "http://localhost:4000",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
       },

@@ -9,7 +9,7 @@ const Tables = () => {
       <Breadcrumb pageName="Tables" />
 
       <div className="flex flex-col gap-10">
-        <TableUsers />
+        <TableUsers users={[]} />
         <TableTwo />
         <TableThree />
       </div>

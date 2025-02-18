@@ -4,7 +4,7 @@ services:
   api:
     build:
       context: .
-      dockerfile: Dockerfile.dev.server
+      dockerfile: Dockerfile.server
     ports:
       - "${PORT}:${PORT}"
     env_file:
@@ -17,7 +17,7 @@ services:
   client:
     build:
       context: .
-      dockerfile: Dockerfile.dev.client
+      dockerfile: Dockerfile.client
     ports:
       - "5173:5173"
     volumes:
@@ -25,3 +25,5 @@ services:
       - /app/node_modules
     depends_on:
       - api
+    env_file:
+      - .env

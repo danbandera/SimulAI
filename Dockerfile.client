@@ -4,17 +4,11 @@ WORKDIR /app
 
 COPY client/package*.json ./
 
-# Remove existing node_modules if they exist
 RUN rm -rf node_modules
-
-# Add both --legacy-peer-deps and --force flags
-RUN npm install --legacy-peer-deps --force \
-    && npm cache clean --force \
-    && rm -rf /tmp/*
+RUN npm install
 
 COPY client/ .
 
 EXPOSE 5173
 
-# Modified command to allow external connections
-CMD ["npm", "run", "dev"]
+CMD ["npm", "run", "dev"] 

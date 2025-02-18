@@ -9,7 +9,7 @@ import { Toggle } from "../../components/toggle/Toggle";
 import "./ConsolePage.scss";
 
 const LOCAL_RELAY_SERVER_URL: string =
-  import.meta.env.REACT_APP_LOCAL_RELAY_SERVER_URL || "";
+  import.meta.env.VITE_REACT_APP_LOCAL_RELAY_SERVER_URL || "";
 
 export function ConsolePage() {
   const apiKey = LOCAL_RELAY_SERVER_URL

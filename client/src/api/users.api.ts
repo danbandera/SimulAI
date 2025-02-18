@@ -1,6 +1,4 @@
-import axios from "axios";
-
-const API = "http://localhost:4000/api";
+import axiosInstance from "../config/axios";
 
 export interface User {
   id?: number;
@@ -12,25 +10,25 @@ export interface User {
 }
 
 export const getUsersRequest = async () => {
-  const response = await axios.get(`${API}/users`);
+  const response = await axiosInstance.get(`/users`);
   return response.data;
 };
 
 export const createUserRequest = async (user: User) => {
-  const response = await axios.post(`${API}/users`, user);
+  const response = await axiosInstance.post(`/users`, user);
   return response.data;
 };
 
 export const updateUserRequest = async (id: number, user: User) => {
-  const response = await axios.put(`${API}/users/${id}`, user);
+  const response = await axiosInstance.put(`/users/${id}`, user);
   return response.data;
 };
 
 export const deleteUserRequest = async (id: number) => {
-  await axios.delete(`${API}/users/${id}`);
+  await axiosInstance.delete(`/users/${id}`);
 };
 
 export const getUserRequest = async (id: number) => {
-  const response = await axios.get(`${API}/users/${id}`);
+  const response = await axiosInstance.get(`/users/${id}`);
   return response.data;
 };

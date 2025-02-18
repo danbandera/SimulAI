@@ -7,7 +7,10 @@ COPY client/package*.json ./
 # Remove existing node_modules if they exist
 RUN rm -rf node_modules
 
-RUN npm install
+# Add both --legacy-peer-deps and --force flags
+RUN npm install --legacy-peer-deps --force \
+    && npm cache clean --force \
+    && rm -rf /tmp/*
 
 COPY client/ .
 

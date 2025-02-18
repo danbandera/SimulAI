@@ -16,9 +16,9 @@ const corsOptions = {
   origin: [
     'http://localhost:5173',
     'https://simulai.onrender.com',
-    // Add any other frontend URLs you need
-  ],
-  credentials: true, // if you're using cookies
+    process.env.FRONTEND_URL // This will pick up from environment
+  ].filter(Boolean), // Remove any undefined/null values
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
 };

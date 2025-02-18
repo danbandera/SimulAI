@@ -11,12 +11,19 @@ const __dirname = path.dirname(__filename);
 dotenv.config();
 const app = express();
 
-app.use(
-  cors({
-    origin: ["https://simulai.onrender.com", "http://localhost:5173"],
-    credentials: true,
-  })
-);
+// CORS configuration
+const corsOptions = {
+  origin: [
+    'http://localhost:5173',
+    'https://simulai.onrender.com',
+    // Add any other frontend URLs you need
+  ],
+  credentials: true, // if you're using cookies
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+};
+
+app.use(cors(corsOptions));
 app.use(express.json());
 
 // API routes

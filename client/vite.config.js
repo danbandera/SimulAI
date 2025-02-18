@@ -25,4 +25,8 @@ export default defineConfig({
       usePolling: true,
     },
   },
+  define: {
+    // This ensures environment variables are properly replaced
+    "process.env.VITE_API_URL": JSON.stringify(process.env.VITE_API_URL),
+  },
 });

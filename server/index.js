@@ -5,6 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import userRoutes from "./routes/user.routes.js";
 import scenarioRoutes from "./routes/scenario.routes.js";
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
@@ -16,8 +17,8 @@ const corsOptions = {
   origin: [
     'http://localhost:5173',
     'https://simulai.onrender.com',
-    process.env.FRONTEND_URL // This will pick up from environment
-  ].filter(Boolean), // Remove any undefined/null values
+    process.env.FRONTEND_URL
+  ].filter(Boolean),
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
@@ -30,16 +31,16 @@ app.use(express.json());
 app.use("/api", userRoutes);
 app.use("/api", scenarioRoutes);
 
-// Serve static files in production
-if (process.env.NODE_ENV === "production") {
-  app.use(express.static(path.join(__dirname, "../client/dist")));
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, "../client/dist")));
 
-  app.get("*", (req, res) => {
-    res.sendFile(path.join(__dirname, "../client/dist/index.html"));
-  });
-}
+// The "catchall" handler: for any request that doesn't
+// match one above, send back the index.html file.
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../client/dist/index.html"));
+});
 
-const PORT = process.env.PORT || 10000;
+const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });

@@ -13,7 +13,7 @@ export default defineConfig({
         target: process.env.VITE_BACKEND_URL || "http://localhost:4000",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
-        secure: false,
+        secure: true,
       },
     },
     watch: {
@@ -22,5 +22,8 @@ export default defineConfig({
   },
   define: {
     "process.env.BACKEND_URL": JSON.stringify(process.env.VITE_BACKEND_URL),
+  },
+  preview: {
+    port: 5173,
   },
 });

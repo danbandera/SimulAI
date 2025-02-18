@@ -15,8 +15,8 @@ COPY client/ .
 # Build client
 RUN npm run build
 
-# Build stage for server
-FROM node:18-alpine as server-builder
+# Final stage
+FROM node:18-alpine
 
 WORKDIR /app
 

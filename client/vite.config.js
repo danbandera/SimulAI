@@ -11,10 +11,14 @@ export default defineConfig({
       "/api": {
         target:
           process.env.NODE_ENV === "production"
-            ? "http://localhost:10000"
+            ? "https://simulai-api.onrender.com"
             : "http://localhost:4000",
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/api/, ""),
+        secure: false,
+        headers: {
+          "Access-Control-Allow-Origin": "*",
+        },
       },
     },
     watch: {

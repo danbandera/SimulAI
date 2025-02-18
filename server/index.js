@@ -13,8 +13,7 @@ const app = express();
 
 app.use(
   cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    origin: ["https://simulai.onrender.com", "http://localhost:5173"],
     credentials: true,
   })
 );

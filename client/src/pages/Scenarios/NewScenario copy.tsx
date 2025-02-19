@@ -5,7 +5,6 @@ import { useUsers } from "../../context/UserContext";
 import { toast } from "react-hot-toast";
 import Breadcrumb from "../../components/Breadcrumbs/Breadcrumb";
 import Select, { SingleValue } from "react-select";
-import { sendEmail } from "../../api/email.api";
 
 interface UserOption {
   value: number;
@@ -22,6 +21,7 @@ const NewScenario = () => {
     status: "draft",
     user: null as number | null,
   });
+
   // Transform users data for react-select
   const userOptions: UserOption[] = users.map((user) => ({
     value: user.id!,
@@ -58,36 +58,10 @@ const NewScenario = () => {
       return;
     }
     try {
-      // Get the selected user's details
-      const selectedUser = users.find((user) => user.id === formData.user);
-      if (!selectedUser) {
-        throw new Error("Selected user not found");
-      }
-
       await createScenario({
         ...formData,
         users: [formData.user],
       });
-
-      await sendEmail({
-        email: selectedUser.email,
-        subject: `New Scenario Assignment: ${formData.title}`,
-        message: `
-          <div style="font-family: Arial, sans-serif;">
-            <h2>Hello ${selectedUser.name},</h2>
-            <p>You have been assigned to a new scenario in SimulAI.</p>
-            
-            <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-              <p><strong>Scenario:</strong> ${formData.title}</p>
-              <p><strong>Description:</strong> ${formData.description || "No description provided"}</p>
-            </div>
-            
-            <p>You can access this scenario from your dashboard.</p>
-            <p>Best regards,<br>SimulAI Team</p>
-          </div>
-        `,
-      });
-
       toast.success("Scenario created successfully");
       navigate("/scenarios");
     } catch (error) {

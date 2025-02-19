@@ -1,17 +1,17 @@
 import axios from "../config/axios";
 
 interface EmailData {
-  to: string;
-  name: string;
-  password: string;
+  email: string;
+  subject: string;
+  message: string;
 }
 
-export const sendWelcomeEmail = async (emailData: EmailData) => {
+export const sendEmail = async (emailData: EmailData) => {
   try {
-    const response = await axios.post("/email", emailData);
+    const response = await axios.post("/email/send", emailData);
     return response.data;
   } catch (error: any) {
-    console.error("Error sending welcome email:", error);
+    console.error("Error sending email:", error);
     throw error;
   }
 };

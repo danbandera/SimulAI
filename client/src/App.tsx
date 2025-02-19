@@ -26,6 +26,7 @@ import ScenarioDetail from "./pages/Scenarios/ScenarioDetail";
 import Login from "./pages/Login/Login";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./ProtectedRoute";
+import SendEmail from "./components/SendEmail";
 
 function App() {
   return (
@@ -216,6 +217,15 @@ function App() {
                     <>
                       <PageTitle title="Signup | TailAdmin - Tailwind CSS Admin Dashboard Template" />
                       <SignUp />
+                    </>
+                  }
+                />
+                <Route
+                  path="/send-email"
+                  element={
+                    <>
+                      <PageTitle title="Send Email | TailAdmin - Tailwind CSS Admin Dashboard Template" />
+                      <SendEmail />
                     </>
                   }
                 />

@@ -3,111 +3,59 @@ import nodemailer from "nodemailer";
 
 const router = express.Router();
 
-// Configure your email transporter
-const createTransporter = () => {
-  return nodemailer.createTransport({
-    host: process.env.SMTP_HOST,
-    port: parseInt(process.env.SMTP_PORT || "587"),
-    secure: process.env.SMTP_SECURE === "true",
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASSWORD,
-    },
-    debug: true, // Enable debug output
-  });
-};
-
-router.post("/", async (req, res) => {
-  const { to, name, password } = req.body;
-
-  // Add validation
-  if (!to || !name || !password) {
-    return res.status(400).json({
-      error: "Missing required fields: email, name, or password",
+function sendEmail({ email, subject, message }) {
+  return new Promise((resolve, reject) => {
+    const transporter = nodemailer.createTransport({
+      service: "gmail",
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD,
+      },
     });
-  }
 
-  try {
-    // Verify required environment variables
-    const requiredEnvVars = [
-      "SMTP_HOST",
-      "SMTP_USER",
-      "SMTP_PASSWORD",
-      "SMTP_FROM_EMAIL",
-    ];
-    const missingEnvVars = requiredEnvVars.filter(
-      (varName) => !process.env[varName]
-    );
-
-    if (missingEnvVars.length > 0) {
-      throw new Error(
-        `Missing environment variables: ${missingEnvVars.join(", ")}`
-      );
-    }
-
-    const transporter = createTransporter();
-
-    // Test the connection before sending
-    try {
-      await transporter.verify();
-      console.log("SMTP connection verified successfully");
-    } catch (verifyError) {
-      console.error("SMTP Verification failed:", verifyError);
-      return res.status(500).json({
-        error: "Email configuration error",
-        details:
-          "Failed to connect to email server. Please check SMTP settings.",
-        code: verifyError.code,
-      });
-    }
-
-    const mailOptions = {
+    const mail_configs = {
       from: process.env.SMTP_FROM_EMAIL,
-      to: to,
-      subject: "Welcome to Our Platform - Your Account Details",
+      to: email,
+      subject: subject,
       html: `
-        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-          <h1 style="color: #333;">Welcome ${name}!</h1>
-          <p>Your account has been created successfully.</p>
-          <p><strong>Here are your login credentials:</strong></p>
-          <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px;">
-            <p>Email: ${to}</p>
-            <p>Temporary Password: ${password}</p>
+        <div style="font-family: Arial, sans-serif; width: 80%; background-color: #f9fafb; padding: 20px;">
+          <div style="width: 100%; margin: 0 auto;">
+            ${message}
           </div>
-          <p>Please login at: <a href="${process.env.FRONTEND_URL}/login">${process.env.FRONTEND_URL}/login</a></p>
-          <p style="color: #ff0000;">Important: For security reasons, please change your password after your first login.</p>
-          <p>If you have any questions, please contact our support team.</p>
-          <p>Best regards,<br>Your Team</p>
         </div>
       `,
     };
 
-    // Send email
-    const info = await transporter.sendMail(mailOptions);
-    console.log("Email sent successfully:", info.messageId);
-
-    res.status(200).json({
-      message: "Welcome email sent successfully",
-      messageId: info.messageId,
+    transporter.sendMail(mail_configs, function (error, info) {
+      if (error) {
+        console.error("Email error:", error);
+        reject({ message: "An error has occurred", details: error.message });
+      } else {
+        resolve({
+          message: "Email sent successfully",
+          messageId: info.messageId,
+        });
+      }
     });
+  });
+}
+
+router.post("/send", async (req, res) => {
+  const { email, subject, message } = req.body;
+
+  // Validate required fields
+  if (!email || !subject || !message) {
+    return res.status(400).json({
+      error: "Missing required fields: email, subject, or message",
+    });
+  }
+
+  try {
+    const result = await sendEmail({ email, subject, message });
+    res.status(200).json(result);
   } catch (error) {
-    console.error("Email error:", error);
-    const errorResponse = {
-      error: "Failed to send welcome email",
-      details: error.message,
-      code: error.code || "UNKNOWN",
-    };
-
-    // Specific error handling for common SMTP errors
-    if (error.code === "EAUTH") {
-      errorResponse.details =
-        "Email authentication failed. Please check SMTP credentials.";
-    } else if (error.code === "ESOCKET") {
-      errorResponse.details =
-        "Failed to connect to email server. Please check SMTP settings.";
-    }
-
-    res.status(500).json(errorResponse);
+    console.error("Send email error:", error);
+    res.status(500).json(error);
   }
 });
 

@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { useAuth } from "../../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 const Login = () => {
   const {
@@ -9,12 +9,20 @@ const Login = () => {
     handleSubmit,
     formState: { errors: formErrors },
   } = useForm();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { login, isAuthenticated, errors: loginErrors } = useAuth();
+  const { login, isAuthenticated, errors: loginErrors, loading } = useAuth();
   const navigate = useNavigate();
 
   const onSubmit = async (data: any) => {
-    await login(data.email, data.password);
+    if (isSubmitting) return;
+
+    try {
+      setIsSubmitting(true);
+      await login(data.email, data.password);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   useEffect(() => {
@@ -22,6 +30,14 @@ const Login = () => {
       navigate("/");
     }
   }, [isAuthenticated, navigate]);
+
+  if (loading) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
 
   return (
     <>
@@ -76,8 +92,16 @@ const Login = () => {
                 )}
               </div>
               <div className="mt-8">
-                <button className="flex w-full justify-center rounded bg-primary py-3 px-5 font-medium text-gray hover:bg-opacity-90">
-                  Login
+                <button
+                  type="submit"
+                  disabled={loading || isSubmitting}
+                  className={`flex w-full justify-center rounded bg-primary py-3 px-5 font-medium text-gray hover:bg-opacity-90 ${
+                    loading || isSubmitting
+                      ? "opacity-50 cursor-not-allowed"
+                      : ""
+                  }`}
+                >
+                  {loading || isSubmitting ? "Loading..." : "Login"}
                 </button>
               </div>
             </div>

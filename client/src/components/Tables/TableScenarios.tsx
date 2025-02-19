@@ -1,6 +1,5 @@
 import { useNavigate } from "react-router-dom";
 import { useScenarios } from "../../context/ScenarioContext";
-import { toast } from "react-hot-toast";
 import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
 
@@ -22,7 +21,6 @@ interface Scenario {
 }
 
 const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
-  console.log(scenarios);
   const navigate = useNavigate();
   const { deleteScenario } = useScenarios();
 
@@ -118,7 +116,7 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
             <div className="flex items-center gap-3 p-2.5 xl:p-5">
               <Link
                 to={`/scenarios/${scenario.id}`}
-                className="hidden text-black dark:text-white hover:text-primary dark:hover:text-primary sm:block"
+                className="hidden text-blue-400 dark:text-white hover:text-primary dark:hover:text-primary sm:block"
               >
                 {scenario.title}
               </Link>
@@ -131,7 +129,7 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
             </div>
 
             <div className="flex items-center justify-center p-2.5 xl:p-5">
-              <p className="text-meta-3">{scenario.status}</p>
+              <p className="text-black">{scenario.status}</p>
             </div>
 
             <div className="flex items-center justify-center p-2.5 xl:p-5">

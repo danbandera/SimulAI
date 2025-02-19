@@ -29,49 +29,59 @@ export const useAuth = () => {
 };
 
 export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
-  const [user, setUser] = useState<User | null>(() => {
-    const savedUser = Cookies.get("user");
-    return savedUser ? JSON.parse(savedUser) : null;
-  });
-
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(() => {
-    return !!Cookies.get("accessToken");
-  });
-
+  const [user, setUser] = useState<User | null>(null);
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean>(false);
   const [errors, setErrors] = useState<string[] | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isInitialized, setIsInitialized] = useState<boolean>(false);
 
   useEffect(() => {
+    let mounted = true;
+
     const checkLogin = async () => {
-      const accessToken = Cookies.get("accessToken");
-
-      if (!accessToken) {
-        setIsAuthenticated(false);
-        setUser(null);
-        setLoading(false);
-        return;
-      }
-
       try {
+        const accessToken = Cookies.get("accessToken");
+
+        if (!accessToken) {
+          if (mounted) {
+            setIsAuthenticated(false);
+            setUser(null);
+          }
+          return;
+        }
+
         const res = await verifyToken();
-        if (!res.data) {
-          setIsAuthenticated(false);
-          setUser(null);
-        } else {
-          setIsAuthenticated(true);
-          setUser(res.data);
+        if (mounted) {
+          if (!res.data) {
+            setIsAuthenticated(false);
+            setUser(null);
+          } else {
+            setIsAuthenticated(true);
+            setUser(res.data);
+          }
         }
       } catch (error) {
-        setIsAuthenticated(false);
-        setUser(null);
+        if (mounted) {
+          setIsAuthenticated(false);
+          setUser(null);
+        }
       } finally {
-        setLoading(false);
+        if (mounted) {
+          setLoading(false);
+          setIsInitialized(true);
+        }
       }
     };
+
     checkLogin();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   const login = async (email: string, password: string) => {
+    setLoading(true);
     try {
       const response = await loginRequest({ email, password });
       setUser(response);
@@ -84,27 +94,38 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       );
       setIsAuthenticated(false);
       setUser(null);
+    } finally {
+      setLoading(false);
     }
   };
 
   const logout = () => {
     Cookies.remove("accessToken");
+    Cookies.remove("user");
     setUser(null);
     setIsAuthenticated(false);
+    window.location.href = "/login";
   };
 
-  useEffect(() => {
-    if (errors) {
-      const timeout = setTimeout(() => {
-        setErrors(null);
-      }, 5000);
-      return () => clearTimeout(timeout);
-    }
-  }, [errors]);
+  // Don't render children until authentication is initialized
+  if (!isInitialized) {
+    return (
+      <div className="h-screen w-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
 
   return (
     <AuthContext.Provider
-      value={{ user, login, isAuthenticated, errors, loading, logout }}
+      value={{
+        user,
+        login,
+        logout,
+        isAuthenticated,
+        errors,
+        loading,
+      }}
     >
       {children}
     </AuthContext.Provider>

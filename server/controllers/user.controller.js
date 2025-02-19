@@ -30,36 +30,67 @@ export const createUser = async (req, res) => {
   try {
     const { name, role, email, password } = req.body;
 
-    const existingUser = await db
+    // Check for existing user with better error handling
+    const { data: existingUser, error: searchError } = await db
       .from("users")
       .select()
       .eq("email", email)
-      .single();
+      .maybeSingle();
+
+    if (searchError) {
+      console.error("Error checking existing user:", searchError);
+      return res.status(500).json({ message: "Error checking user existence" });
+    }
+
     if (existingUser) {
-      return res.status(400).json( ["User already exists" ]);
+      console.log("User already exists:", email);
+      return res
+        .status(400)
+        .json({ message: "User with this email already exists" });
     }
 
     const hashedPassword = await bcrypt.hash(password, 10);
-    const result = await db.from("users").insert({
-      name,
-      role,
-      email,
-      password: hashedPassword,
+
+    // Insert new user with better error handling
+    const { data: newUser, error: insertError } = await db
+      .from("users")
+      .insert({
+        name,
+        role,
+        email,
+        password: hashedPassword,
+      })
+      .select()
+      .single();
+
+    if (insertError) {
+      console.error("Error inserting user:", insertError);
+      return res.status(500).json({ message: "Error creating user" });
+    }
+
+    // Create access token after successful user creation
+    const accessToken = await createAccessToken({ id: newUser.id });
+    res.cookie("accessToken", accessToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
-    const userId = result.insertId;
-    const accessToken = await createAccessToken({ id: userId });
-    res.cookie("accessToken", accessToken);
+
+    // Return success response
     res.status(201).json({
-      id: userId,
-      name,
-      email,
-      role,
-      createdAt: new Date(),
-      updatedAt: new Date(),
+      id: newUser.id,
+      name: newUser.name,
+      email: newUser.email,
+      role: newUser.role,
+      created_at: newUser.created_at,
     });
   } catch (error) {
     console.error("Create User Error:", error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: "Internal server error while creating user",
+      error: error.message,
+    });
   }
 };
 

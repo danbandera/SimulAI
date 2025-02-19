@@ -27,12 +27,13 @@ const NewUser: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      await createUser(formData);
+      const result = await createUser(formData);
+      console.log("User created successfully:", result);
       toast.success("User created successfully!");
-      navigate("/users"); // Redirect to users list
-    } catch (error) {
-      toast.error("Error creating user");
-      console.error(error);
+      navigate("/users");
+    } catch (error: any) {
+      console.error("Error creating user:", error);
+      toast.error(error.message || "Error creating user");
     }
   };
 

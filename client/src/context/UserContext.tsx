@@ -55,9 +55,12 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     try {
       const response = await createUserRequest(user);
       setUsers([...users, response]);
-    } catch (error) {
-      console.error("Error creating user:", error);
-      throw error;
+      return response;
+    } catch (error: any) {
+      const errorMessage =
+        error.response?.data?.message || error.message || "Error creating user";
+      console.error("Error creating user:", errorMessage);
+      throw new Error(errorMessage);
     }
   };
 

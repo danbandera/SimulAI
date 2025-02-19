@@ -6,7 +6,6 @@ const Scenarios = () => {
   useEffect(() => {
     loadScenarios();
   }, []);
-  console.log(scenarios);
   return (
     <>
       <h1>Scenarios</h1>

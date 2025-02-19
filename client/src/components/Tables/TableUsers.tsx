@@ -5,7 +5,6 @@ import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
 
 const TableUsers = ({ users }: { users: any }) => {
-  console.log(users);
   const navigate = useNavigate();
   const { deleteUser } = useUsers();
 
@@ -98,11 +97,11 @@ const TableUsers = ({ users }: { users: any }) => {
 
             <div className="flex items-center justify-center p-2.5 xl:p-5">
               <p className="text-meta-3">
-                {user.role === "1"
+                {user.role === "admin"
                   ? "Admin"
-                  : user.role === "2"
-                  ? "Company"
-                  : "User"}
+                  : user.role == "company"
+                    ? "Company"
+                    : "User"}
               </p>
             </div>
             <div className="flex items-center justify-center p-2.5 xl:p-5">

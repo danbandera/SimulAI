@@ -64,7 +64,7 @@ const FormLayout = () => {
                   />
                 </div>
 
-                <SelectGroupOne />
+                <SelectRole value="" onChange={() => {}} />
 
                 <div className="mb-6">
                   <label className="mb-2.5 block text-black dark:text-white">

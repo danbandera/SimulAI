@@ -15,7 +15,6 @@ export const getScenarios = async (req, res) => {
           email
         )
       `);
-    console.log(result.data);
     res.json(result.data);
   } catch (error) {
     console.error("Database Error:", error);

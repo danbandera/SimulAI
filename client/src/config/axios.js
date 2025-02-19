@@ -1,4 +1,5 @@
 import axios from "axios";
+import Cookies from "js-cookie";
 
 // In production, the API is served from the same origin
 const baseURL =
@@ -18,14 +19,16 @@ const api = axios.create({
 
 // Add request interceptor to log requests
 api.interceptors.request.use((request) => {
-  console.log("Request:", request);
+  const token = Cookies.get("accessToken");
+  if (token) {
+    request.headers.Authorization = `Bearer ${token}`;
+  }
   return request;
 });
 
 // Add response interceptor to log responses
 api.interceptors.response.use(
   (response) => {
-    console.log("Response:", response);
     return response;
   },
   (error) => {

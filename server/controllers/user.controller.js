@@ -1,4 +1,6 @@
 import { db } from "../db.cjs";
+import bcrypt from "bcryptjs";
+import { createAccessToken } from "../libs/jwt.js";
 
 export const getUsers = async (req, res) => {
   try {
@@ -27,17 +29,34 @@ export const getUser = async (req, res) => {
 export const createUser = async (req, res) => {
   try {
     const { name, role, email, password } = req.body;
+
+    const existingUser = await db
+      .from("users")
+      .select()
+      .eq("email", email)
+      .single();
+    if (existingUser) {
+      return res.status(400).json( ["User already exists" ]);
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
     const result = await db.from("users").insert({
       name,
       role,
       email,
-      password,
+      password: hashedPassword,
     });
-    if (result.status === 201) {
-      res.status(201).json({ message: "User created successfully" });
-    } else {
-      res.status(400).json({ message: result.error.message });
-    }
+    const userId = result.insertId;
+    const accessToken = await createAccessToken({ id: userId });
+    res.cookie("accessToken", accessToken);
+    res.status(201).json({
+      id: userId,
+      name,
+      email,
+      role,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
   } catch (error) {
     console.error("Create User Error:", error);
     res.status(500).json({ message: error.message });

@@ -1,4 +1,4 @@
-import axiosInstance from "../config/axios";
+import axios from "../config/axios";
 
 export interface Scenario {
   id?: number;
@@ -12,26 +12,26 @@ export interface Scenario {
 }
 
 export const getScenariosRequest = async () => {
-  const response = await axiosInstance.get(`/scenarios`);
+  const response = await axios.get(`/scenarios`);
   return response.data;
 };
 
 export const createScenarioRequest = async (scenario: Scenario) => {
-  const response = await axiosInstance.post(`/scenarios`, scenario);
+  const response = await axios.post(`/scenarios`, scenario);
   return response.data;
 };
 
 export const deleteScenarioRequest = async (id: number) => {
-  const response = await axiosInstance.delete(`/scenarios/${id}`);
+  const response = await axios.delete(`/scenarios/${id}`);
   return response.data;
 };
 
 export const getScenarioRequest = async (id: number) => {
-  const response = await axiosInstance.get(`/scenarios/${id}`);
+  const response = await axios.get(`/scenarios/${id}`);
   return response.data;
 };
 
 export const updateScenarioRequest = async (id: number, scenario: Scenario) => {
-  const response = await axiosInstance.put(`/scenarios/${id}`, scenario);
+  const response = await axios.put(`/scenarios/${id}`, scenario);
   return response.data;
 };

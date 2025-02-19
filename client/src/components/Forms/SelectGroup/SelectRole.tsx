@@ -28,9 +28,9 @@ const SelectRole: React.FC<SelectRoleProps> = ({ value, onChange }) => {
         required
       >
         <option value="">Select Role</option>
-        <option value="1">Admin</option>
-        <option value="2">Company</option>
-        <option value="3">User</option>
+        <option value="admin">Admin</option>
+        <option value="company">Company</option>
+        <option value="user">User</option>
       </select>
     </div>
   );

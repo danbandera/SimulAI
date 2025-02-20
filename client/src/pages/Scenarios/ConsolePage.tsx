@@ -10,7 +10,7 @@ import "./ConsolePage.scss";
 
 const LOCAL_RELAY_SERVER_URL: string =
   import.meta.env.VITE_REACT_APP_LOCAL_RELAY_SERVER_URL || "";
-console.log(import.meta.env.VITE_OPENAI_API_KEY);
+
 export function ConsolePage() {
   const apiKey = LOCAL_RELAY_SERVER_URL
     ? ""

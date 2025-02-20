@@ -10,12 +10,12 @@ import "./ConsolePage.scss";
 
 const LOCAL_RELAY_SERVER_URL: string =
   import.meta.env.VITE_REACT_APP_LOCAL_RELAY_SERVER_URL || "";
-
+console.log(import.meta.env.VITE_OPENAI_API_KEY);
 export function ConsolePage() {
   const apiKey = LOCAL_RELAY_SERVER_URL
     ? ""
     : localStorage.getItem("tmp::voice_api_key") ||
-      import.meta.env.VITE_OPENAI_API_KEY ||
+      prompt("OpenAI API Key") ||
       "";
   if (apiKey !== "") {
     localStorage.setItem("tmp::voice_api_key", apiKey);
@@ -44,7 +44,7 @@ export function ConsolePage() {
   const [isRecording, setIsRecording] = useState(false);
 
   const resetAPIKey = useCallback(() => {
-    const apiKey = prompt("OpenAI API Key");
+    const apiKey = import.meta.env.VITE_OPENAI_API_KEY;
     if (apiKey !== null) {
       localStorage.clear();
       localStorage.setItem("tmp::voice_api_key", apiKey);

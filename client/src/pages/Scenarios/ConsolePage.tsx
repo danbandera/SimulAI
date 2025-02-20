@@ -10,16 +10,10 @@ import "./ConsolePage.scss";
 
 const LOCAL_RELAY_SERVER_URL: string =
   import.meta.env.VITE_REACT_APP_LOCAL_RELAY_SERVER_URL || "";
+const OPENAI_API_KEY: string = import.meta.env.VITE_OPENAI_API_KEY || "";
 
 export function ConsolePage() {
-  const apiKey = LOCAL_RELAY_SERVER_URL
-    ? ""
-    : localStorage.getItem("tmp::voice_api_key") ||
-      prompt("OpenAI API Key") ||
-      "";
-  if (apiKey !== "") {
-    localStorage.setItem("tmp::voice_api_key", apiKey);
-  }
+  const apiKey = LOCAL_RELAY_SERVER_URL ? "" : OPENAI_API_KEY;
 
   const wavRecorderRef = useRef<WavRecorder>(
     new WavRecorder({ sampleRate: 24000 }),
@@ -42,15 +36,6 @@ export function ConsolePage() {
   const [isConnected, setIsConnected] = useState(false);
   const [canPushToTalk, setCanPushToTalk] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
-
-  const resetAPIKey = useCallback(() => {
-    const apiKey = prompt("OpenAI API Key");
-    if (apiKey !== null) {
-      localStorage.clear();
-      localStorage.setItem("tmp::voice_api_key", apiKey);
-      window.location.reload();
-    }
-  }, []);
 
   const connectConversation = useCallback(async () => {
     const client = clientRef.current;
@@ -210,9 +195,10 @@ export function ConsolePage() {
                 <div className="conversation-item" key={conversationItem.id}>
                   <div className={`speaker ${conversationItem.role || ""}`}>
                     <div>
-                      {(
-                        conversationItem.role || conversationItem.type
-                      ).replaceAll("_", " ")}
+                      {(conversationItem.role || conversationItem.type).replace(
+                        /_/g,
+                        " ",
+                      )}
                     </div>
                     <div
                       className="close"

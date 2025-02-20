@@ -18,13 +18,13 @@ export const loginUser = async (req, res) => {
     }
 
     const isMatch = await bcrypt.compare(password, users.password);
-    
+
     if (!isMatch) {
       return res.status(401).json({ error: "Invalid email or password" });
     }
 
     const accessToken = await createAccessToken({ id: users.id });
-    
+
     // Set cookie with specific options
     res.cookie("accessToken", accessToken, {
       // httpOnly: true,

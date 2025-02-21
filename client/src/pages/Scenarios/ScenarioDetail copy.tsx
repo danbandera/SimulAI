@@ -15,7 +15,7 @@ interface Scenario {
   description: string;
   status: string;
   assigned_user: User;
-  created_user: User;
+  created_by: User;
   created_at: string;
   updated_at?: string;
 }
@@ -98,7 +98,7 @@ const ScenarioDetail = () => {
                     Created By
                   </h5>
                   <p className="text-sm text-black dark:text-white">
-                    {scenario.created_user?.name || "Unknown"}
+                    {scenario.created_by?.name || "Unknown"}
                   </p>
                 </div>
               </div>

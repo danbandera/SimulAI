@@ -10,7 +10,7 @@ export const getScenarios = async (req, res) => {
           name,
           email
         ),
-        created_user:user_id_created (
+        created_by (
           id,
           name,
           email
@@ -36,7 +36,7 @@ export const getScenarioById = async (req, res) => {
           name,
           email
         ),
-        created_user:user_id_created (
+        created_by (
           id,
           name,
           email
@@ -70,18 +70,24 @@ export const getScenarioByUserId = async (req, res) => {
 
 export const createScenario = async (req, res) => {
   try {
-    const { title, description, user, parent_scenario } = req.body;
+    const {
+      title,
+      description,
+      user_id_assigned,
+      created_by,
+      parent_scenario,
+      status,
+    } = req.body;
 
-    // Start a Supabase transaction
     const { data: scenario, error: scenarioError } = await connectSqlDB
       .from("scenarios")
       .insert({
         title,
         description,
-        status: "draft",
-        user_id_assigned: user,
-        user_id_created: user,
-        parent_scenario: parent_scenario,
+        status,
+        user_id_assigned,
+        created_by,
+        parent_scenario,
       })
       .select(
         `
@@ -91,7 +97,7 @@ export const createScenario = async (req, res) => {
           name,
           email
         ),
-        created_user:user_id_created (
+        created_by (
           id,
           name,
           email

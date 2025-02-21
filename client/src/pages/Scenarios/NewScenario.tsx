@@ -16,6 +16,7 @@ const NewScenario = () => {
   const navigate = useNavigate();
   const { createScenario } = useScenarios();
   const { users, getUsers } = useUsers();
+  const { currentUser } = useUsers();
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -23,10 +24,12 @@ const NewScenario = () => {
     user: null as number | null,
   });
   // Transform users data for react-select
-  const userOptions: UserOption[] = users.map((user) => ({
-    value: user.id!,
-    label: `${user.name} (${user.email})`,
-  }));
+  const userOptions: UserOption[] = users
+    .filter((user) => user.created_by === currentUser?.id)
+    .map((user) => ({
+      value: user.id!,
+      label: `${user.name} (${user.email})`,
+    }));
 
   useEffect(() => {
     getUsers();
@@ -67,6 +70,8 @@ const NewScenario = () => {
       await createScenario({
         ...formData,
         users: [formData.user],
+        user_id_assigned: formData.user,
+        created_by: Number(currentUser?.id),
       });
 
       await sendEmail({

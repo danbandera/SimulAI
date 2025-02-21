@@ -10,6 +10,7 @@ import { sendEmail } from "../../api/email.api";
 const NewUser: React.FC = () => {
   const navigate = useNavigate();
   const { createUser } = useUsers();
+  const { currentUser } = useUsers();
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -35,6 +36,7 @@ const NewUser: React.FC = () => {
       const result = await createUser({
         ...formData,
         password,
+        created_by: Number(currentUser?.id),
       });
 
       // Send welcome email with password

@@ -1,4 +1,10 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import {
+  createContext,
+  useContext,
+  useState,
+  ReactNode,
+  useEffect,
+} from "react";
 import {
   getUsersRequest,
   createUserRequest,
@@ -6,6 +12,7 @@ import {
   updateUserRequest,
   getUserRequest,
 } from "../api/users.api";
+import { useAuth } from "./AuthContext";
 
 interface User {
   id?: number;
@@ -13,11 +20,13 @@ interface User {
   email: string;
   role: string;
   password: string;
+  created_by: number;
   created_at?: string;
 }
 
 interface UserContextType {
   users: User[];
+  currentUser: User | null;
   getUsers: () => Promise<void>;
   createUser: (user: User) => Promise<void>;
   deleteUser: (id: number) => Promise<void>;
@@ -41,6 +50,23 @@ export const useUsers = () => {
 
 export const UserProvider = ({ children }: UserProviderProps) => {
   const [users, setUsers] = useState<User[]>([]);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const { user } = useAuth();
+
+  useEffect(() => {
+    const loadCurrentUser = async () => {
+      if (user?.data.id) {
+        try {
+          const userData = await getUser(Number(user.data.id));
+          setCurrentUser(userData);
+        } catch (error) {
+          console.error("Error loading current user:", error);
+        }
+      }
+    };
+
+    loadCurrentUser();
+  }, [user]);
 
   const getUsers = async () => {
     try {
@@ -102,6 +128,7 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     <UserContext.Provider
       value={{
         users,
+        currentUser,
         getUsers,
         createUser,
         deleteUser,

@@ -33,7 +33,7 @@ export const getUser = async (req, res) => {
 
 export const createUser = async (req, res) => {
   try {
-    const { name, role, email, password } = req.body;
+    const { name, role, email, password, created_by } = req.body;
 
     // Check for existing user with better error handling
     const { data: existingUser, error: searchError } = await connectSqlDB
@@ -64,6 +64,7 @@ export const createUser = async (req, res) => {
         role,
         email,
         password: hashedPassword,
+        created_by,
       })
       .select()
       .single();

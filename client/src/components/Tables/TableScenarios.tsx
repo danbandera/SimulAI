@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useScenarios } from "../../context/ScenarioContext";
 import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
-
+import { useUsers } from "../../context/UserContext";
 interface User {
   id: number;
   name: string;
@@ -15,7 +15,7 @@ interface Scenario {
   description: string;
   status: string;
   assigned_user: User;
-  created_user: User;
+  created_by: User;
   created_at: string;
   updated_at?: string;
 }
@@ -23,6 +23,18 @@ interface Scenario {
 const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
   const navigate = useNavigate();
   const { deleteScenario } = useScenarios();
+  const { currentUser } = useUsers();
+
+  // Filter scenarios based on user role
+  const filteredScenarios = scenarios.filter((scenario) => {
+    if (currentUser?.role === "user") {
+      return scenario.assigned_user?.id === Number(currentUser?.id);
+    }
+    // For company/admin roles, show scenarios they created
+    return scenario.created_by.id === Number(currentUser?.id);
+  });
+
+  console.log(currentUser);
 
   const handleEdit = (e: React.MouseEvent, scenarioId: number) => {
     e.preventDefault(); // Prevent the Link navigation
@@ -114,10 +126,10 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
           </div>
         </div>
 
-        {scenarios.map((scenario, key) => (
+        {filteredScenarios.map((scenario, key) => (
           <div
             className={`grid grid-cols-3 sm:grid-cols-8 gap-4 ${
-              key === scenarios.length - 1
+              key === filteredScenarios.length - 1
                 ? ""
                 : "border-b border-stroke dark:border-strokedark"
             }`}
@@ -150,7 +162,7 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
 
             <div className="flex items-center justify-center p-2.5 xl:p-5">
               <p className="text-black dark:text-white">
-                {scenario.created_user?.name || "Unknown"}
+                {scenario.created_by?.name || "Unknown"}
               </p>
             </div>
 

@@ -16,7 +16,7 @@ interface Scenario {
   description: string;
   status: string;
   assigned_user: User;
-  created_user: User;
+  created_by: User;
   created_at: string;
   updated_at?: string;
 }

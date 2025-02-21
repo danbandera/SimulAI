@@ -2,6 +2,10 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useScenarios } from "../../context/ScenarioContext";
 import Breadcrumb from "../../components/Breadcrumbs/Breadcrumb";
+// import { jsPDF } from "jspdf";
+
+import fs from "fs";
+import { jsPDF } from "jspdf";
 
 interface ConversationMessage {
   role: string;
@@ -9,11 +13,11 @@ interface ConversationMessage {
 }
 
 interface ConversationData {
-  id: number;
+  _id: string;
   scenario_id: number;
   user_id: number;
   conversation: ConversationMessage[];
-  created_at: string;
+  createdAt: string;
 }
 
 const ScenarioConversations = () => {
@@ -46,6 +50,49 @@ const ScenarioConversations = () => {
     }));
   };
 
+  const exportAsPDF = (conv: ConversationData, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent expanding the conversation when clicking export
+    const doc = new jsPDF();
+    const timestamp = new Date(conv.createdAt).toLocaleString();
+
+    doc.setFontSize(16);
+    doc.text(`Conversation Export - ${timestamp}`, 20, 20);
+
+    let yPosition = 40;
+    conv.conversation.forEach((msg) => {
+      doc.setFontSize(12);
+      doc.text(`${msg.role}: ${msg.message}`, 20, yPosition, {
+        maxWidth: 170,
+      });
+      yPosition += 10 + doc.splitTextToSize(msg.message, 170).length * 7;
+
+      if (yPosition >= 280) {
+        doc.addPage();
+        yPosition = 20;
+      }
+    });
+
+    doc.save(`conversation-${timestamp}.pdf`);
+  };
+
+  const exportAsTXT = (conv: ConversationData, e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent expanding the conversation when clicking export
+    const timestamp = new Date(conv.createdAt).toLocaleString();
+    let content = `Conversation Export - ${timestamp}\n\n`;
+
+    conv.conversation.forEach((msg) => {
+      content += `${msg.role}: ${msg.message}\n\n`;
+    });
+
+    const blob = new Blob([content], { type: "text/plain" });
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `conversation-${timestamp}.txt`;
+    link.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   return (
     <>
       <Breadcrumb pageName="Conversations History" />
@@ -65,9 +112,23 @@ const ScenarioConversations = () => {
                   <span className="text-sm text-gray-500">
                     {new Date(conv.createdAt).toLocaleString()}
                   </span>
-                  <button className="text-sm text-blue-500">
-                    {isExpanded ? "Collapse" : "Expand"}
-                  </button>
+                  <div className="flex gap-2">
+                    <button
+                      className="px-3 py-1 text-sm text-white bg-primary rounded hover:bg-opacity-90"
+                      onClick={(e) => exportAsPDF(conv, e)}
+                    >
+                      PDF
+                    </button>
+                    <button
+                      className="px-3 py-1 text-sm text-white bg-primary rounded hover:bg-opacity-90"
+                      onClick={(e) => exportAsTXT(conv, e)}
+                    >
+                      TXT
+                    </button>
+                    <button className="text-sm text-blue-500">
+                      {isExpanded ? "Collapse" : "Expand"}
+                    </button>
+                  </div>
                 </div>
 
                 {isExpanded && (

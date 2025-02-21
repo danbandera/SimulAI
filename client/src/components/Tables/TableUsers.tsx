@@ -9,6 +9,17 @@ const TableUsers = ({ users }: { users: any }) => {
   const { deleteUser } = useUsers();
   const { currentUser } = useUsers();
 
+  // Filter users based on role
+  const filteredUsers = users.filter((user: any) => {
+    if (currentUser?.role === "admin") {
+      return true; // Admin sees all users
+    }
+    if (currentUser?.role === "company") {
+      return user.created_by === Number(currentUser?.id); // Company sees users they created
+    }
+    return false; // Regular users don't see the users table
+  });
+
   const handleEdit = (e: React.MouseEvent, userId: number) => {
     e.preventDefault(); // Prevent the Link navigation
     navigate(`/users/edit/${userId}`);
@@ -77,57 +88,54 @@ const TableUsers = ({ users }: { users: any }) => {
           </div>
         </div>
 
-        {users.map(
-          (user: any, key: any) =>
-            user.created_by === currentUser?.id && (
-              <div
-                className={`grid grid-cols-3 sm:grid-cols-5 ${
-                  key === users.length - 1
-                    ? ""
-                    : "border-b border-stroke dark:border-strokedark"
-                }`}
-                key={key}
+        {filteredUsers.map((user: any, key: any) => (
+          <div
+            className={`grid grid-cols-3 sm:grid-cols-5 ${
+              key === filteredUsers.length - 1
+                ? ""
+                : "border-b border-stroke dark:border-strokedark"
+            }`}
+            key={key}
+          >
+            <div className="flex items-center gap-3 p-2.5 xl:p-5">
+              <p className="hidden text-black dark:text-white sm:block">
+                {user.name}
+              </p>
+            </div>
+
+            <div className="flex items-center justify-center p-2.5 xl:p-5">
+              <p className="text-black dark:text-white">{user.email}</p>
+            </div>
+
+            <div className="flex items-center justify-center p-2.5 xl:p-5">
+              <p className="text-meta-3">
+                {user.role === "admin"
+                  ? "Admin"
+                  : user.role == "company"
+                    ? "Company"
+                    : "User"}
+              </p>
+            </div>
+            <div className="flex items-center justify-center p-2.5 xl:p-5">
+              <Link
+                to="#"
+                onClick={(e) => handleEdit(e, user.id)}
+                className="inline-flex items-center justify-center rounded-md bg-primary py-2 px-4 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
               >
-                <div className="flex items-center gap-3 p-2.5 xl:p-5">
-                  <p className="hidden text-black dark:text-white sm:block">
-                    {user.name}
-                  </p>
-                </div>
-
-                <div className="flex items-center justify-center p-2.5 xl:p-5">
-                  <p className="text-black dark:text-white">{user.email}</p>
-                </div>
-
-                <div className="flex items-center justify-center p-2.5 xl:p-5">
-                  <p className="text-meta-3">
-                    {user.role === "admin"
-                      ? "Admin"
-                      : user.role == "company"
-                        ? "Company"
-                        : "User"}
-                  </p>
-                </div>
-                <div className="flex items-center justify-center p-2.5 xl:p-5">
-                  <Link
-                    to="#"
-                    onClick={(e) => handleEdit(e, user.id)}
-                    className="inline-flex items-center justify-center rounded-md bg-primary py-2 px-4 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
-                  >
-                    Editar
-                  </Link>
-                </div>
-                <div className="flex items-center justify-center p-2.5 xl:p-5">
-                  <Link
-                    to="#"
-                    onClick={(e) => handleDelete(e, user.id)}
-                    className="inline-flex items-center justify-center rounded-md bg-danger py-2 px-4 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
-                  >
-                    Eliminar
-                  </Link>
-                </div>
-              </div>
-            ),
-        )}
+                Editar
+              </Link>
+            </div>
+            <div className="flex items-center justify-center p-2.5 xl:p-5">
+              <Link
+                to="#"
+                onClick={(e) => handleDelete(e, user.id)}
+                className="inline-flex items-center justify-center rounded-md bg-danger py-2 px-4 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
+              >
+                Eliminar
+              </Link>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

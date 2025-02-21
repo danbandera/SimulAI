@@ -27,14 +27,15 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
 
   // Filter scenarios based on user role
   const filteredScenarios = scenarios.filter((scenario) => {
-    if (currentUser?.role === "user") {
-      return scenario.assigned_user?.id === Number(currentUser?.id);
+    if (currentUser?.role === "admin") {
+      return true; // Admin sees all scenarios
     }
-    // For company/admin roles, show scenarios they created
-    return scenario.created_by.id === Number(currentUser?.id);
+    if (currentUser?.role === "company") {
+      return scenario.created_by.id === Number(currentUser?.id); // Company sees only their created scenarios
+    }
+    // Regular user only sees scenarios assigned to them
+    return scenario.assigned_user?.id === Number(currentUser?.id);
   });
-
-  console.log(currentUser);
 
   const handleEdit = (e: React.MouseEvent, scenarioId: number) => {
     e.preventDefault(); // Prevent the Link navigation

@@ -25,7 +25,11 @@ const NewScenario = () => {
   });
   // Transform users data for react-select
   const userOptions: UserOption[] = users
-    .filter((user) => user.created_by === currentUser?.id)
+    .filter((user) =>
+      currentUser?.role === "admin"
+        ? true
+        : user.created_by === currentUser?.id,
+    )
     .map((user) => ({
       value: user.id!,
       label: `${user.name} (${user.email})`,

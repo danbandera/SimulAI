@@ -1,4 +1,5 @@
-import { db } from "../db.cjs";
+import { connectSqlDB } from "../db.cjs";
+// const { connectSqlDB } = pkg;
 import bcrypt from "bcryptjs";
 import { createAccessToken } from "../libs/jwt.js";
 import jwt from "jsonwebtoken";
@@ -7,7 +8,7 @@ export const loginUser = async (req, res) => {
   const { email, password } = req.body;
   try {
     // Supabase returns { data, error } format
-    const { data: users, error } = await db
+    const { data: users, error } = await connectSqlDB
       .from("users")
       .select()
       .eq("email", email)
@@ -55,7 +56,7 @@ export const logoutUser = async (req, res) => {
 export const getProfile = async (req, res) => {
   const { id } = req.user;
   try {
-    const { data: users, error } = await db
+    const { data: users, error } = await connectSqlDB
       .from("users")
       .select()
       .eq("id", id)
@@ -89,7 +90,11 @@ export const verifyToken = async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const users = await db.from("users").select().eq("id", id).single();
+    const users = await connectSqlDB
+      .from("users")
+      .select()
+      .eq("id", id)
+      .single();
 
     if (error || !users) {
       return res.status(401).json({ error: "Unauthorized" });

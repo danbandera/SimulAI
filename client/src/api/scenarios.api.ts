@@ -1,5 +1,11 @@
 import axios from "../config/axios";
 
+export interface Conversation {
+  scenarioId: number;
+  userId: number;
+  conversation: string[];
+}
+
 export interface Scenario {
   id?: number;
   title: string;
@@ -33,5 +39,32 @@ export const getScenarioRequest = async (id: number) => {
 
 export const updateScenarioRequest = async (id: number, scenario: Scenario) => {
   const response = await axios.put(`/scenarios/${id}`, scenario);
+  return response.data;
+};
+
+export const saveConversationRequest = async (
+  scenarioId: number,
+  conversation: Conversation,
+  userId: number,
+) => {
+  const response = await axios.post(`/scenarios/${scenarioId}/conversations`, {
+    conversation,
+    userId,
+  });
+  return response.data;
+};
+
+export const getConversationsRequest = async (scenarioId: number) => {
+  const response = await axios.get(`/scenarios/${scenarioId}/conversations`);
+  return response.data;
+};
+
+export const getConversationRequest = async (
+  scenarioId: number,
+  conversationId: number,
+) => {
+  const response = await axios.get(
+    `/scenarios/${scenarioId}/conversations/${conversationId}`,
+  );
   return response.data;
 };

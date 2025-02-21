@@ -7,6 +7,10 @@ import { X, Edit, Zap } from "react-feather";
 import { Button } from "../../components/button/Button";
 import { Toggle } from "../../components/toggle/Toggle";
 import "./ConsolePage.scss";
+import { useScenarios } from "../../context/ScenarioContext";
+import { useUsers } from "../../context/UserContext";
+import { saveConversationRequest } from "../../api/scenarios.api.js";
+import { useParams } from "react-router-dom";
 
 const LOCAL_RELAY_SERVER_URL: string =
   import.meta.env.VITE_REACT_APP_LOCAL_RELAY_SERVER_URL || "";
@@ -14,6 +18,13 @@ const LOCAL_RELAY_SERVER_URL: string =
 const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 
 export function ConsolePage() {
+  const { id: scenarioId } = useParams();
+  const { scenarios } = useScenarios();
+  const { users } = useUsers();
+
+  // Debug log to see the structure
+  console.log("Users data:", users);
+
   const apiKey = LOCAL_RELAY_SERVER_URL
     ? ""
     : localStorage.getItem("tmp::voice_api_key") || OPENAI_API_KEY || "";
@@ -136,29 +147,33 @@ export function ConsolePage() {
     }
     setCanPushToTalk(value === "none");
   };
+  console.log(scenarioId);
+  console.log(users);
+  const saveConversation = useCallback(async () => {
+    // if (!scenarioId || !userId) {
+    //   console.error("Missing scenario or user ID");
+    //   return;
+    // }
 
-  const saveConversationToJson = useCallback(() => {
     const conversation = items.map((item) => ({
       role: item.role,
       message: item.formatted.text || item.formatted.transcript,
     }));
+    console.log(conversation);
+    try {
+      const response = await saveConversationRequest(
+        parseInt(scenarioId),
+        conversation,
+        parseInt(users[0].id),
+      );
 
-    const blob = new Blob([JSON.stringify(conversation, null, 2)], {
-      type: "application/json",
-    });
-
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `conversation-${new Date()
-      .toISOString()
-      .slice(0, 19)}.json`;
-    document.body.appendChild(link);
-    link.click();
-
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }, [items]);
+      const result = await response.json();
+      console.log("Conversation saved successfully:", result);
+    } catch (error) {
+      console.error("Error saving conversation:", error);
+      // Handle error (maybe show a notification to the user)
+    }
+  }, [items, scenarioId, users]);
 
   useEffect(() => {
     const client = clientRef.current;
@@ -264,7 +279,7 @@ export function ConsolePage() {
             {items.length > 0 && (
               <Button
                 label="Save Conversation"
-                onClick={saveConversationToJson}
+                onClick={saveConversation}
                 buttonStyle="regular"
               />
             )}
@@ -275,7 +290,12 @@ export function ConsolePage() {
               icon={isConnected ? X : Zap}
               buttonStyle={isConnected ? "regular" : "action"}
               onClick={
-                isConnected ? disconnectConversation : connectConversation
+                isConnected
+                  ? () => {
+                      disconnectConversation();
+                      saveConversation();
+                    }
+                  : connectConversation
               }
             />
           </div>

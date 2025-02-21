@@ -6,6 +6,9 @@ import {
   createScenarioRequest,
   updateScenarioRequest,
   deleteScenarioRequest,
+  Conversation,
+  saveConversationRequest,
+  getConversationsRequest,
 } from "../api/scenarios.api";
 
 interface Scenario {
@@ -25,6 +28,12 @@ interface ScenarioContextValue {
   deleteScenario: (id: number) => Promise<void>;
   getScenario: (id: number) => Promise<Scenario>;
   updateScenario: (id: number, scenario: Scenario) => Promise<void>;
+  saveConversation: (
+    scenarioId: number,
+    conversation: Conversation,
+    userId: number,
+  ) => Promise<void>;
+  getConversations: (scenarioId: number) => Promise<Conversation[]>;
 }
 
 interface ScenarioProviderProps {
@@ -103,6 +112,36 @@ export const ScenarioProvider = ({ children }: ScenarioProviderProps) => {
     }
   };
 
+  const saveConversation = async (
+    scenarioId: number,
+    conversation: Conversation,
+    userId: number,
+  ) => {
+    try {
+      const response = await saveConversationRequest(
+        scenarioId,
+        conversation,
+        userId,
+      );
+      console.log(response);
+      toast.success("Conversation saved successfully");
+    } catch (error) {
+      console.error("Error saving conversation:", error);
+      toast.error("Error saving conversation");
+      throw error;
+    }
+  };
+
+  const getConversations = async (scenarioId: number) => {
+    try {
+      const response = await getConversationsRequest(scenarioId);
+      return response;
+    } catch (error) {
+      console.error("Error getting conversations:", error);
+      toast.error("Error getting conversations");
+      throw error;
+    }
+  };
   return (
     <ScenarioContext.Provider
       value={{
@@ -112,6 +151,8 @@ export const ScenarioProvider = ({ children }: ScenarioProviderProps) => {
         deleteScenario,
         getScenario,
         updateScenario,
+        saveConversation,
+        getConversations,
       }}
     >
       {children}

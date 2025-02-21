@@ -59,6 +59,11 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
     }
   };
 
+  const handleConversations = (e: React.MouseEvent, scenarioId: number) => {
+    e.preventDefault(); // Prevent the Link navigation
+    navigate(`/scenarios/conversations/${scenarioId}`);
+  };
+
   return (
     <div className="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
       <h4 className="mb-6 text-xl font-semibold text-black dark:text-white px-5">
@@ -66,7 +71,7 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
       </h4>
 
       <div className="flex flex-col">
-        <div className="grid grid-cols-3 rounded-sm bg-gray-2 dark:bg-meta-4 sm:grid-cols-7">
+        <div className="grid grid-cols-3 rounded-sm bg-gray-2 dark:bg-meta-4 sm:grid-cols-8 gap-2">
           <div className="p-2.5 xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
               Title
@@ -92,6 +97,11 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
               Created By
             </h5>
           </div>
+          <div className="p-2.5 text-center xl:p-5">
+            <h5 className="text-sm font-medium uppercase xsm:text-base">
+              Conversations
+            </h5>
+          </div>
           <div className="hidden p-2.5 text-center sm:block xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
               Editar
@@ -106,7 +116,7 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
 
         {scenarios.map((scenario, key) => (
           <div
-            className={`grid grid-cols-3 sm:grid-cols-7 ${
+            className={`grid grid-cols-3 sm:grid-cols-8 gap-4 ${
               key === scenarios.length - 1
                 ? ""
                 : "border-b border-stroke dark:border-strokedark"
@@ -148,6 +158,15 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
               <Link
                 to="#"
                 onClick={(e) => handleEdit(e, scenario.id)}
+                className="inline-flex items-center justify-center rounded-md bg-green-700 py-2 px-4 text-center font-medium text-white hover:bg-opacity-90 lg:px-4 xl:px-6"
+              >
+                Conversations
+              </Link>
+            </div>
+            <div className="flex items-center justify-center p-2.5 xl:p-5">
+              <Link
+                to="#"
+                onClick={(e) => handleConversations(e, scenario.id)}
                 className="inline-flex items-center justify-center rounded-md bg-primary py-2 px-4 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
               >
                 Editar

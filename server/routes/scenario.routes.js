@@ -6,9 +6,18 @@ import {
   updateScenario,
   deleteScenario,
   getScenarioByUserId,
+  saveConversation,
+  getConversations,
+  getConversation,
+  getAllConversations,
 } from "../controllers/scenario.controller.js";
 
 const router = Router();
+
+router.post("/scenarios/:id/conversations", saveConversation);
+router.get("/scenarios/conversations", getAllConversations);
+router.get("/scenarios/:scenarioId/conversations", getConversations);
+router.get("/scenarios/:id/conversations/:conversationId", getConversation);
 
 router.get("/scenarios", getScenarios);
 router.post("/scenarios", createScenario);
@@ -16,4 +25,5 @@ router.get("/scenarios/:id", getScenarioById);
 router.put("/scenarios/:id", updateScenario);
 router.delete("/scenarios/:id", deleteScenario);
 router.get("/scenarios/user/:id", getScenarioByUserId);
+
 export default router;

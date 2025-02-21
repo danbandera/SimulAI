@@ -1,10 +1,11 @@
-import { db } from "../db.cjs";
+import { connectSqlDB } from "../db.cjs";
+// const { connectSqlDB } = pkg;
 import bcrypt from "bcryptjs";
 import { createAccessToken } from "../libs/jwt.js";
 
 export const getUsers = async (req, res) => {
   try {
-    const result = await db.from("users").select();
+    const result = await connectSqlDB.from("users").select();
     res.json(result.data);
   } catch (error) {
     console.error("Database Error:", error);
@@ -15,7 +16,11 @@ export const getUsers = async (req, res) => {
 export const getUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await db.from("users").select().eq("id", id).single();
+    const result = await connectSqlDB
+      .from("users")
+      .select()
+      .eq("id", id)
+      .single();
 
     if (result.data.length === 0) {
       return res.status(404).json({ message: "User not found" });
@@ -31,7 +36,7 @@ export const createUser = async (req, res) => {
     const { name, role, email, password } = req.body;
 
     // Check for existing user with better error handling
-    const { data: existingUser, error: searchError } = await db
+    const { data: existingUser, error: searchError } = await connectSqlDB
       .from("users")
       .select()
       .eq("email", email)
@@ -52,7 +57,7 @@ export const createUser = async (req, res) => {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Insert new user with better error handling
-    const { data: newUser, error: insertError } = await db
+    const { data: newUser, error: insertError } = await connectSqlDB
       .from("users")
       .insert({
         name,
@@ -98,7 +103,7 @@ export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, role, email, password } = req.body;
-    const result = await db
+    const result = await connectSqlDB
       .from("users")
       .update({
         name,
@@ -122,7 +127,7 @@ export const updateUser = async (req, res) => {
 export const deleteUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await db.from("users").delete().eq("id", id);
+    const result = await connectSqlDB.from("users").delete().eq("id", id);
     res.json(result.data);
     // if (result.status === 204) {
     //   // res.status(200).json({ message: "User deleted successfully" });

@@ -90,23 +90,22 @@ export const verifyToken = async (req, res) => {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    const users = await connectSqlDB
+    const { data: user, error: userError } = await connectSqlDB
       .from("users")
       .select()
-      .eq("id", id)
+      .eq("id", decoded.id)
       .single();
 
-    if (error || !users) {
+    if (userError || !user) {
       return res.status(401).json({ error: "Unauthorized" });
     }
 
-    res.status(200).json({
-      id: users.id,
-      name: users.name,
-      email: users.email,
-      role: users.role,
-      createdAt: users.created_at,
-      updatedAt: users.updated_at,
+    // Return just the user data without nesting
+    res.json({
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      role: user.role,
     });
   });
 };

@@ -3,7 +3,7 @@ import { loginRequest, verifyToken } from "../api/auth.api";
 import Cookies from "js-cookie";
 
 interface User {
-  id: string;
+  id: number;
   name: string;
   email: string;
   role: string;
@@ -57,7 +57,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             setUser(null);
           } else {
             setIsAuthenticated(true);
-            setUser(res.data);
+            setUser(res.data.data);
           }
         }
       } catch (error) {

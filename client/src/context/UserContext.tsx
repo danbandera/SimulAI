@@ -55,9 +55,9 @@ export const UserProvider = ({ children }: UserProviderProps) => {
 
   useEffect(() => {
     const loadCurrentUser = async () => {
-      if (user?.data.id) {
+      if (user?.id) {
         try {
-          const userData = await getUser(Number(user.data.id));
+          const userData = await getUser(Number(user.id));
           setCurrentUser(userData);
         } catch (error) {
           console.error("Error loading current user:", error);

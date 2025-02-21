@@ -27,6 +27,7 @@ import Login from "./pages/Login/Login";
 import { AuthProvider } from "./context/AuthContext";
 import ProtectedRoute from "./ProtectedRoute";
 import SendEmail from "./components/SendEmail";
+import ScenarioConversations from "./pages/Scenarios/ScenarioConversations";
 
 function App() {
   return (
@@ -108,6 +109,15 @@ function App() {
                     <>
                       <PageTitle title="Edit Scenario | Admin Dashboard" />
                       {/* <EditScenario /> */}
+                    </>
+                  }
+                />
+                <Route
+                  path="/scenarios/:id/conversations"
+                  element={
+                    <>
+                      <PageTitle title="Conversations History | Admin Dashboard" />
+                      <ScenarioConversations />
                     </>
                   }
                 />

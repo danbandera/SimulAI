@@ -9,7 +9,7 @@ import { Toggle } from "../../components/toggle/Toggle";
 import "./ConsolePage.scss";
 import { useScenarios } from "../../context/ScenarioContext";
 import { useUsers } from "../../context/UserContext";
-import { saveConversationRequest } from "../../api/scenarios.api.js";
+import { saveConversationRequest } from "../../api/scenarios.api";
 import { useParams } from "react-router-dom";
 
 const LOCAL_RELAY_SERVER_URL: string =
@@ -19,12 +19,8 @@ const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 
 export function ConsolePage() {
   const { id: scenarioId } = useParams();
-  const { scenarios } = useScenarios();
-  const { users } = useUsers();
-
-  // Debug log to see the structure
-  console.log("Users data:", users);
-
+  const { currentUser } = useUsers();
+  const { saveConversation } = useScenarios();
   const apiKey = LOCAL_RELAY_SERVER_URL
     ? ""
     : localStorage.getItem("tmp::voice_api_key") || OPENAI_API_KEY || "";
@@ -147,33 +143,29 @@ export function ConsolePage() {
     }
     setCanPushToTalk(value === "none");
   };
-  console.log(scenarioId);
-  console.log(users);
-  const saveConversation = useCallback(async () => {
-    // if (!scenarioId || !userId) {
-    //   console.error("Missing scenario or user ID");
-    //   return;
-    // }
+
+  const saveConversationButton = useCallback(async () => {
+    if (!scenarioId || !currentUser?.id) {
+      console.error("Missing scenario or user ID");
+      return;
+    }
 
     const conversation = items.map((item) => ({
-      role: item.role,
-      message: item.formatted.text || item.formatted.transcript,
+      role: item.role || "user",
+      message: item.formatted.text || item.formatted.transcript || "",
     }));
-    console.log(conversation);
+
     try {
       const response = await saveConversationRequest(
-        parseInt(scenarioId),
+        scenarioId,
         conversation,
-        parseInt(users[0].id),
+        currentUser.id,
       );
-
-      const result = await response.json();
-      console.log("Conversation saved successfully:", result);
+      console.log("Conversation saved successfully:", response);
     } catch (error) {
       console.error("Error saving conversation:", error);
-      // Handle error (maybe show a notification to the user)
     }
-  }, [items, scenarioId, users]);
+  }, [items, scenarioId, currentUser]);
 
   useEffect(() => {
     const client = clientRef.current;
@@ -279,7 +271,7 @@ export function ConsolePage() {
             {items.length > 0 && (
               <Button
                 label="Save Conversation"
-                onClick={saveConversation}
+                onClick={saveConversationButton}
                 buttonStyle="regular"
               />
             )}
@@ -291,9 +283,18 @@ export function ConsolePage() {
               buttonStyle={isConnected ? "regular" : "action"}
               onClick={
                 isConnected
-                  ? () => {
+                  ? async () => {
                       disconnectConversation();
-                      saveConversation();
+                      const conversationData = items.map((item) => ({
+                        role: item.role,
+                        message:
+                          item.formatted.text || item.formatted.transcript,
+                      }));
+                      await saveConversation(
+                        Number(scenarioId),
+                        conversationData,
+                        currentUser?.id,
+                      );
                     }
                   : connectConversation
               }

@@ -33,7 +33,7 @@ const NewUser: React.FC = () => {
       const password = generateRandomPassword();
 
       // Create user with generated password
-      const result = await createUser({
+      await createUser({
         ...formData,
         password,
         created_by: Number(currentUser?.id),

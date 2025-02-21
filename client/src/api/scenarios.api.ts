@@ -3,7 +3,10 @@ import axios from "../config/axios";
 export interface Conversation {
   scenarioId: number;
   userId: number;
-  conversation: string[];
+  conversation: Array<{
+    role: string;
+    message: string;
+  }>;
 }
 
 export interface Scenario {
@@ -45,14 +48,24 @@ export const updateScenarioRequest = async (id: number, scenario: Scenario) => {
 };
 
 export const saveConversationRequest = async (
-  scenarioId: number,
-  conversation: Conversation,
-  userId: number,
+  scenarioId: number | string,
+  conversation: Array<{ role: string; message: string }>,
+  userId: number | undefined,
 ) => {
-  const response = await axios.post(`/scenarios/${scenarioId}/conversations`, {
-    conversation,
-    userId,
-  });
+  if (!scenarioId || !userId) {
+    throw new Error("Missing required parameters");
+  }
+
+  const conversationData: Conversation = {
+    scenarioId: Number(scenarioId),
+    userId: Number(userId),
+    conversation: conversation,
+  };
+
+  const response = await axios.post(
+    `/scenarios/${scenarioId}/conversations`,
+    conversationData,
+  );
   return response.data;
 };
 

@@ -33,6 +33,9 @@ app.use("/api", scenarioRoutes);
 app.use("/api", authRoutes);
 app.use("/api/email", emailRoutes);
 
+// Serve static files from the uploads directory
+app.use("/uploads", express.static("uploads"));
+
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, "../client/dist")));
 

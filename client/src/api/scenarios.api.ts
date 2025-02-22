@@ -20,6 +20,8 @@ export interface Scenario {
   parent_scenario?: number;
   user_id_assigned?: number;
   created_by?: number;
+  aspects?: { value: string; label: string }[];
+  files?: File[];
 }
 
 export const getScenariosRequest = async () => {
@@ -27,8 +29,12 @@ export const getScenariosRequest = async () => {
   return response.data;
 };
 
-export const createScenarioRequest = async (scenario: Scenario) => {
-  const response = await axios.post(`/scenarios`, scenario);
+export const createScenarioRequest = async (scenarioData: FormData) => {
+  const response = await axios.post(`/scenarios`, scenarioData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
   return response.data;
 };
 

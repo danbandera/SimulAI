@@ -19,7 +19,11 @@ interface Scenario {
   users: number[];
   created_at?: string;
   updated_at?: string;
-  created_by: number;
+  parent_scenario?: number;
+  user_id_assigned?: number;
+  created_by?: number;
+  aspects?: { value: string; label: string }[];
+  files?: File[];
 }
 
 interface ScenarioContextValue {
@@ -66,9 +70,9 @@ export const ScenarioProvider = ({ children }: ScenarioProviderProps) => {
     }
   };
 
-  const createScenario = async (scenario: Scenario) => {
+  const createScenario = async (scenarioData: FormData) => {
     try {
-      const response = await createScenarioRequest(scenario);
+      const response = await createScenarioRequest(scenarioData);
       setScenarios([...scenarios, response]);
       toast.success("Scenario created successfully");
     } catch (error) {

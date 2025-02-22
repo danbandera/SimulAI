@@ -21,6 +21,8 @@ CREATE TABLE scenarios (
   user_id_created INTEGER REFERENCES users(id) ON DELETE CASCADE,
   status VARCHAR(50) DEFAULT 'draft',
   parent_scenario INTEGER,
+  aspects JSONB DEFAULT '[]'::jsonb,
+  files TEXT[] DEFAULT '{}',
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP
 );

@@ -276,4 +276,20 @@
       }
     }
   }
+
+  .content-block.emotion {
+    margin-top: 1rem;
+    padding: 1rem;
+    background-color: rgba(0, 0, 0, 0.05);
+    border-radius: 4px;
+
+    .content-block-title {
+      font-weight: bold;
+      margin-bottom: 0.5rem;
+    }
+
+    .content-block-body {
+      font-style: italic;
+    }
+  }
 }

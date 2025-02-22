@@ -70,6 +70,7 @@ const Login = () => {
                   type="email"
                   {...register("email", { required: true })}
                   placeholder="Enter your email address"
+                  autoComplete="email"
                   className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
                 />
                 {formErrors.email && (
@@ -85,6 +86,7 @@ const Login = () => {
                   type="password"
                   {...register("password", { required: true })}
                   placeholder="Enter password"
+                  autoComplete="current-password"
                   className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
                 />
                 {formErrors.password && (

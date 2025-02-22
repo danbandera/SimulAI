@@ -7,8 +7,6 @@ const baseURL =
     ? "/api" // Use relative path in production
     : import.meta.env.VITE_BACKEND_URL; // Use full URL in development
 
-console.log("Current API URL:", baseURL);
-
 const api = axios.create({
   baseURL,
   withCredentials: true,

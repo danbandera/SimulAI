@@ -16,6 +16,12 @@ const LOCAL_RELAY_SERVER_URL: string =
 
 const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
 
+const calculateSpeakingTime = (text: string): number => {
+  const wordsPerSecond = 2; // Average speaking rate
+  const wordCount = text.split(" ").length;
+  return (wordCount / wordsPerSecond) * 1000; // Convert to milliseconds
+};
+
 export function ConsolePage() {
   const { id: scenarioId } = useParams();
   const { currentUser } = useUsers();
@@ -71,7 +77,7 @@ export function ConsolePage() {
     await client.connect();
 
     client.sendUserMessageContent([
-      { type: "input_text", text: "Hola ¿Como estas?" },
+      { type: "input_text", text: "¡Hola! Inicia con el entrenamiento" },
     ]);
 
     if (client.getTurnDetectionType() === "server_vad") {
@@ -184,33 +190,44 @@ export function ConsolePage() {
             <div className="content-block-title">conversation</div>
             <div className="content-block-body" data-conversation-content>
               {!items.length && `awaiting connection...`}
-              {items.map((conversationItem) => (
-                <div className="conversation-item" key={conversationItem.id}>
-                  <div className={`speaker ${conversationItem.role || ""}`}>
-                    <div>
-                      {(
-                        conversationItem.role || conversationItem.type
-                      ).replaceAll("_", " ")}
+              {items
+                .filter(
+                  (item) =>
+                    !(
+                      item.role === "user" &&
+                      (item.formatted.text ===
+                        "Please analyze the emotions I displayed during this conversation and provide a summary. REMEMER: Only this conversation, not the previous ones. Say it in Spanish." ||
+                        item.formatted.text ===
+                          "¡Hola! Inicia con el entrenamiento")
+                    ),
+                )
+                .map((conversationItem) => (
+                  <div className="conversation-item" key={conversationItem.id}>
+                    <div className={`speaker ${conversationItem.role || ""}`}>
+                      <div>
+                        {(
+                          conversationItem.role || conversationItem.type
+                        ).replaceAll("_", " ")}
+                      </div>
+                    </div>
+                    <div className={`speaker-content`}>
+                      {conversationItem.role === "user" && (
+                        <div>
+                          User:{" "}
+                          {conversationItem.formatted.text ||
+                            conversationItem.formatted.transcript}
+                        </div>
+                      )}
+                      {conversationItem.role === "assistant" && (
+                        <div>
+                          Assistant:{" "}
+                          {conversationItem.formatted.text ||
+                            conversationItem.formatted.transcript}
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <div className={`speaker-content`}>
-                    {conversationItem.role === "user" && (
-                      <div>
-                        User:{" "}
-                        {conversationItem.formatted.text ||
-                          conversationItem.formatted.transcript}
-                      </div>
-                    )}
-                    {conversationItem.role === "assistant" && (
-                      <div>
-                        Assistant:{" "}
-                        {conversationItem.formatted.text ||
-                          conversationItem.formatted.transcript}
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
           <div className="content-actions">
@@ -240,34 +257,103 @@ export function ConsolePage() {
                 isConnected
                   ? async () => {
                       const client = clientRef.current;
+                      const analysisPrompt =
+                        "Please analyze the emotions I displayed during this conversation and provide a summary. REMEMER: Only this conversation, not the previous ones. Say it in Spanish.";
+
+                      console.log("Sending analysis prompt...");
+
                       client.sendUserMessageContent([
                         {
                           type: "input_text",
-                          text: "Please analyze the emotions I displayed during this conversation and provide a summary. REMEMER: Only this conversation, not the previous ones. Say it in Spanish.",
+                          text: analysisPrompt,
                         },
                       ]);
 
-                      await new Promise((resolve) => setTimeout(resolve, 2000));
+                      // Wait for the analysis response
+                      const checkForAnalysis = async () => {
+                        const latestItems = client.conversation.getItems();
+                        console.log("Checking for analysis response...");
 
-                      const lastAssistantMessage = [...items]
-                        .reverse()
-                        .find((item) => item.role === "assistant");
-
-                      const conversationData = items.map((item) => ({
-                        role: item.role,
-                        message:
-                          item.formatted.text || item.formatted.transcript,
-                      }));
-
-                      if (scenarioId && currentUser?.id) {
-                        await saveConversation(
-                          Number(scenarioId),
-                          conversationData,
-                          currentUser?.id,
+                        // Get the last assistant message after our analysis prompt
+                        const analysisPromptIndex = latestItems.findIndex(
+                          (item) =>
+                            item.role === "user" &&
+                            item.formatted.text === analysisPrompt,
                         );
-                      }
 
-                      disconnectConversation();
+                        const lastAssistantMessage = latestItems
+                          .slice(analysisPromptIndex)
+                          .reverse()
+                          .find(
+                            (item) =>
+                              item.role === "assistant" &&
+                              item.status === "completed", // Make sure the message is completed
+                          );
+
+                        console.log(
+                          "Last assistant message:",
+                          lastAssistantMessage,
+                        );
+
+                        if (
+                          lastAssistantMessage?.status === "completed" &&
+                          (lastAssistantMessage.formatted?.transcript ||
+                            lastAssistantMessage.formatted?.text)
+                        ) {
+                          const responseText =
+                            lastAssistantMessage.formatted.transcript ||
+                            lastAssistantMessage.formatted.text ||
+                            "";
+
+                          console.log("Response text:", responseText);
+
+                          const waitTime = calculateSpeakingTime(responseText);
+                          console.log(
+                            "Found response, waiting for:",
+                            waitTime,
+                            "ms",
+                          );
+
+                          await new Promise((resolve) =>
+                            setTimeout(resolve, waitTime),
+                          );
+
+                          // Filter out the analysis prompt and include the response
+                          const conversationData = latestItems
+                            .filter(
+                              (item) =>
+                                !(
+                                  item.role === "user" &&
+                                  item.formatted.text === analysisPrompt
+                                ),
+                            )
+                            .map((item) => ({
+                              role: item.role,
+                              message:
+                                item.formatted.text ||
+                                item.formatted.transcript,
+                            }));
+
+                          console.log("Saving conversation...");
+                          if (scenarioId && currentUser?.id) {
+                            await saveConversation(
+                              Number(scenarioId),
+                              conversationData,
+                              currentUser?.id,
+                            );
+                          }
+                          disconnectConversation();
+                        } else {
+                          // Check again in 500ms
+                          console.log(
+                            "No completed response yet, checking again in 500ms",
+                          );
+                          setTimeout(checkForAnalysis, 500);
+                        }
+                      };
+
+                      // Start checking after a small delay to allow the message to be sent
+                      setTimeout(checkForAnalysis, 1000);
                     }
                   : connectConversation
               }

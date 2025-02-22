@@ -26,12 +26,7 @@ export function ConsolePage() {
   const { id: scenarioId } = useParams();
   const { currentUser } = useUsers();
   const { saveConversation } = useScenarios();
-  const apiKey = LOCAL_RELAY_SERVER_URL
-    ? ""
-    : localStorage.getItem("tmp::voice_api_key") || OPENAI_API_KEY || "";
-  if (apiKey !== "") {
-    localStorage.setItem("tmp::voice_api_key", apiKey);
-  }
+  const apiKey = LOCAL_RELAY_SERVER_URL ? "" : OPENAI_API_KEY || "";
 
   const wavRecorderRef = useRef<WavRecorder>(
     new WavRecorder({ sampleRate: 24000 }),
@@ -54,15 +49,6 @@ export function ConsolePage() {
   const [isConnected, setIsConnected] = useState(false);
   const [canPushToTalk, setCanPushToTalk] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
-
-  const resetAPIKey = useCallback(() => {
-    const apiKey = OPENAI_API_KEY;
-    if (apiKey !== null) {
-      localStorage.clear();
-      localStorage.setItem("tmp::voice_api_key", apiKey);
-      window.location.reload();
-    }
-  }, []);
 
   const connectConversation = useCallback(async () => {
     const client = clientRef.current;

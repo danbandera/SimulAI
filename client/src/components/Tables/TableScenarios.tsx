@@ -26,16 +26,23 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
   const { currentUser } = useUsers();
 
   // Filter scenarios based on user role
-  const filteredScenarios = scenarios.filter((scenario) => {
-    if (currentUser?.role === "admin") {
-      return true; // Admin sees all scenarios
-    }
-    if (currentUser?.role === "company") {
-      return scenario.created_by.id === Number(currentUser?.id); // Company sees only their created scenarios
-    }
-    // Regular user only sees scenarios assigned to them
-    return scenario.assigned_user?.id === Number(currentUser?.id);
-  });
+  const filteredScenarios = scenarios
+    .filter((scenario) => {
+      if (currentUser?.role === "admin") {
+        return true; // Admin sees all scenarios
+      }
+      if (currentUser?.role === "company") {
+        return scenario.created_by.id === Number(currentUser?.id); // Company sees only their created scenarios
+      }
+      // Regular user only sees scenarios assigned to them
+      return scenario.assigned_user?.id === Number(currentUser?.id);
+    })
+    .sort((a, b) => {
+      // Sort by created_at in descending order (newest first)
+      return (
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+    });
 
   const handleEdit = (e: React.MouseEvent, scenarioId: number) => {
     e.preventDefault(); // Prevent the Link navigation
@@ -74,8 +81,9 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
 
   const handleConversations = (e: React.MouseEvent, scenarioId: number) => {
     e.preventDefault(); // Prevent the Link navigation
-    navigate(`/scenarios/conversations/${scenarioId}`);
+    navigate(`/scenarios/${scenarioId}/conversations`);
   };
+  const columnsNumber = currentUser?.role === "admin" ? 8 : 7;
 
   return (
     <div className="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
@@ -84,7 +92,9 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
       </h4>
 
       <div className="flex flex-col">
-        <div className="grid grid-cols-3 rounded-sm bg-gray-2 dark:bg-meta-4 sm:grid-cols-8 gap-2">
+        <div
+          className={`grid grid-cols-3 rounded-sm bg-gray-2 dark:bg-meta-4 sm:grid-cols-${columnsNumber} gap-2`}
+        >
           <div className="p-2.5 xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
               Title
@@ -105,11 +115,13 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
               Assigned To
             </h5>
           </div>
-          <div className="p-2.5 text-center xl:p-5">
-            <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Created By
-            </h5>
-          </div>
+          {currentUser?.role === "admin" && (
+            <div className="p-2.5 text-center xl:p-5">
+              <h5 className="text-sm font-medium uppercase xsm:text-base">
+                Created By
+              </h5>
+            </div>
+          )}
           <div className="p-2.5 text-center xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
               Conversations
@@ -129,7 +141,7 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
 
         {filteredScenarios.map((scenario, key) => (
           <div
-            className={`grid grid-cols-3 sm:grid-cols-8 gap-4 ${
+            className={`grid grid-cols-3 sm:grid-cols-${columnsNumber} gap-4 ${
               key === filteredScenarios.length - 1
                 ? ""
                 : "border-b border-stroke dark:border-strokedark"
@@ -147,7 +159,8 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
 
             <div className="flex items-center justify-center p-2.5 xl:p-5">
               <p className="text-black dark:text-white">
-                {scenario.description}
+                {scenario.description.slice(0, 100)}
+                {scenario.description.length > 100 && "..."}
               </p>
             </div>
 
@@ -161,16 +174,18 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
               </p>
             </div>
 
-            <div className="flex items-center justify-center p-2.5 xl:p-5">
-              <p className="text-black dark:text-white">
-                {scenario.created_by?.name || "Unknown"}
-              </p>
-            </div>
+            {currentUser?.role === "admin" && (
+              <div className="flex items-center justify-center p-2.5 xl:p-5">
+                <p className="text-black dark:text-white">
+                  {scenario.created_by?.name || "Unknown"}
+                </p>
+              </div>
+            )}
 
             <div className="flex items-center justify-center p-2.5 xl:p-5">
               <Link
-                to={`/scenarios/${scenario.id}/conversations`}
-                // onClick={(e) => handleEdit(e, scenario.id)}
+                to={"#"}
+                onClick={(e) => handleConversations(e, scenario.id)}
                 className="inline-flex items-center justify-center rounded-md bg-green-700 py-2 px-4 text-center font-medium text-white hover:bg-opacity-90 lg:px-4 xl:px-6"
               >
                 Conversations
@@ -179,7 +194,7 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
             <div className="flex items-center justify-center p-2.5 xl:p-5">
               <Link
                 to="#"
-                onClick={(e) => handleConversations(e, scenario.id)}
+                onClick={(e) => handleEdit(e, scenario.id)}
                 className="inline-flex items-center justify-center rounded-md bg-primary py-2 px-4 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
               >
                 Editar

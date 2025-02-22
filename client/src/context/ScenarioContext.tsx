@@ -32,7 +32,7 @@ interface ScenarioContextValue {
   createScenario: (scenario: Scenario) => Promise<void>;
   deleteScenario: (id: number) => Promise<void>;
   getScenario: (id: number) => Promise<Scenario>;
-  updateScenario: (id: number, scenario: Scenario) => Promise<void>;
+  updateScenario: (id: number, scenario: FormData) => Promise<void>;
   saveConversation: (
     scenarioId: number,
     conversation: Conversation,
@@ -105,9 +105,9 @@ export const ScenarioProvider = ({ children }: ScenarioProviderProps) => {
     }
   };
 
-  const updateScenario = async (id: number, scenario: Scenario) => {
+  const updateScenario = async (id: number, scenarioData: FormData) => {
     try {
-      const response = await updateScenarioRequest(id, scenario);
+      const response = await updateScenarioRequest(id, scenarioData);
       setScenarios(scenarios.map((s) => (s.id === id ? response : s)));
       toast.success("Scenario updated successfully");
     } catch (error) {

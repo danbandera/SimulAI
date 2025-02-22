@@ -27,7 +27,7 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
   const { deleteScenario } = useScenarios();
   const { currentUser } = useUsers();
 
-  const columnsNumber = currentUser?.role === "admin" ? 9 : 8;
+  const columnsNumber = currentUser?.role === "admin" ? 4 : 3;
 
   // Filter scenarios based on user role
   const filteredScenarios = scenarios
@@ -118,16 +118,6 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
           </div>
           <div className="p-2.5 text-center xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Description
-            </h5>
-          </div>
-          <div className="p-2.5 text-center xl:p-5">
-            <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Status
-            </h5>
-          </div>
-          <div className="p-2.5 text-center xl:p-5">
-            <h5 className="text-sm font-medium uppercase xsm:text-base">
               Assigned To
             </h5>
           </div>
@@ -140,22 +130,7 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
           )}
           <div className="p-2.5 text-center xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Conversations
-            </h5>
-          </div>
-          <div className="hidden p-2.5 text-center sm:block xl:p-5">
-            <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Duplicate
-            </h5>
-          </div>
-          <div className="hidden p-2.5 text-center sm:block xl:p-5">
-            <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Editar
-            </h5>
-          </div>
-          <div className="hidden p-2.5 text-center sm:block xl:p-5">
-            <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Eliminar
+              Details
             </h5>
           </div>
         </div>
@@ -180,17 +155,6 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
 
             <div className="flex items-center justify-center p-2.5 xl:p-5">
               <p className="text-black dark:text-white">
-                {scenario.description.slice(0, 100)}
-                {scenario.description.length > 100 && "..."}
-              </p>
-            </div>
-
-            <div className="flex items-center justify-center p-2.5 xl:p-5">
-              <p className="text-black">{scenario.status}</p>
-            </div>
-
-            <div className="flex items-center justify-center p-2.5 xl:p-5">
-              <p className="text-black dark:text-white">
                 {scenario.assigned_user?.name || "Unassigned"}
               </p>
             </div>
@@ -205,38 +169,10 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
 
             <div className="flex items-center justify-center p-2.5 xl:p-5">
               <Link
-                to={"#"}
-                onClick={(e) => handleConversations(e, scenario.id)}
+                to={`/scenarios/${scenario.id}`}
                 className="inline-flex items-center justify-center rounded-md bg-green-700 py-2 px-4 text-center font-medium text-white hover:bg-opacity-90 lg:px-4 xl:px-6"
               >
-                Conversations
-              </Link>
-            </div>
-            <div className="flex items-center justify-center p-2.5 xl:p-5">
-              <Link
-                to="#"
-                onClick={(e) => handleDuplicate(e, scenario)}
-                className="inline-flex items-center justify-center rounded-md bg-meta-3 py-2 px-4 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
-              >
-                Duplicate
-              </Link>
-            </div>
-            <div className="flex items-center justify-center p-2.5 xl:p-5">
-              <Link
-                to="#"
-                onClick={(e) => handleEdit(e, scenario.id)}
-                className="inline-flex items-center justify-center rounded-md bg-primary py-2 px-4 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
-              >
-                Editar
-              </Link>
-            </div>
-            <div className="flex items-center justify-center p-2.5 xl:p-5">
-              <Link
-                to="#"
-                onClick={(e) => handleDelete(e, scenario.id)}
-                className="inline-flex items-center justify-center rounded-md bg-danger py-2 px-4 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
-              >
-                Eliminar
+                Details
               </Link>
             </div>
           </div>

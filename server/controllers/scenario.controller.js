@@ -203,27 +203,60 @@ export const createScenario = async (req, res) => {
 
 export const updateScenario = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { title, description, status, user_id, parent_scenario } = req.body;
+    upload.array("files")(req, res, async (err) => {
+      if (err instanceof multer.MulterError) {
+        console.error("Multer error:", err);
+        return res.status(400).json({
+          message: "File upload error",
+          error: err.message,
+        });
+      } else if (err) {
+        console.error("Unknown upload error:", err);
+        return res.status(500).json({
+          message: "Error uploading files",
+          error: err.message,
+        });
+      }
 
-    // Update scenario details
-    const { data: scenario, error: scenarioError } = await connectSqlDB
-      .from("scenarios")
-      .update({
-        title,
-        description,
-        status,
-        user_id,
-        parent_scenario,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", id);
+      try {
+        const { id } = req.params;
+        const { title, description, status, aspects, existingFiles } = req.body;
 
-    if (scenarioError) {
-      return res.status(400).json({ message: scenarioError.message });
-    }
+        // Get new file paths
+        const newFiles = req.files ? req.files.map((file) => file.path) : [];
 
-    res.json(scenario);
+        // Parse existing files and aspects
+        const parsedExistingFiles = existingFiles
+          ? JSON.parse(existingFiles)
+          : [];
+        const parsedAspects = aspects ? JSON.parse(aspects) : [];
+
+        // Combine existing and new files
+        const allFiles = [...parsedExistingFiles, ...newFiles];
+
+        const { data: scenario, error: scenarioError } = await connectSqlDB
+          .from("scenarios")
+          .update({
+            title,
+            description,
+            status,
+            aspects: parsedAspects,
+            files: allFiles,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", id)
+          .select()
+          .single();
+
+        if (scenarioError) {
+          return res.status(400).json({ message: scenarioError.message });
+        }
+
+        res.json(scenario);
+      } catch (error) {
+        throw error;
+      }
+    });
   } catch (error) {
     console.error("Update Scenario Error:", error);
     res.status(500).json({ message: error.message });

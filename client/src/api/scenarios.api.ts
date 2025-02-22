@@ -9,6 +9,12 @@ export interface Conversation {
   }>;
 }
 
+export interface User {
+  id: number;
+  name: string;
+  email: string;
+}
+
 export interface Scenario {
   id?: number;
   title: string;
@@ -20,8 +26,10 @@ export interface Scenario {
   parent_scenario?: number;
   user_id_assigned?: number;
   created_by?: number;
+  assigned_user?: User;
+  created_by_user?: User;
   aspects?: { value: string; label: string }[];
-  files?: File[];
+  files?: string[];
 }
 
 export const getScenariosRequest = async () => {
@@ -48,8 +56,15 @@ export const getScenarioRequest = async (id: number) => {
   return response.data;
 };
 
-export const updateScenarioRequest = async (id: number, scenario: Scenario) => {
-  const response = await axios.put(`/scenarios/${id}`, scenario);
+export const updateScenarioRequest = async (
+  id: number,
+  scenarioData: FormData,
+) => {
+  const response = await axios.put(`/scenarios/${id}`, scenarioData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
   return response.data;
 };
 

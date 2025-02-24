@@ -22,11 +22,22 @@ const calculateSpeakingTime = (text: string): number => {
   return (wordCount / wordsPerSecond) * 1000; // Convert to milliseconds
 };
 
-export function ConsolePage() {
+interface ConsolePageProps {
+  aspects: string;
+  description: string;
+}
+
+export const ConsolePage: React.FC<ConsolePageProps> = ({
+  aspects,
+  description,
+}) => {
   const { id: scenarioId } = useParams();
   const { currentUser } = useUsers();
   const { saveConversation } = useScenarios();
   const apiKey = LOCAL_RELAY_SERVER_URL ? "" : OPENAI_API_KEY || "";
+  const newInstructions =
+    instructions + `\n\n${description}` + `\n\n${aspects}`;
+  console.log(newInstructions);
 
   const wavRecorderRef = useRef<WavRecorder>(
     new WavRecorder({ sampleRate: 24000 }),
@@ -349,4 +360,4 @@ export function ConsolePage() {
       </div>
     </div>
   );
-}
+};

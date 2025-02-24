@@ -127,7 +127,7 @@ function App() {
                   path="/dashboard"
                   element={
                     <>
-                      <PageTitle title="eCommerce Dashboard | TailAdmin - Tailwind CSS Admin Dashboard Template" />
+                      <PageTitle title="eCommerce Dashboard | SimulAI - Tailwind CSS Admin Dashboard Template" />
                       <ECommerce />
                     </>
                   }
@@ -136,7 +136,7 @@ function App() {
                   path="/calendar"
                   element={
                     <>
-                      <PageTitle title="Calendar | TailAdmin - Tailwind CSS Admin Dashboard Template" />
+                      <PageTitle title="Calendar | SimulAI - Tailwind CSS Admin Dashboard Template" />
                       <Calendar />
                     </>
                   }
@@ -145,7 +145,7 @@ function App() {
                   path="/profile"
                   element={
                     <>
-                      <PageTitle title="Profile | TailAdmin - Tailwind CSS Admin Dashboard Template" />
+                      <PageTitle title="Profile | SimulAI - Tailwind CSS Admin Dashboard Template" />
                       <Profile />
                     </>
                   }
@@ -154,7 +154,7 @@ function App() {
                   path="/forms/form-elements"
                   element={
                     <>
-                      <PageTitle title="Form Elements | TailAdmin - Tailwind CSS Admin Dashboard Template" />
+                      <PageTitle title="Form Elements | SimulAI - Tailwind CSS Admin Dashboard Template" />
                       <FormElements />
                     </>
                   }
@@ -163,7 +163,7 @@ function App() {
                   path="/forms/form-layout"
                   element={
                     <>
-                      <PageTitle title="Form Layout | TailAdmin - Tailwind CSS Admin Dashboard Template" />
+                      <PageTitle title="Form Layout | SimulAI - Tailwind CSS Admin Dashboard Template" />
                       <FormLayout />
                     </>
                   }
@@ -172,7 +172,7 @@ function App() {
                   path="/tables"
                   element={
                     <>
-                      <PageTitle title="Tables | TailAdmin - Tailwind CSS Admin Dashboard Template" />
+                      <PageTitle title="Tables | SimulAI - Tailwind CSS Admin Dashboard Template" />
                       <Tables />
                     </>
                   }
@@ -181,7 +181,7 @@ function App() {
                   path="/settings"
                   element={
                     <>
-                      <PageTitle title="Settings | TailAdmin - Tailwind CSS Admin Dashboard Template" />
+                      <PageTitle title="Settings | SimulAI - Tailwind CSS Admin Dashboard Template" />
                       <Settings />
                     </>
                   }
@@ -190,7 +190,7 @@ function App() {
                   path="/chart"
                   element={
                     <>
-                      <PageTitle title="Basic Chart | TailAdmin - Tailwind CSS Admin Dashboard Template" />
+                      <PageTitle title="Basic Chart | SimulAI - Tailwind CSS Admin Dashboard Template" />
                       <Chart />
                     </>
                   }
@@ -199,7 +199,7 @@ function App() {
                   path="/ui/alerts"
                   element={
                     <>
-                      <PageTitle title="Alerts | TailAdmin - Tailwind CSS Admin Dashboard Template" />
+                      <PageTitle title="Alerts | SimulAI - Tailwind CSS Admin Dashboard Template" />
                       <Alerts />
                     </>
                   }
@@ -208,7 +208,7 @@ function App() {
                   path="/ui/buttons"
                   element={
                     <>
-                      <PageTitle title="Buttons | TailAdmin - Tailwind CSS Admin Dashboard Template" />
+                      <PageTitle title="Buttons | SimulAI - Tailwind CSS Admin Dashboard Template" />
                       <Buttons />
                     </>
                   }
@@ -217,7 +217,7 @@ function App() {
                   path="/auth/signin"
                   element={
                     <>
-                      <PageTitle title="Signin | TailAdmin - Tailwind CSS Admin Dashboard Template" />
+                      <PageTitle title="Signin | SimulAI - Tailwind CSS Admin Dashboard Template" />
                       <SignIn />
                     </>
                   }
@@ -226,7 +226,7 @@ function App() {
                   path="/auth/signup"
                   element={
                     <>
-                      <PageTitle title="Signup | TailAdmin - Tailwind CSS Admin Dashboard Template" />
+                      <PageTitle title="Signup | SimulAI - Tailwind CSS Admin Dashboard Template" />
                       <SignUp />
                     </>
                   }
@@ -235,7 +235,7 @@ function App() {
                   path="/send-email"
                   element={
                     <>
-                      <PageTitle title="Send Email | TailAdmin - Tailwind CSS Admin Dashboard Template" />
+                      <PageTitle title="Send Email | SimulAI - Tailwind CSS Admin Dashboard Template" />
                       <SendEmail />
                     </>
                   }

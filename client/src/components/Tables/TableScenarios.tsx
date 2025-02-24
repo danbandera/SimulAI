@@ -27,7 +27,7 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
   const { deleteScenario } = useScenarios();
   const { currentUser } = useUsers();
 
-  const columnsNumber = currentUser?.role === "admin" ? 4 : 3;
+  const isAdmin = currentUser?.role === "admin";
 
   // Filter scenarios based on user role
   const filteredScenarios = scenarios
@@ -109,7 +109,9 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
 
       <div className="flex flex-col">
         <div
-          className={`grid grid-cols-3 rounded-sm bg-gray-2 dark:bg-meta-4 sm:grid-cols-${columnsNumber} gap-2`}
+          className={`grid rounded-sm bg-gray-2 dark:bg-meta-4 gap-2 ${
+            isAdmin ? "grid-cols-4" : "grid-cols-3"
+          }`}
         >
           <div className="p-2.5 xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
@@ -121,7 +123,7 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
               Assigned To
             </h5>
           </div>
-          {currentUser?.role === "admin" && (
+          {isAdmin && (
             <div className="p-2.5 text-center xl:p-5">
               <h5 className="text-sm font-medium uppercase xsm:text-base">
                 Created By
@@ -137,7 +139,7 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
 
         {filteredScenarios.map((scenario, key) => (
           <div
-            className={`grid grid-cols-3 sm:grid-cols-${columnsNumber} gap-4 ${
+            className={`grid gap-4 ${isAdmin ? "grid-cols-4" : "grid-cols-3"} ${
               key === filteredScenarios.length - 1
                 ? ""
                 : "border-b border-stroke dark:border-strokedark"
@@ -159,7 +161,7 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
               </p>
             </div>
 
-            {currentUser?.role === "admin" && (
+            {isAdmin && (
               <div className="flex items-center justify-center p-2.5 xl:p-5">
                 <p className="text-black dark:text-white">
                   {scenario.created_by?.name || "Unknown"}

@@ -31,7 +31,11 @@ const ScenarioDetail = () => {
   const { getScenario, deleteScenario } = useScenarios();
   const { currentUser } = useUsers();
   const [scenario, setScenario] = useState<Scenario | null>(null);
-  console.log(scenario);
+  // get the aspects from the scenario as string
+  const aspects =
+    scenario?.aspects?.map((aspect) => aspect.label).join(", ") || "";
+  console.log(aspects);
+  const description = scenario?.description || "";
   useEffect(() => {
     const loadScenario = async () => {
       if (id) {
@@ -217,7 +221,7 @@ const ScenarioDetail = () => {
             </h3>
           </div>
           <div className="p-6.5">
-            <ConsolePage />
+            <ConsolePage aspects={aspects} description={description} />
           </div>
         </div>
       </div>

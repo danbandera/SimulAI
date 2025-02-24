@@ -4,6 +4,8 @@ import {
   logoutUser,
   getProfile,
   verifyToken,
+  requestPasswordReset,
+  resetPassword,
 } from "../controllers/auth.controller.js";
 import { authRequired } from "../middlewares/validateToken.js";
 import { validateSchema } from "../middlewares/validator.mddleware.js";
@@ -18,7 +20,7 @@ router.get("/verify-token", authRequired, async (req, res) => {
   try {
     // req.user should be set by your authRequired middleware
     res.json({
-      data: req.user
+      data: req.user,
     });
   } catch (error) {
     res.status(401).json({ message: "Invalid token" });
@@ -26,5 +28,9 @@ router.get("/verify-token", authRequired, async (req, res) => {
 });
 
 router.get("/profile", authRequired, getProfile);
+
+router.post("/request-password-reset", requestPasswordReset);
+
+router.post("/reset-password", resetPassword);
 
 export default router;

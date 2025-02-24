@@ -3,6 +3,8 @@ import { connectSqlDB } from "../db.cjs";
 import bcrypt from "bcryptjs";
 import { createAccessToken } from "../libs/jwt.js";
 import jwt from "jsonwebtoken";
+import nodemailer from "nodemailer";
+import crypto from "crypto";
 
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
@@ -108,4 +110,117 @@ export const verifyToken = async (req, res) => {
       role: user.role,
     });
   });
+};
+
+export const requestPasswordReset = async (req, res) => {
+  const { email } = req.body;
+
+  try {
+    // Check if user exists
+    const { data: user, error } = await connectSqlDB
+      .from("users")
+      .select()
+      .eq("email", email)
+      .single();
+
+    if (error || !user) {
+      // Return success even if user not found (security best practice)
+      return res.json({
+        message: "If an account exists, reset instructions will be sent",
+      });
+    }
+
+    // Generate reset token
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    console.log("Generated token:", resetToken);
+
+    const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour
+
+    // Store reset token in database
+    const { data: insertData, error: insertError } = await connectSqlDB
+      .from("password_resets")
+      .upsert({
+        user_id: user.id,
+        token: resetToken,
+        expires_at: resetTokenExpiry,
+      })
+      .select()
+      .single();
+
+    console.log("Token storage result:", { insertData, insertError });
+
+    // Send email
+    const transporter = nodemailer.createTransport({
+      // Configure your email service here
+      host: process.env.SMTP_HOST,
+      port: process.env.SMTP_PORT,
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD,
+      },
+    });
+
+    await transporter.sendMail({
+      from: process.env.SMTP_FROM_EMAIL,
+      to: email,
+      subject: "Password Reset Request",
+      html: `
+        <p>You requested a password reset.</p>
+        <p>Click this <a href="${process.env.CLIENT_URL}/reset-password/${resetToken}">link</a> to reset your password.</p>
+        <p>This link will expire in 1 hour.</p>
+      `,
+    });
+
+    res.json({
+      message: "If an account exists, reset instructions will be sent",
+    });
+  } catch (error) {
+    console.error("Password reset request error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  const { token, newPassword } = req.body;
+  console.log("Received token:", token);
+
+  try {
+    // First check if token exists
+    const { data: resetData, error: resetError } = await connectSqlDB
+      .from("password_resets")
+      .select("*") // Select all fields for debugging
+      .eq("token", token)
+      .single();
+
+    console.log("Query result:", { resetData, resetError });
+
+    if (!resetData || resetError) {
+      return res.status(400).json({
+        message: "Invalid or expired token",
+        debug: { resetError, resetData },
+      });
+    }
+
+    // Check if token is expired
+    if (new Date(resetData.expires_at) < new Date()) {
+      return res.status(400).json({ message: "Reset token has expired" });
+    }
+
+    // Hash new password
+    const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+    // Update user password
+    await connectSqlDB
+      .from("users")
+      .update({ password: hashedPassword })
+      .eq("id", resetData.user_id);
+
+    // Delete used token
+    await connectSqlDB.from("password_resets").delete().eq("token", token);
+
+    res.json({ message: "Password updated successfully" });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    res.status(500).json({ message: "Internal server error" });
+  }
 };

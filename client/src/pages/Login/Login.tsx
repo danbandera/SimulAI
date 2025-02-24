@@ -106,6 +106,14 @@ const Login = () => {
                   {loading || isSubmitting ? "Loading..." : "Login"}
                 </button>
               </div>
+              <div className="mt-3 text-center">
+                <a
+                  href="/recover-password"
+                  className="text-sm text-primary hover:underline"
+                >
+                  Forgot your password?
+                </a>
+              </div>
             </div>
           </form>
         </div>

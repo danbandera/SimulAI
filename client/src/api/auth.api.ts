@@ -31,3 +31,26 @@ export const logoutRequest = async () => {
     throw error;
   }
 };
+
+export const resetPasswordRequest = async (email: string) => {
+  try {
+    const response = await axios.post("/request-password-reset", { email });
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};
+
+interface ResetPasswordData {
+  token: string;
+  newPassword: string;
+}
+
+export const resetPassword = async (data: ResetPasswordData) => {
+  try {
+    const response = await axios.post("/reset-password", data);
+    return response.data;
+  } catch (error) {
+    throw error;
+  }
+};

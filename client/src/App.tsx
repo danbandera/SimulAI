@@ -29,6 +29,8 @@ import ProtectedRoute from "./ProtectedRoute";
 import SendEmail from "./components/SendEmail";
 import ScenarioConversations from "./pages/Scenarios/ScenarioConversations";
 import EditScenario from "./pages/Scenarios/EditScenario";
+import RecoverPassword from "./pages/RecoverPassword/RecoverPassword";
+import ResetPassword from "./pages/ResetPassword/ResetPassword";
 
 function App() {
   return (
@@ -38,6 +40,11 @@ function App() {
           <div className="min-h-screen bg-gray-50">
             <Routes>
               <Route path="/login" element={<Login />} />
+              <Route path="/recover-password" element={<RecoverPassword />} />
+              <Route
+                path="/reset-password/:token"
+                element={<ResetPassword />}
+              />
 
               {/* Wrap protected routes in DefaultLayout */}
               <Route
@@ -237,6 +244,15 @@ function App() {
                     <>
                       <PageTitle title="Send Email | SimulAI - Tailwind CSS Admin Dashboard Template" />
                       <SendEmail />
+                    </>
+                  }
+                />
+                <Route
+                  path="/recover-password"
+                  element={
+                    <>
+                      <PageTitle title="Recover Password | SimulAI - Tailwind CSS Admin Dashboard Template" />
+                      <RecoverPassword />
                     </>
                   }
                 />

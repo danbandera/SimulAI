@@ -1,5 +1,10 @@
 import { createContext, useContext, useState, useEffect } from "react";
-import { loginRequest, verifyToken } from "../api/auth.api";
+import {
+  loginRequest,
+  verifyToken,
+  resetPasswordRequest,
+  resetPassword,
+} from "../api/auth.api";
 import Cookies from "js-cookie";
 
 interface User {
@@ -16,6 +21,8 @@ interface AuthContextType {
   errors: string[] | null;
   loading: boolean;
   logout: () => void;
+  resetPassword: (token: string, newPassword: string) => Promise<void>;
+  resetPasswordRequest: (email: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -116,6 +123,15 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
+  const resetPasswordFn = async (token: string, newPassword: string) => {
+    try {
+      const response = await resetPassword({ token, newPassword });
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -125,6 +141,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         isAuthenticated,
         errors,
         loading,
+        resetPassword: resetPasswordFn,
+        resetPasswordRequest,
       }}
     >
       {children}

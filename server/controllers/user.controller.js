@@ -2,6 +2,7 @@ import { connectSqlDB } from "../db.cjs";
 // const { connectSqlDB } = pkg;
 import bcrypt from "bcryptjs";
 import { createAccessToken } from "../libs/jwt.js";
+import { uploadToS3, deleteFromS3 } from "../utils/s3.utils.js";
 
 export const getUsers = async (req, res) => {
   try {
@@ -48,7 +49,6 @@ export const createUser = async (req, res) => {
     }
 
     if (existingUser) {
-      console.log("User already exists:", email);
       return res
         .status(400)
         .json({ message: "User with this email already exists" });
@@ -65,6 +65,7 @@ export const createUser = async (req, res) => {
         email,
         password: hashedPassword,
         created_by,
+        profile_image: "",
       })
       .select()
       .single();
@@ -104,21 +105,49 @@ export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, role, email, password } = req.body;
+
+    const updateData = {
+      name,
+      role,
+      email,
+      profile_image: "",
+    };
+
+    // Handle profile image upload if file is present
+    if (req.file) {
+      const fileUrl = await uploadToS3(req.file, "avatares");
+      updateData.profile_image = fileUrl;
+
+      // Delete old profile image if exists
+      const oldUser = await connectSqlDB
+        .from("users")
+        .select("profile_image")
+        .eq("id", id)
+        .single();
+
+      if (oldUser.data?.profile_image) {
+        await deleteFromS3(oldUser.data.profile_image);
+      }
+    }
+
+    // Only update password if provided
+    if (password) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      updateData.password = hashedPassword;
+    }
+
     const result = await connectSqlDB
       .from("users")
-      .update({
-        name,
-        role,
-        email,
-        password,
-      })
-      .eq("id", id);
-    if (result.status === 204) {
-      // res.status(204).json({ message: "User updated successfully" });
-      res.json(result.data);
-    } else {
-      res.status(400).json({ message: result.error.message });
+      .update(updateData)
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (result.error) {
+      throw result.error;
     }
+
+    res.json(result.data);
   } catch (error) {
     console.error("Update User Error:", error);
     res.status(500).json({ message: error.message });
@@ -137,5 +166,69 @@ export const deleteUser = async (req, res) => {
     // }
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+export const updateUserProfileImage = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if file exists
+    if (!req.file) {
+      return res.status(400).json({ message: "No image file provided" });
+    }
+
+    try {
+      // Upload to S3
+      const fileUrl = await uploadToS3(req.file, "avatares");
+
+      // Get old user data
+      const { data: oldUser, error: selectError } = await connectSqlDB
+        .from("users")
+        .select("profile_image")
+        .eq("id", id)
+        .single();
+
+      if (selectError) {
+        console.error("Error fetching old user:", selectError);
+        throw selectError;
+      }
+
+      // Delete old image if exists
+      if (oldUser?.profile_image) {
+        try {
+          await deleteFromS3(oldUser.profile_image);
+        } catch (deleteError) {
+          console.error("Error deleting old image:", deleteError);
+          // Continue even if delete fails
+        }
+      }
+
+      // Update user with new image URL
+      const { data: updatedUser, error: updateError } = await connectSqlDB
+        .from("users")
+        .update({ profile_image: fileUrl })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (updateError) {
+        console.error("Error updating user:", updateError);
+        throw updateError;
+      }
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Error processing image:", error);
+      res.status(500).json({
+        message: "Error processing image upload",
+        error: error.message,
+      });
+    }
+  } catch (error) {
+    console.error("Update Profile Image Error:", error);
+    res.status(500).json({
+      message: "Error updating profile image",
+      error: error.message,
+    });
   }
 };

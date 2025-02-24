@@ -3,9 +3,10 @@ import { Link } from "react-router-dom";
 // import DropdownNotification from "./DropdownNotification";
 // import DropdownUser from "./DropdownUser";
 import LogoIcon from "../../images/logo/logo-icon.svg";
-// import DarkModeSwitcher from "./DarkModeSwitcher";
+import DarkModeSwitcher from "./DarkModeSwitcher";
 import { useAuth } from "../../context/AuthContext";
 import { useUsers } from "../../context/UserContext";
+import DropdownUser from "./DropdownUser";
 
 const Header = (props: {
   sidebarOpen: string | boolean | undefined;
@@ -103,23 +104,11 @@ const Header = (props: {
         </div>
 
         <div className="flex items-center gap-3 2xsm:gap-7">
-          {/* username name */}
-          <span className="text-sm font-medium text-gray-700">
-            {currentUser?.name}
-          </span>
           <ul className="flex items-center gap-2 2xsm:gap-4">
             {/* <!-- Dark Mode Toggler --> */}
             {/* <DarkModeSwitcher /> */}
-            <button
-              className="bg-red-500 text-white px-4 py-2 rounded-md"
-              onClick={() => {
-                logout();
-              }}
-            >
-              Logout
-            </button>
             {/* <!-- Dark Mode Toggler --> */}
-
+            <DarkModeSwitcher />
             {/* <!-- Notification Menu Area --> */}
             {/* <DropdownNotification /> */}
             {/* <!-- Notification Menu Area --> */}
@@ -130,7 +119,7 @@ const Header = (props: {
           </ul>
 
           {/* <!-- User Area --> */}
-          {/* <DropdownUser /> */}
+          <DropdownUser />
           {/* <!-- User Area --> */}
         </div>
       </div>

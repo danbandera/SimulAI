@@ -1,59 +1,59 @@
-import { Link } from 'react-router-dom';
-import { Chat } from '../../types/chat';
-import UserOne from '../../images/user/user-01.png';
-import UserTwo from '../../images/user/user-02.png';
-import UserThree from '../../images/user/user-03.png';
-import UserFour from '../../images/user/user-04.png';
-import UserFive from '../../images/user/user-05.png';
+import { Link } from "react-router-dom";
+import { Chat } from "../../types/chat";
+import UserOne from "../../images/user/default-user.jpg";
+import UserTwo from "../../images/user/default-user.jpg";
+import UserThree from "../../images/user/default-user.jpg";
+import UserFour from "../../images/user/default-user.jpg";
+import UserFive from "../../images/user/default-user.jpg";
 
 const chatData: Chat[] = [
   {
     avatar: UserOne,
-    name: 'Devid Heilo',
-    text: 'How are you?',
+    name: "Devid Heilo",
+    text: "How are you?",
     time: 12,
     textCount: 3,
-    color: '#10B981',
+    color: "#10B981",
   },
   {
     avatar: UserTwo,
-    name: 'Henry Fisher',
-    text: 'Waiting for you!',
+    name: "Henry Fisher",
+    text: "Waiting for you!",
     time: 12,
     textCount: 0,
-    color: '#DC3545',
+    color: "#DC3545",
   },
   {
     avatar: UserFour,
-    name: 'Jhon Doe',
+    name: "Jhon Doe",
     text: "What's up?",
     time: 32,
     textCount: 0,
-    color: '#10B981',
+    color: "#10B981",
   },
   {
     avatar: UserFive,
-    name: 'Jane Doe',
-    text: 'Great',
+    name: "Jane Doe",
+    text: "Great",
     time: 32,
     textCount: 2,
-    color: '#FFBA00',
+    color: "#FFBA00",
   },
   {
     avatar: UserOne,
-    name: 'Jhon Doe',
-    text: 'How are you?',
+    name: "Jhon Doe",
+    text: "How are you?",
     time: 32,
     textCount: 0,
-    color: '#10B981',
+    color: "#10B981",
   },
   {
     avatar: UserThree,
-    name: 'Jhon Doe',
-    text: 'How are you?',
+    name: "Jhon Doe",
+    text: "How are you?",
     time: 32,
     textCount: 3,
-    color: '#FFBA00',
+    color: "#FFBA00",
   },
 ];
 
@@ -75,7 +75,7 @@ const ChatCard = () => {
               <img src={chat.avatar} alt="User" />
               <span
                 className="absolute right-0 bottom-0 h-3.5 w-3.5 rounded-full border-2 border-white"
-                style={{backgroundColor: chat.color}}
+                style={{ backgroundColor: chat.color }}
               ></span>
             </div>
 
@@ -94,7 +94,7 @@ const ChatCard = () => {
               {chat.textCount !== 0 && (
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-primary">
                   <span className="text-sm font-medium text-white">
-                    {' '}
+                    {" "}
                     {chat.textCount}
                   </span>
                 </div>

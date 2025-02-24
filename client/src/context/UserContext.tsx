@@ -11,6 +11,7 @@ import {
   deleteUserRequest,
   updateUserRequest,
   getUserRequest,
+  updateUserProfileImageRequest,
 } from "../api/users.api";
 import { useAuth } from "./AuthContext";
 
@@ -20,6 +21,7 @@ interface User {
   email: string;
   role: string;
   password: string;
+  profile_image?: string;
   created_by: number;
   created_at?: string;
 }
@@ -32,6 +34,7 @@ interface UserContextType {
   deleteUser: (id: number) => Promise<void>;
   updateUser: (id: number, user: User) => Promise<void>;
   getUser: (id: number) => Promise<User>;
+  updateUserProfileImage: (id: number, file: File) => Promise<void>;
 }
 
 interface UserProviderProps {
@@ -124,6 +127,22 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     }
   };
 
+  const updateUserProfileImage = async (id: number, file: File) => {
+    try {
+      const response = await updateUserProfileImageRequest(id, file);
+      // Update current user with new image
+      if (currentUser && response.profile_image) {
+        setCurrentUser({
+          ...currentUser,
+          profile_image: response.profile_image,
+        });
+      }
+      return response;
+    } catch (error) {
+      console.error("Error updating user profile image:", error);
+      throw error;
+    }
+  };
   return (
     <UserContext.Provider
       value={{
@@ -134,6 +153,7 @@ export const UserProvider = ({ children }: UserProviderProps) => {
         deleteUser,
         updateUser,
         getUser,
+        updateUserProfileImage,
       }}
     >
       {children}

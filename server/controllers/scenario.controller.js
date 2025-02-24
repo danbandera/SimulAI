@@ -3,6 +3,7 @@ import Conversation from "../models/conversation.model.js";
 import multer from "multer";
 import path from "path";
 import fs from "fs";
+import { uploadToS3, deleteFromS3 } from "../utils/s3.utils.js";
 
 // Create uploads directory if it doesn't exist
 const uploadDir = "uploads/scenarios";
@@ -23,15 +24,11 @@ const storage = multer.diskStorage({
 });
 
 const upload = multer({
-  storage: storage,
-  fileFilter: (req, file, cb) => {
-    // Add file type validation if needed
-    cb(null, true);
-  },
+  storage: multer.memoryStorage(), // Use memory storage instead of disk
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB limit
   },
-});
+}).array("files"); // Configure for multiple files with field name 'files'
 
 export const getScenarios = async (req, res) => {
   try {
@@ -102,22 +99,16 @@ export const getScenarioByUserId = async (req, res) => {
 
 export const createScenario = async (req, res) => {
   try {
-    // Handle file uploads first
-    upload.array("files")(req, res, async (err) => {
+    // Use multer as middleware
+    upload(req, res, async (err) => {
       if (err instanceof multer.MulterError) {
-        // A Multer error occurred when uploading
-        console.error("Multer error:", err);
-        return res.status(400).json({
-          message: "File upload error",
-          error: err.message,
-        });
+        return res
+          .status(400)
+          .json({ message: "File upload error", error: err.message });
       } else if (err) {
-        // An unknown error occurred
-        console.error("Unknown upload error:", err);
-        return res.status(500).json({
-          message: "Error uploading files",
-          error: err.message,
-        });
+        return res
+          .status(500)
+          .json({ message: "Error uploading files", error: err.message });
       }
 
       try {
@@ -131,11 +122,26 @@ export const createScenario = async (req, res) => {
           aspects,
         } = req.body;
 
-        // Get file paths if any files were uploaded
-        const files = req.files ? req.files.map((file) => file.path) : [];
+        // Handle file uploads to S3
+        const fileUrls = [];
+        if (req.files && req.files.length > 0) {
+          for (const file of req.files) {
+            try {
+              const fileUrl = await uploadToS3(file, "documents");
+              fileUrls.push(fileUrl);
+            } catch (error) {
+              console.error("Error uploading file to S3:", error);
+            }
+          }
+        }
 
         // Parse aspects from JSON string
-        const parsedAspects = aspects ? JSON.parse(aspects) : [];
+        let parsedAspects = [];
+        try {
+          parsedAspects = aspects ? JSON.parse(aspects) : [];
+        } catch (error) {
+          console.error("Error parsing aspects:", error);
+        }
 
         const { data: scenario, error: scenarioError } = await connectSqlDB
           .from("scenarios")
@@ -145,9 +151,9 @@ export const createScenario = async (req, res) => {
             status,
             user_id_assigned,
             created_by,
-            parent_scenario,
+            parent_scenario: parent_scenario || null,
             aspects: parsedAspects,
-            files,
+            files: fileUrls,
           })
           .select(
             `
@@ -167,32 +173,21 @@ export const createScenario = async (req, res) => {
           .single();
 
         if (scenarioError) {
-          // If database error occurs, delete uploaded files
-          if (files.length > 0) {
-            files.forEach((file) => {
-              try {
-                fs.unlinkSync(file);
-              } catch (e) {
-                console.error("Error deleting file:", e);
-              }
-            });
+          // Clean up uploaded files if scenario creation fails
+          for (const fileUrl of fileUrls) {
+            try {
+              await deleteFromS3(fileUrl);
+            } catch (error) {
+              console.error("Error deleting file from S3:", error);
+            }
           }
           return res.status(400).json({ message: scenarioError.message });
         }
 
         res.status(201).json(scenario);
       } catch (error) {
-        // If any error occurs during scenario creation, delete uploaded files
-        if (req.files && req.files.length > 0) {
-          req.files.forEach((file) => {
-            try {
-              fs.unlinkSync(file.path);
-            } catch (e) {
-              console.error("Error deleting file:", e);
-            }
-          });
-        }
-        throw error;
+        console.error("Create Scenario Error:", error);
+        res.status(500).json({ message: error.message });
       }
     });
   } catch (error) {
@@ -203,36 +198,42 @@ export const createScenario = async (req, res) => {
 
 export const updateScenario = async (req, res) => {
   try {
-    upload.array("files")(req, res, async (err) => {
-      if (err instanceof multer.MulterError) {
-        console.error("Multer error:", err);
-        return res.status(400).json({
-          message: "File upload error",
-          error: err.message,
-        });
-      } else if (err) {
-        console.error("Unknown upload error:", err);
-        return res.status(500).json({
-          message: "Error uploading files",
-          error: err.message,
-        });
+    upload(req, res, async (err) => {
+      if (err) {
+        return res
+          .status(400)
+          .json({ message: "File upload error", error: err.message });
       }
 
       try {
         const { id } = req.params;
         const { title, description, status, aspects, existingFiles } = req.body;
 
-        // Get new file paths
-        const newFiles = req.files ? req.files.map((file) => file.path) : [];
+        // Upload new files to S3
+        const newFileUrls = [];
+        if (req.files && req.files.length > 0) {
+          for (const file of req.files) {
+            try {
+              const fileUrl = await uploadToS3(file, "documents");
+              newFileUrls.push(fileUrl);
+            } catch (error) {
+              console.error("Error uploading file to S3:", error);
+            }
+          }
+        }
 
         // Parse existing files and aspects
-        const parsedExistingFiles = existingFiles
-          ? JSON.parse(existingFiles)
-          : [];
-        const parsedAspects = aspects ? JSON.parse(aspects) : [];
+        let parsedExistingFiles = [];
+        let parsedAspects = [];
+        try {
+          parsedExistingFiles = existingFiles ? JSON.parse(existingFiles) : [];
+          parsedAspects = aspects ? JSON.parse(aspects) : [];
+        } catch (error) {
+          console.error("Error parsing JSON data:", error);
+        }
 
-        // Combine existing and new files
-        const allFiles = [...parsedExistingFiles, ...newFiles];
+        // Combine existing and new file URLs
+        const allFiles = [...parsedExistingFiles, ...newFileUrls];
 
         const { data: scenario, error: scenarioError } = await connectSqlDB
           .from("scenarios")
@@ -249,12 +250,21 @@ export const updateScenario = async (req, res) => {
           .single();
 
         if (scenarioError) {
+          // Clean up newly uploaded files if update fails
+          for (const fileUrl of newFileUrls) {
+            try {
+              await deleteFromS3(fileUrl);
+            } catch (error) {
+              console.error("Error deleting file from S3:", error);
+            }
+          }
           return res.status(400).json({ message: scenarioError.message });
         }
 
         res.json(scenario);
       } catch (error) {
-        throw error;
+        console.error("Update Scenario Error:", error);
+        res.status(500).json({ message: error.message });
       }
     });
   } catch (error) {
@@ -266,6 +276,25 @@ export const updateScenario = async (req, res) => {
 export const deleteScenario = async (req, res) => {
   try {
     const { id } = req.params;
+
+    // Get scenario data to access file URLs
+    const { data: scenario } = await connectSqlDB
+      .from("scenarios")
+      .select("files")
+      .eq("id", id)
+      .single();
+
+    // Delete files from S3
+    if (scenario && scenario.files) {
+      for (const fileUrl of scenario.files) {
+        try {
+          await deleteFromS3(fileUrl);
+        } catch (error) {
+          console.error("Error deleting file from S3:", error);
+        }
+      }
+    }
+
     const result = await connectSqlDB.from("scenarios").delete().eq("id", id);
 
     if (result.error) {

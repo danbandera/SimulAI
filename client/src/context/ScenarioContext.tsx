@@ -29,10 +29,10 @@ interface Scenario {
 interface ScenarioContextValue {
   scenarios: Scenario[];
   loadScenarios: () => Promise<void>;
-  createScenario: (scenario: Scenario) => Promise<void>;
+  createScenario: (scenarioData: FormData) => Promise<void>;
   deleteScenario: (id: number) => Promise<void>;
   getScenario: (id: number) => Promise<Scenario>;
-  updateScenario: (id: number, scenario: FormData) => Promise<void>;
+  updateScenario: (id: number, scenarioData: FormData) => Promise<void>;
   saveConversation: (
     scenarioId: number,
     conversation: Conversation,

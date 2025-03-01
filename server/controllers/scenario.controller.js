@@ -4,9 +4,32 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { uploadToS3, deleteFromS3 } from "../utils/s3.utils.js";
+import OpenAI from "openai";
+import ffmpeg from "fluent-ffmpeg";
+
+// Check for required environment variables
+if (!process.env.OPENAI_API_KEY) {
+  console.error("Missing OPENAI_API_KEY environment variable");
+  process.exit(1);
+}
+
+// Set FFmpeg path based on OS
+const ffmpegPath =
+  process.platform === "darwin"
+    ? "/opt/homebrew/bin/ffmpeg"
+    : process.platform === "linux"
+    ? "/usr/bin/ffmpeg"
+    : "ffmpeg";
+
+console.log("Using FFmpeg path:", ffmpegPath);
+ffmpeg.setFfmpegPath(ffmpegPath);
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 // Create uploads directory if it doesn't exist
-const uploadDir = "uploads/scenarios";
+const uploadDir = path.join(process.cwd(), "uploads", "scenarios");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
@@ -363,5 +386,137 @@ export const getAllConversations = async (req, res) => {
     res.json(conversations);
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+export const processAudio = async (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: "No audio file provided" });
+  }
+
+  try {
+    console.log("Processing audio file:", req.file);
+
+    // Get the correct directory paths
+    const uploadsDir = path.join(process.cwd(), "uploads");
+    const scenariosDir = path.join(uploadsDir, "scenarios");
+
+    console.log("Current directory:", process.cwd());
+    console.log("Uploads directory:", uploadsDir);
+    console.log("Scenarios directory:", scenariosDir);
+
+    if (!fs.existsSync(uploadsDir)) {
+      fs.mkdirSync(uploadsDir, { recursive: true });
+      console.log("Created uploads directory");
+    }
+    if (!fs.existsSync(scenariosDir)) {
+      fs.mkdirSync(scenariosDir, { recursive: true });
+      console.log("Created scenarios directory");
+    }
+
+    // List directory contents before processing
+    console.log(
+      "Initial uploads directory contents:",
+      fs.readdirSync(uploadsDir)
+    );
+    console.log(
+      "Initial scenarios directory contents:",
+      fs.readdirSync(scenariosDir)
+    );
+
+    // Create temporary file path for the uploaded audio
+    const tempFile = path.join(scenariosDir, `temp-${Date.now()}.webm`);
+    fs.writeFileSync(tempFile, req.file.buffer);
+    console.log("Temporary file created:", tempFile);
+
+    // Convert webm to wav
+    const wavFile = path.join(scenariosDir, `temp-${Date.now()}.wav`);
+    console.log("Converting to WAV:", wavFile);
+
+    await new Promise((resolve, reject) => {
+      ffmpeg(tempFile)
+        .toFormat("wav")
+        .audioCodec("pcm_s16le")
+        .on("error", (err) => {
+          console.error("FFmpeg error:", err);
+          reject(err);
+        })
+        .on("end", () => {
+          console.log("FFmpeg conversion complete");
+          resolve();
+        })
+        .save(wavFile);
+    });
+
+    console.log("Starting transcription...");
+    // Transcribe audio
+    const transcript = await openai.audio.transcriptions.create({
+      file: fs.createReadStream(wavFile),
+      model: "whisper-1",
+    });
+    console.log("Transcription complete:", transcript.text);
+
+    console.log("Getting ChatGPT response...");
+    // Get ChatGPT response
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: transcript.text }],
+    });
+    const response = completion.choices[0].message.content;
+    console.log("ChatGPT response:", response);
+
+    console.log("Converting to speech...");
+    // Convert response to speech
+    const mp3 = await openai.audio.speech.create({
+      model: "tts-1",
+      voice: "fable",
+      input: response,
+    });
+
+    const buffer = Buffer.from(await mp3.arrayBuffer());
+    const responseFile = path.join(scenariosDir, `response-${Date.now()}.mp3`);
+    fs.writeFileSync(responseFile, buffer);
+    console.log("Speech file saved:", responseFile);
+
+    // Verify the file was created and log its details
+    if (!fs.existsSync(responseFile)) {
+      throw new Error("Failed to save audio file");
+    }
+    console.log("Response file size:", fs.statSync(responseFile).size);
+
+    // List directory contents after saving
+    console.log(
+      "Final scenarios directory contents:",
+      fs.readdirSync(scenariosDir)
+    );
+
+    // Clean up temporary files
+    try {
+      fs.unlinkSync(tempFile);
+      fs.unlinkSync(wavFile);
+      console.log("Temporary files cleaned up");
+    } catch (cleanupError) {
+      console.error("Error cleaning up temporary files:", cleanupError);
+    }
+
+    // Send the response with the file path relative to the uploads directory
+    const audioUrl = `/uploads/scenarios/${path.basename(responseFile)}`;
+    console.log("Audio URL:", audioUrl);
+    console.log("Full file path:", responseFile);
+    console.log("File exists check:", fs.existsSync(responseFile));
+
+    res.json({
+      transcription: transcript.text,
+      response,
+      audioUrl,
+    });
+  } catch (error) {
+    console.error("Detailed error in processAudio:", error);
+    if (error.response) {
+      console.error("OpenAI API error response:", error.response.data);
+    }
+    res
+      .status(500)
+      .json({ error: "Failed to process audio", details: error.message });
   }
 };

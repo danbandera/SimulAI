@@ -1,30 +1,22 @@
 import { useEffect, useRef, useCallback, useState } from "react";
-import { RealtimeClient } from "@openai/realtime-api-beta";
-import { ItemType } from "@openai/realtime-api-beta/dist/lib/client.js";
-import { WavRecorder, WavStreamPlayer } from "../../lib/wavtools/index.js";
 import { instructions } from "../../utils/conversation_config";
-import { X, Edit, Zap } from "react-feather";
+import { X, Zap } from "react-feather";
 import { Button } from "../../components/button/Button";
-import { Toggle } from "../../components/toggle/Toggle";
 import "./ConsolePage.scss";
 import { useScenarios } from "../../context/ScenarioContext";
 import { useUsers } from "../../context/UserContext";
 import { useParams } from "react-router-dom";
-
-const LOCAL_RELAY_SERVER_URL: string =
-  import.meta.env.VITE_REACT_APP_LOCAL_RELAY_SERVER_URL || "";
-
-const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY;
-
-const calculateSpeakingTime = (text: string): number => {
-  const wordsPerSecond = 2; // Average speaking rate
-  const wordCount = text.split(" ").length;
-  return (wordCount / wordsPerSecond) * 1000; // Convert to milliseconds
-};
+import axios from "../../config/axios";
+import { toast } from "react-hot-toast";
 
 interface ConsolePageProps {
   aspects: string;
   description: string;
+}
+
+interface ConversationItem {
+  role: string;
+  message: string;
 }
 
 export const ConsolePage: React.FC<ConsolePageProps> = ({
@@ -34,148 +26,213 @@ export const ConsolePage: React.FC<ConsolePageProps> = ({
   const { id: scenarioId } = useParams();
   const { currentUser } = useUsers();
   const { saveConversation } = useScenarios();
-  const apiKey = LOCAL_RELAY_SERVER_URL ? "" : OPENAI_API_KEY || "";
   const newInstructions =
     instructions + `\n\n${description}` + `\n\n${aspects}`;
-  console.log(newInstructions);
 
-  const wavRecorderRef = useRef<WavRecorder>(
-    new WavRecorder({ sampleRate: 24000 }),
-  );
-  const wavStreamPlayerRef = useRef<WavStreamPlayer>(
-    new WavStreamPlayer({ sampleRate: 24000 }),
-  );
-  const clientRef = useRef<RealtimeClient>(
-    new RealtimeClient(
-      LOCAL_RELAY_SERVER_URL
-        ? { url: LOCAL_RELAY_SERVER_URL }
-        : {
-            apiKey: apiKey,
-            dangerouslyAllowAPIKeyInBrowser: true,
-          },
-    ),
-  );
+  const mediaRecorderRef = useRef<MediaRecorder | null>(null);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
 
-  const [items, setItems] = useState<ItemType[]>([]);
+  const [items, setItems] = useState<ConversationItem[]>([]);
   const [isConnected, setIsConnected] = useState(false);
-  const [canPushToTalk, setCanPushToTalk] = useState(true);
   const [isRecording, setIsRecording] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
-  const connectConversation = useCallback(async () => {
-    const client = clientRef.current;
-    const wavRecorder = wavRecorderRef.current;
-    const wavStreamPlayer = wavStreamPlayerRef.current;
+  const startConversation = useCallback(async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream, {
+        mimeType: "audio/webm",
+      });
 
-    setIsConnected(true);
-    setItems(client.conversation.getItems());
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          chunksRef.current.push(event.data);
+        }
+      };
 
-    await wavRecorder.begin();
-    await wavStreamPlayer.connect();
-    await client.connect();
-
-    client.sendUserMessageContent([
-      { type: "input_text", text: "¡Hola! Inicia con el entrenamiento" },
-    ]);
-
-    if (client.getTurnDetectionType() === "server_vad") {
-      await wavRecorder.record((data) => client.appendInputAudio(data.mono));
+      setIsConnected(true);
+      setItems([
+        { role: "user", message: "¡Hola! Inicia con el entrenamiento" },
+      ]);
+    } catch (error) {
+      console.error("Error starting conversation:", error);
+      toast.error(
+        "Error starting conversation. Please check microphone access.",
+      );
+      setIsConnected(false);
     }
   }, []);
 
-  const disconnectConversation = useCallback(async () => {
-    setIsConnected(false);
-    setItems([]);
-
-    const client = clientRef.current;
-    client.disconnect();
-
-    const wavRecorder = wavRecorderRef.current;
-    await wavRecorder.end();
-
-    const wavStreamPlayer = wavStreamPlayerRef.current;
-    await wavStreamPlayer.interrupt();
+  const endConversation = useCallback(async () => {
+    try {
+      if (mediaRecorderRef.current?.state !== "inactive") {
+        mediaRecorderRef.current?.stop();
+      }
+      mediaRecorderRef.current?.stream
+        .getTracks()
+        .forEach((track) => track.stop());
+      setIsConnected(false);
+      setItems([]);
+    } catch (error) {
+      console.error("Error ending conversation:", error);
+      toast.error("Error ending conversation");
+    }
   }, []);
 
   const startRecording = async () => {
-    const client = clientRef.current;
-    const wavRecorder = wavRecorderRef.current;
-    const wavStreamPlayer = wavStreamPlayerRef.current;
-
-    if (wavRecorder.getStatus() === "recording") {
-      await wavRecorder.pause();
+    try {
+      chunksRef.current = [];
+      mediaRecorderRef.current?.start();
+      setIsRecording(true);
+    } catch (error) {
+      console.error("Error starting recording:", error);
+      toast.error("Error starting recording");
+      setIsRecording(false);
     }
-
-    setIsRecording(true);
-    const trackSampleOffset = await wavStreamPlayer.interrupt();
-    if (trackSampleOffset?.trackId) {
-      const { trackId, offset } = trackSampleOffset;
-      await client.cancelResponse(trackId, offset);
-    }
-    await wavRecorder.record((data) => client.appendInputAudio(data.mono));
   };
 
   const stopRecording = async () => {
-    setIsRecording(false);
-    const client = clientRef.current;
-    const wavRecorder = wavRecorderRef.current;
+    if (!isRecording || isProcessing) return;
 
-    if (wavRecorder.getStatus() === "recording") {
-      await wavRecorder.pause();
-    }
+    setIsProcessing(true);
+    try {
+      mediaRecorderRef.current?.stop();
+      setIsRecording(false);
 
-    client.createResponse();
-  };
+      // Wait for the final chunk
+      await new Promise<void>((resolve) => {
+        if (mediaRecorderRef.current) {
+          mediaRecorderRef.current.onstop = () => resolve();
+        } else {
+          resolve();
+        }
+      });
 
-  const changeTurnEndType = async (value: string) => {
-    const client = clientRef.current;
-    const wavRecorder = wavRecorderRef.current;
-    if (value === "none" && wavRecorder.getStatus() === "recording") {
-      await wavRecorder.pause();
+      // Create blob from chunks
+      const audioBlob = new Blob(chunksRef.current, { type: "audio/webm" });
+
+      // Verify that we have a valid audio blob
+      if (!audioBlob || audioBlob.size === 0) {
+        throw new Error("No audio data recorded");
+      }
+
+      // Create form data with the audio blob
+      const formData = new FormData();
+      formData.append("audio", audioBlob, "recording.webm");
+
+      // Send audio to backend for processing
+      const response = await axios.post(
+        `/scenarios/${scenarioId}/process-audio`,
+        formData,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+          timeout: 30000,
+          maxContentLength: 10 * 1024 * 1024, // 10MB
+        },
+      );
+
+      // Add user's transcribed message to conversation
+      setItems((prevItems) => [
+        ...prevItems,
+        { role: "user", message: response.data.transcription },
+      ]);
+
+      // Add assistant's response to conversation
+      setItems((prevItems) => [
+        ...prevItems,
+        { role: "assistant", message: response.data.response },
+      ]);
+
+      // Play the audio response
+      if (audioRef.current && response.data.audioUrl) {
+        try {
+          // Ensure we're using the backend URL for audio files
+          const audioUrl = new URL(
+            response.data.audioUrl,
+            axios.defaults.baseURL,
+          ).toString();
+          console.log("Playing audio from:", audioUrl);
+
+          // Validate that the audio URL exists
+          const checkResponse = await fetch(audioUrl, { method: "HEAD" });
+          if (!checkResponse.ok) {
+            throw new Error(`Audio file not found: ${checkResponse.status}`);
+          }
+
+          // Create a new Audio element
+          const audio = new Audio();
+
+          // Add event listeners for debugging
+          audio.addEventListener("loadstart", () => {
+            console.log("Audio loading started");
+          });
+
+          audio.addEventListener("loadedmetadata", () => {
+            console.log("Audio metadata loaded:", {
+              duration: audio.duration,
+            });
+          });
+
+          audio.addEventListener("canplay", () => {
+            console.log("Audio can play");
+          });
+
+          audio.addEventListener("error", (e) => {
+            console.error("Audio loading error:", {
+              error: e,
+              code: audio.error?.code,
+              message: audio.error?.message,
+            });
+            toast.error(
+              `Error loading audio: ${audio.error?.message || "Unknown error"}`,
+            );
+          });
+
+          // Wait for the audio to be loaded before playing
+          audio.addEventListener("canplaythrough", async () => {
+            try {
+              console.log("Audio ready to play");
+              await audio.play();
+            } catch (error) {
+              console.error("Error playing audio:", error);
+              toast.error("Error playing audio response");
+            }
+          });
+
+          // Set audio source and load
+          audio.src = audioUrl;
+          audio.load();
+        } catch (error) {
+          console.error("Error setting up audio playback:", error);
+          toast.error("Error playing audio response");
+        }
+      }
+    } catch (error: any) {
+      console.error("Error processing audio:", error);
+      toast.error(error?.message || "Error processing audio");
+    } finally {
+      setIsProcessing(false);
     }
-    client.updateSession({
-      turn_detection: value === "none" ? null : { type: "server_vad" },
-    });
-    if (value === "server_vad" && client.isConnected()) {
-      await wavRecorder.record((data) => client.appendInputAudio(data.mono));
-    }
-    setCanPushToTalk(value === "none");
   };
 
   useEffect(() => {
-    const client = clientRef.current;
-    const wavStreamPlayer = wavStreamPlayerRef.current;
-
-    client.updateSession({ instructions: instructions });
-    client.updateSession({ input_audio_transcription: { model: "whisper-1" } });
-
-    client.on("conversation.interrupted", async () => {
-      const trackSampleOffset = await wavStreamPlayer.interrupt();
-      if (trackSampleOffset?.trackId) {
-        const { trackId, offset } = trackSampleOffset;
-        await client.cancelResponse(trackId, offset);
-      }
+    // Request microphone permission on component mount
+    navigator.mediaDevices.getUserMedia({ audio: true }).catch((error) => {
+      console.error("Error requesting microphone permission:", error);
+      toast.error("Please grant microphone access to use this feature");
     });
-
-    client.on("conversation.updated", async ({ item, delta }: any) => {
-      const items = client.conversation.getItems();
-      if (delta?.audio) {
-        wavStreamPlayer.add16BitPCM(delta.audio, item.id);
-      }
-      if (item.status === "completed" && item.formatted.audio?.length) {
-        const wavFile = await WavRecorder.decode(
-          item.formatted.audio,
-          24000,
-          24000,
-        );
-        item.formatted.file = wavFile;
-      }
-      setItems(items);
-    });
-
-    setItems(client.conversation.getItems());
 
     return () => {
-      client.reset();
+      // Cleanup: stop recording and release media stream
+      if (mediaRecorderRef.current?.state !== "inactive") {
+        mediaRecorderRef.current?.stop();
+      }
+      mediaRecorderRef.current?.stream
+        .getTracks()
+        .forEach((track) => track.stop());
     };
   }, []);
 
@@ -187,59 +244,34 @@ export const ConsolePage: React.FC<ConsolePageProps> = ({
             <div className="content-block-title">conversation</div>
             <div className="content-block-body" data-conversation-content>
               {!items.length && `awaiting connection...`}
-              {items
-                .filter(
-                  (item) =>
-                    !(
-                      item.role === "user" &&
-                      (item.formatted.text ===
-                        "Please analyze the emotions I displayed during this conversation and provide a summary. REMEMER: Only this conversation, not the previous ones. Say it in Spanish." ||
-                        item.formatted.text ===
-                          "¡Hola! Inicia con el entrenamiento")
-                    ),
-                )
-                .map((conversationItem) => (
-                  <div className="conversation-item" key={conversationItem.id}>
-                    <div className={`speaker ${conversationItem.role || ""}`}>
-                      <div>
-                        {(
-                          conversationItem.role || conversationItem.type
-                        ).replaceAll("_", " ")}
-                      </div>
-                    </div>
-                    <div className={`speaker-content`}>
-                      {conversationItem.role === "user" && (
-                        <div>
-                          User:{" "}
-                          {conversationItem.formatted.text ||
-                            conversationItem.formatted.transcript}
-                        </div>
-                      )}
-                      {conversationItem.role === "assistant" && (
-                        <div>
-                          Assistant:{" "}
-                          {conversationItem.formatted.text ||
-                            conversationItem.formatted.transcript}
-                        </div>
-                      )}
+              {items.map((item, index) => (
+                <div className="conversation-item" key={index}>
+                  <div className={`speaker ${item.role}`}>
+                    <div>{item.role}</div>
+                  </div>
+                  <div className="speaker-content">
+                    <div>
+                      {item.role.charAt(0).toUpperCase() + item.role.slice(1)}:{" "}
+                      {item.message}
                     </div>
                   </div>
-                ))}
+                </div>
+              ))}
             </div>
           </div>
           <div className="content-actions">
-            <Toggle
-              defaultValue={false}
-              labels={["manual", "automatic"]}
-              values={["none", "server_vad"]}
-              onChange={(_, value) => changeTurnEndType(value)}
-            />
             <div className="spacer" />
-            {isConnected && canPushToTalk && (
+            {isConnected && (
               <Button
-                label={isRecording ? "release to send" : "push to talk"}
+                label={
+                  isProcessing
+                    ? "Processing..."
+                    : isRecording
+                      ? "release to send"
+                      : "push to talk"
+                }
                 buttonStyle={isRecording ? "alert" : "regular"}
-                disabled={!isConnected || !canPushToTalk}
+                disabled={!isConnected || isProcessing}
                 onMouseDown={startRecording}
                 onMouseUp={stopRecording}
               />
@@ -253,111 +285,27 @@ export const ConsolePage: React.FC<ConsolePageProps> = ({
               onClick={
                 isConnected
                   ? async () => {
-                      const client = clientRef.current;
-                      const analysisPrompt =
-                        "Please analyze the emotions I displayed during this conversation and provide a summary. REMEMER: Only this conversation, not the previous ones. Say it in Spanish.";
-
-                      console.log("Sending analysis prompt...");
-
-                      client.sendUserMessageContent([
-                        {
-                          type: "input_text",
-                          text: analysisPrompt,
-                        },
-                      ]);
-
-                      // Wait for the analysis response
-                      const checkForAnalysis = async () => {
-                        const latestItems = client.conversation.getItems();
-                        console.log("Checking for analysis response...");
-
-                        // Get the last assistant message after our analysis prompt
-                        const analysisPromptIndex = latestItems.findIndex(
-                          (item) =>
-                            item.role === "user" &&
-                            item.formatted.text === analysisPrompt,
+                      // Save the conversation before ending
+                      if (scenarioId && currentUser?.id) {
+                        await saveConversation(
+                          Number(scenarioId),
+                          {
+                            scenarioId: Number(scenarioId),
+                            userId: currentUser.id,
+                            conversation: items,
+                          },
+                          currentUser.id,
                         );
-
-                        const lastAssistantMessage = latestItems
-                          .slice(analysisPromptIndex)
-                          .reverse()
-                          .find(
-                            (item) =>
-                              item.role === "assistant" &&
-                              item.status === "completed", // Make sure the message is completed
-                          );
-
-                        console.log(
-                          "Last assistant message:",
-                          lastAssistantMessage,
-                        );
-
-                        if (
-                          lastAssistantMessage?.status === "completed" &&
-                          (lastAssistantMessage.formatted?.transcript ||
-                            lastAssistantMessage.formatted?.text)
-                        ) {
-                          const responseText =
-                            lastAssistantMessage.formatted.transcript ||
-                            lastAssistantMessage.formatted.text ||
-                            "";
-
-                          console.log("Response text:", responseText);
-
-                          const waitTime = calculateSpeakingTime(responseText);
-                          console.log(
-                            "Found response, waiting for:",
-                            waitTime,
-                            "ms",
-                          );
-
-                          await new Promise((resolve) =>
-                            setTimeout(resolve, waitTime),
-                          );
-
-                          // Filter out the analysis prompt and include the response
-                          const conversationData = latestItems
-                            .filter(
-                              (item) =>
-                                !(
-                                  item.role === "user" &&
-                                  item.formatted.text === analysisPrompt
-                                ),
-                            )
-                            .map((item) => ({
-                              role: item.role,
-                              message:
-                                item.formatted.text ||
-                                item.formatted.transcript,
-                            }));
-
-                          console.log("Saving conversation...");
-                          if (scenarioId && currentUser?.id) {
-                            await saveConversation(
-                              Number(scenarioId),
-                              conversationData,
-                              currentUser?.id,
-                            );
-                          }
-                          disconnectConversation();
-                        } else {
-                          // Check again in 500ms
-                          console.log(
-                            "No completed response yet, checking again in 500ms",
-                          );
-                          setTimeout(checkForAnalysis, 500);
-                        }
-                      };
-
-                      // Start checking after a small delay to allow the message to be sent
-                      setTimeout(checkForAnalysis, 1000);
+                      }
+                      endConversation();
                     }
-                  : connectConversation
+                  : startConversation
               }
             />
           </div>
         </div>
       </div>
+      <audio ref={audioRef} style={{ display: "none" }} />
     </div>
   );
 };

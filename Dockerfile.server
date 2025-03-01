@@ -5,6 +5,8 @@ WORKDIR /app
 # Install FFmpeg and other required dependencies
 RUN apt-get update && \
     apt-get install -y ffmpeg && \
+    ffmpeg -version && \
+    which ffmpeg && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
@@ -17,8 +19,17 @@ RUN npm install
 # Copy the rest of the application
 COPY . .
 
-# Create uploads directory
-RUN mkdir -p uploads/scenarios
+# Create uploads directory with proper permissions
+RUN mkdir -p uploads/scenarios && \
+    chmod -R 777 uploads
+
+# Set environment variable
+ENV NODE_ENV=production
+
+# Verify FFmpeg installation and directory permissions
+RUN ffmpeg -version && \
+    ls -la /usr/bin/ffmpeg && \
+    ls -la uploads
 
 # Expose the port the app runs on
 EXPOSE 4000

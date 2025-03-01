@@ -8,8 +8,8 @@ import OpenAI from "openai";
 import ffmpeg from "fluent-ffmpeg";
 
 // Check for required environment variables
-if (!process.env.OPENAI_API_KEY) {
-  console.error("Missing OPENAI_API_KEY environment variable");
+if (!process.env.VITE_OPENAI_API_KEY) {
+  console.error("Missing VITE_OPENAI_API_KEY environment variable");
   process.exit(1);
 }
 
@@ -25,7 +25,7 @@ console.log("Using FFmpeg path:", ffmpegPath);
 ffmpeg.setFfmpegPath(ffmpegPath);
 
 const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+  apiKey: process.env.VITE_OPENAI_API_KEY,
 });
 
 // Create uploads directory if it doesn't exist

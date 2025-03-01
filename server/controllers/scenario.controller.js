@@ -13,16 +13,29 @@ if (!process.env.VITE_OPENAI_API_KEY) {
   process.exit(1);
 }
 
-// Set FFmpeg path based on OS
+// Set FFmpeg path based on environment
 const ffmpegPath =
-  process.platform === "darwin"
+  process.env.NODE_ENV === "production"
+    ? "ffmpeg" // In production, use the system-installed ffmpeg
+    : process.platform === "darwin"
     ? "/opt/homebrew/bin/ffmpeg"
     : process.platform === "linux"
     ? "/usr/bin/ffmpeg"
     : "ffmpeg";
 
+console.log("Environment:", process.env.NODE_ENV);
 console.log("Using FFmpeg path:", ffmpegPath);
-ffmpeg.setFfmpegPath(ffmpegPath);
+
+try {
+  ffmpeg.setFfmpegPath(ffmpegPath);
+  // Test if FFmpeg is available
+  const { execSync } = require("child_process");
+  execSync("ffmpeg -version");
+  console.log("FFmpeg is available");
+} catch (error) {
+  console.error("FFmpeg error:", error);
+  console.error("Please ensure FFmpeg is installed in your environment");
+}
 
 const openai = new OpenAI({
   apiKey: process.env.VITE_OPENAI_API_KEY,

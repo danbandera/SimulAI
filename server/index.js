@@ -28,16 +28,21 @@ console.log("Current directory:", process.cwd());
 console.log("Uploads directory:", uploadsDir);
 console.log("Scenarios directory:", scenariosDir);
 
-// Ensure directories exist
+// Ensure directories exist with proper permissions
 try {
   if (!fs.existsSync(uploadsDir)) {
-    fs.mkdirSync(uploadsDir, { recursive: true });
+    fs.mkdirSync(uploadsDir, { recursive: true, mode: 0o777 });
     console.log("Created uploads directory:", uploadsDir);
   }
   if (!fs.existsSync(scenariosDir)) {
-    fs.mkdirSync(scenariosDir, { recursive: true });
+    fs.mkdirSync(scenariosDir, { recursive: true, mode: 0o777 });
     console.log("Created scenarios directory:", scenariosDir);
   }
+
+  // Ensure directories have correct permissions
+  fs.chmodSync(uploadsDir, 0o777);
+  fs.chmodSync(scenariosDir, 0o777);
+  console.log("Set directory permissions");
 
   // Verify directories are writable
   fs.accessSync(uploadsDir, fs.constants.W_OK);
@@ -55,6 +60,8 @@ try {
   );
 } catch (error) {
   console.error("Directory setup error:", error);
+  console.error("Error details:", error.message);
+  if (error.code) console.error("Error code:", error.code);
 }
 
 dotenv.config();

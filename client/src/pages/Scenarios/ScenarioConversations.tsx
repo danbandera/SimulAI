@@ -101,7 +101,6 @@ const ScenarioConversations = () => {
         <div className="flex flex-col gap-5.5">
           {conversations.map((conv) => {
             const isExpanded = expandedConversations[conv._id] || false;
-            console.log(conv._id);
             return (
               <div
                 key={conv._id}

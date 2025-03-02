@@ -35,7 +35,7 @@ interface ScenarioContextValue {
   updateScenario: (id: number, scenarioData: FormData) => Promise<void>;
   saveConversation: (
     scenarioId: number,
-    conversation: Conversation,
+    conversation: { role: string; message: string }[],
     userId: number,
   ) => Promise<void>;
   getConversations: (scenarioId: number) => Promise<Conversation[]>;

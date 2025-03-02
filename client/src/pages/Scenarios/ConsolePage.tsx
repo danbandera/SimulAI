@@ -52,9 +52,9 @@ export const ConsolePage: React.FC<ConsolePageProps> = ({
       };
 
       setIsConnected(true);
-      setItems([
-        { role: "user", message: "¡Hola! Inicia con el entrenamiento" },
-      ]);
+      // setItems([
+      //   { role: "user", message: "¡Hola! Inicia con el entrenamiento" },
+      // ]);
     } catch (error) {
       console.error("Error starting conversation:", error);
       toast.error(
@@ -149,10 +149,12 @@ export const ConsolePage: React.FC<ConsolePageProps> = ({
       // Play the audio response
       if (audioRef.current && response.data.audioUrl) {
         try {
-          // Construct the audio URL based on the environment
           const audioUrl = response.data.audioUrl.startsWith("http")
-            ? response.data.audioUrl // Use as is if it's a full URL
-            : `${window.location.origin}${response.data.audioUrl}`; // Prepend origin for relative URLs
+            ? `${window.location.origin}${response.data.audioUrl}`
+            : new URL(
+                response.data.audioUrl,
+                axios.defaults.baseURL,
+              ).toString();
 
           console.log("Playing audio from:", audioUrl);
 
@@ -289,11 +291,7 @@ export const ConsolePage: React.FC<ConsolePageProps> = ({
                       if (scenarioId && currentUser?.id) {
                         await saveConversation(
                           Number(scenarioId),
-                          {
-                            scenarioId: Number(scenarioId),
-                            userId: currentUser.id,
-                            conversation: items,
-                          },
+                          items,
                           currentUser.id,
                         );
                       }

@@ -41,4 +41,4 @@ RUN mkdir -p uploads/scenarios
 EXPOSE 4000
 
 # Start the application
-CMD ["npm", "start"] 
+CMD ["npm", "run", "start"] 

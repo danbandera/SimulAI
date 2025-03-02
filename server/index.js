@@ -140,12 +140,40 @@ app.use("/api", authRoutes);
 app.use("/api/email", emailRoutes);
 
 // Serve static files from the React app
-app.use(express.static(path.join(__dirname, "../client/dist")));
+const clientDistPath = path.join(__dirname, "../client/dist");
+console.log("Client dist path:", clientDistPath);
+
+// Verify client dist directory exists
+try {
+  if (fs.existsSync(clientDistPath)) {
+    console.log(
+      "Client dist directory contents:",
+      fs.readdirSync(clientDistPath)
+    );
+  } else {
+    console.warn("Client dist directory not found at:", clientDistPath);
+  }
+} catch (error) {
+  console.error("Error checking client dist directory:", error);
+}
+
+app.use(express.static(clientDistPath));
 
 // The "catchall" handler: for any request that doesn't
 // match one above, send back the index.html file.
 app.get("*", (req, res) => {
-  res.sendFile(path.join(__dirname, "../client/dist/index.html"));
+  const indexPath = path.join(clientDistPath, "index.html");
+
+  if (fs.existsSync(indexPath)) {
+    res.sendFile(indexPath);
+  } else {
+    console.error("index.html not found at:", indexPath);
+    res
+      .status(404)
+      .send(
+        "Application not properly built. Please check the deployment configuration."
+      );
+  }
 });
 
 const PORT = process.env.PORT || 4000;

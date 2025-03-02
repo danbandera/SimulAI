@@ -149,11 +149,11 @@ export const ConsolePage: React.FC<ConsolePageProps> = ({
       // Play the audio response
       if (audioRef.current && response.data.audioUrl) {
         try {
-          // Ensure we're using the backend URL for audio files
-          const audioUrl = new URL(
-            response.data.audioUrl,
-            axios.defaults.baseURL,
-          ).toString();
+          // Construct the audio URL based on the environment
+          const audioUrl = response.data.audioUrl.startsWith("http")
+            ? response.data.audioUrl // Use as is if it's a full URL
+            : `${window.location.origin}${response.data.audioUrl}`; // Prepend origin for relative URLs
+
           console.log("Playing audio from:", audioUrl);
 
           // Validate that the audio URL exists

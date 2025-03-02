@@ -8,37 +8,24 @@ import OpenAI from "openai";
 import ffmpeg from "fluent-ffmpeg";
 
 // Check for required environment variables
-if (!process.env.VITE_OPENAI_API_KEY) {
-  console.error("Missing VITE_OPENAI_API_KEY environment variable");
+if (!process.env.OPENAI_API_KEY) {
+  console.error("Missing OPENAI_API_KEY environment variable");
   process.exit(1);
 }
 
-// Set FFmpeg path based on environment
+// Set FFmpeg path based on OS
 const ffmpegPath =
-  process.env.NODE_ENV === "production"
-    ? "ffmpeg" // In production, use the system-installed ffmpeg
-    : process.platform === "darwin"
+  process.platform === "darwin"
     ? "/opt/homebrew/bin/ffmpeg"
     : process.platform === "linux"
     ? "/usr/bin/ffmpeg"
     : "ffmpeg";
 
-console.log("Environment:", process.env.NODE_ENV);
 console.log("Using FFmpeg path:", ffmpegPath);
-
-try {
-  ffmpeg.setFfmpegPath(ffmpegPath);
-  // Test if FFmpeg is available
-  const { execSync } = require("child_process");
-  execSync("ffmpeg -version");
-  console.log("FFmpeg is available");
-} catch (error) {
-  console.error("FFmpeg error:", error);
-  console.error("Please ensure FFmpeg is installed in your environment");
-}
+ffmpeg.setFfmpegPath(ffmpegPath);
 
 const openai = new OpenAI({
-  apiKey: process.env.VITE_OPENAI_API_KEY,
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
 // Create uploads directory if it doesn't exist

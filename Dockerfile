@@ -7,7 +7,6 @@ WORKDIR /app/client
 COPY client/package*.json ./
 
 # Install client dependencies
-RUN rm -rf node_modules
 RUN npm install
 
 # Copy client source
@@ -17,41 +16,24 @@ COPY client/ .
 RUN npm run build
 
 # Final stage
-FROM node:18-slim
+FROM node:18-alpine
 
 WORKDIR /app
 
-# Install FFmpeg and other required dependencies
-RUN apt-get update && \
-    apt-get install -y ffmpeg && \
-    ffmpeg -version && \
-    which ffmpeg && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# Copy package files
+# Copy server package files
 COPY package*.json ./
 
-# Install dependencies
+# Install server dependencies
 RUN npm install
 
-# Copy the rest of the application
+# Copy server source
 COPY . .
 
-# Create uploads directory with proper permissions
-RUN mkdir -p uploads/scenarios && \
-    chmod -R 777 uploads
+# Copy client build from client-builder
+COPY --from=client-builder /app/client/dist ./client/dist
 
-# Set environment variable
-ENV NODE_ENV=production
+# Expose the port
+EXPOSE $PORT
 
-# Verify FFmpeg installation and directory permissions
-RUN ffmpeg -version && \
-    ls -la /usr/bin/ffmpeg && \
-    ls -la uploads
-
-# Expose the port the app runs on
-EXPOSE 4000
-
-# Start the application
+# Start the server
 CMD ["npm", "start"] 

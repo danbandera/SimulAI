@@ -221,78 +221,76 @@ export const createScenario = async (req, res) => {
 
 export const updateScenario = async (req, res) => {
   try {
-    upload(req, res, async (err) => {
-      if (err) {
-        return res
-          .status(400)
-          .json({ message: "File upload error", error: err.message });
-      }
+    const { id } = req.params;
+    const { title, description, status, aspects, existingFiles } = req.body;
 
-      try {
-        const { id } = req.params;
-        const { title, description, status, aspects, existingFiles } = req.body;
-
-        // Upload new files to S3
-        const newFileUrls = [];
-        if (req.files && req.files.length > 0) {
-          for (const file of req.files) {
-            try {
-              const fileUrl = await uploadToS3(file, "documents");
-              newFileUrls.push(fileUrl);
-            } catch (error) {
-              console.error("Error uploading file to S3:", error);
-            }
-          }
-        }
-
-        // Parse existing files and aspects
-        let parsedExistingFiles = [];
-        let parsedAspects = [];
+    // Upload new files to S3
+    const newFileUrls = [];
+    if (req.files && req.files.length > 0) {
+      for (const file of req.files) {
         try {
-          parsedExistingFiles = existingFiles ? JSON.parse(existingFiles) : [];
-          parsedAspects = aspects ? JSON.parse(aspects) : [];
+          const fileUrl = await uploadToS3(file, "documents");
+          newFileUrls.push(fileUrl);
         } catch (error) {
-          console.error("Error parsing JSON data:", error);
+          console.error("Error uploading file to S3:", error);
+          return res.status(500).json({
+            message: "Error uploading files to storage",
+            error: error.message,
+          });
         }
-
-        // Combine existing and new file URLs
-        const allFiles = [...parsedExistingFiles, ...newFileUrls];
-
-        const { data: scenario, error: scenarioError } = await connectSqlDB
-          .from("scenarios")
-          .update({
-            title,
-            description,
-            status,
-            aspects: parsedAspects,
-            files: allFiles,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", id)
-          .select()
-          .single();
-
-        if (scenarioError) {
-          // Clean up newly uploaded files if update fails
-          for (const fileUrl of newFileUrls) {
-            try {
-              await deleteFromS3(fileUrl);
-            } catch (error) {
-              console.error("Error deleting file from S3:", error);
-            }
-          }
-          return res.status(400).json({ message: scenarioError.message });
-        }
-
-        res.json(scenario);
-      } catch (error) {
-        console.error("Update Scenario Error:", error);
-        res.status(500).json({ message: error.message });
       }
-    });
+    }
+
+    // Parse existing files and aspects
+    let parsedExistingFiles = [];
+    let parsedAspects = [];
+    try {
+      parsedExistingFiles = existingFiles ? JSON.parse(existingFiles) : [];
+      parsedAspects = aspects ? JSON.parse(aspects) : [];
+    } catch (error) {
+      console.error("Error parsing JSON data:", error);
+      return res.status(400).json({
+        message: "Invalid JSON data provided",
+        error: error.message,
+      });
+    }
+
+    // Combine existing and new file URLs
+    const allFiles = [...parsedExistingFiles, ...newFileUrls];
+
+    const { data: scenario, error: scenarioError } = await connectSqlDB
+      .from("scenarios")
+      .update({
+        title,
+        description,
+        status,
+        aspects: parsedAspects,
+        files: allFiles,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", id)
+      .select()
+      .single();
+
+    if (scenarioError) {
+      // Clean up newly uploaded files if update fails
+      for (const fileUrl of newFileUrls) {
+        try {
+          await deleteFromS3(fileUrl);
+        } catch (error) {
+          console.error("Error deleting file from S3:", error);
+        }
+      }
+      return res.status(400).json({ message: scenarioError.message });
+    }
+
+    res.json(scenario);
   } catch (error) {
     console.error("Update Scenario Error:", error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      message: "Internal server error while updating scenario",
+      error: error.message,
+    });
   }
 };
 
@@ -339,7 +337,6 @@ export const saveConversation = async (req, res) => {
       userId,
     });
 
-    console.log(conversationToSave);
     res.status(201).json(conversationToSave);
   } catch (error) {
     console.error("Save Conversation Error:", error);

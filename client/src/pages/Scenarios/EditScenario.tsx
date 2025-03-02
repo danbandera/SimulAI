@@ -29,7 +29,6 @@ const EditScenario = () => {
     files: [] as File[],
     existingFiles: [] as string[],
   });
-  console.log(formData);
 
   const aspectOptions = [
     { value: "aspect1", label: "Aspect 1" },
@@ -114,17 +113,20 @@ const EditScenario = () => {
         JSON.stringify(formData.existingFiles),
       );
 
-      // Append each new file
       formData.files.forEach((file) => {
         formDataToSend.append("files", file);
       });
 
       await updateScenario(Number(id), formDataToSend);
       toast.success("Scenario updated successfully");
-      navigate("/scenarios");
-    } catch (error) {
+      navigate(`/scenarios/${id}`);
+    } catch (error: any) {
       console.error("Error updating scenario:", error);
-      toast.error("Error updating scenario");
+      if (error.response?.data?.message) {
+        toast.error(`Error: ${error.response.data.message}`);
+      } else {
+        toast.error("Error updating scenario");
+      }
     }
   };
 

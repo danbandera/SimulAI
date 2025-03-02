@@ -150,7 +150,7 @@ export const ConsolePage: React.FC<ConsolePageProps> = ({
       if (audioRef.current && response.data.audioUrl) {
         try {
           const audioUrl = response.data.audioUrl.startsWith("http")
-            ? `${window.location.origin}${response.data.audioUrl}`
+            ? response.data.audioUrl
             : new URL(
                 response.data.audioUrl,
                 axios.defaults.baseURL,

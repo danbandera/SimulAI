@@ -8,31 +8,20 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/*
 
-# Copy package files for both server and client
+# Copy package files
 COPY package*.json ./
-COPY client/package*.json ./client/
 
-# Install dependencies for server and client
+# Install dependencies
 RUN npm install
-RUN cd client && npm install
 
 # Copy the rest of the application
 COPY . .
 
-# Build the client application
-RUN cd client && npm run build
-
-# Create uploads directory with proper permissions
-RUN mkdir -p uploads/scenarios && \
-    chmod -R 777 uploads
-
-# Verify FFmpeg installation and directory structure
-RUN ffmpeg -version && \
-    ls -la /app/uploads && \
-    ls -la /app/client/dist
+# Create uploads directory
+RUN mkdir -p uploads/scenarios
 
 # Expose the port the app runs on
 EXPOSE 4000
 
 # Start the application
-CMD ["npm", "run", "start"] 
+CMD ["npm", "start"] 

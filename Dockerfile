@@ -1,44 +1,39 @@
 # Build stage for client
 FROM node:18-alpine as client-builder
 
-WORKDIR /app
+WORKDIR /app/client
 
+# Copy client package files
 COPY client/package*.json ./
 
-RUN rm -rf node_modules
+# Install client dependencies
 RUN npm install
 
+# Copy client source
 COPY client/ .
 
-EXPOSE 5173
+# Build client
+RUN npm run build
 
-CMD ["npm", "run", "dev"] 
-
-# Build stage for server
-FROM node:18-slim
+# Final stage
+FROM node:18-alpine
 
 WORKDIR /app
 
-# Install FFmpeg and other required dependencies
-RUN apt-get update && \
-    apt-get install -y ffmpeg && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
-
-# Copy package files
+# Copy server package files
 COPY package*.json ./
 
-# Install dependencies
+# Install server dependencies
 RUN npm install
 
-# Copy the rest of the application
+# Copy server source
 COPY . .
 
-# Create uploads directory
-RUN mkdir -p uploads/scenarios
+# Copy client build from client-builder
+COPY --from=client-builder /app/client/dist ./client/dist
 
-# Expose the port the app runs on
-EXPOSE 4000
+# Expose the port
+EXPOSE $PORT
 
-# Start the application
-CMD ["npm", "run", "start"] 
+# Start the server
+CMD ["npm", "start"] 

@@ -397,6 +397,38 @@ export const processAudio = async (req, res) => {
   try {
     console.log("Processing audio file:", req.file);
 
+    // Get the scenario ID from the request parameters
+    const { id } = req.params;
+
+    // Get the scenario data from the database
+    const { data: scenario, error } = await connectSqlDB
+      .from("scenarios")
+      .select("*")
+      .eq("id", id)
+      .single();
+
+    if (error) {
+      throw new Error(`Error fetching scenario: ${error.message}`);
+    }
+
+    // Build the system context using scenario data
+    const systemContext = `You are an AI interviewer conducting an evaluation. Here is your context:
+    - Scenario Title: ${scenario.title}
+    - Description: ${scenario.description}
+    ${
+      scenario.aspects
+        ? `- Aspects to evaluate: ${scenario.aspects
+            .map((aspect) => aspect.label)
+            .join(", ")}`
+        : ""
+    }
+    
+    IMPORTANT INSTRUCTIONS:
+    1. You MUST ONLY respond in Spanish
+    2. You should evaluate the candidate based on the aspects mentioned above
+    3. Keep your responses professional and constructive
+    4. Focus on the scenario context provided`;
+
     // Get the correct directory paths
     const uploadsDir = path.join(process.cwd(), "uploads");
     const scenariosDir = path.join(uploadsDir, "scenarios");
@@ -460,7 +492,13 @@ export const processAudio = async (req, res) => {
     // Get ChatGPT response
     const completion = await openai.chat.completions.create({
       model: "gpt-4o-mini",
-      messages: [{ role: "user", content: transcript.text }],
+      messages: [
+        {
+          role: "system",
+          content: systemContext,
+        },
+        { role: "user", content: transcript.text },
+      ],
     });
     const response = completion.choices[0].message.content;
     console.log("ChatGPT response:", response);

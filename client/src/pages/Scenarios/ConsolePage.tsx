@@ -8,6 +8,7 @@ import { useUsers } from "../../context/UserContext";
 import { useParams } from "react-router-dom";
 import axios from "../../config/axios";
 import { toast } from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 
 interface ConsolePageProps {
   aspects: string;
@@ -23,6 +24,7 @@ export const ConsolePage: React.FC<ConsolePageProps> = ({
   aspects,
   description,
 }) => {
+  const { t } = useTranslation();
   const { id: scenarioId } = useParams();
   const { currentUser } = useUsers();
   const { saveConversation } = useScenarios();
@@ -243,9 +245,11 @@ export const ConsolePage: React.FC<ConsolePageProps> = ({
       <div className="content-main">
         <div className="content-logs">
           <div className="content-block conversation">
-            <div className="content-block-title">conversation</div>
+            <div className="content-block-title">
+              {t("console.conversation")}
+            </div>
             <div className="content-block-body" data-conversation-content>
-              {!items.length && `awaiting connection...`}
+              {!items.length && t("console.awaitingConnection")}
               {items.map((item, index) => (
                 <div className="conversation-item" key={index}>
                   <div className={`speaker ${item.role}`}>
@@ -267,10 +271,10 @@ export const ConsolePage: React.FC<ConsolePageProps> = ({
               <Button
                 label={
                   isProcessing
-                    ? "Processing..."
+                    ? t("console.processing")
                     : isRecording
-                      ? "release to send"
-                      : "push to talk"
+                      ? t("console.releaseToSend")
+                      : t("console.pushToTalk")
                 }
                 buttonStyle={isRecording ? "alert" : "regular"}
                 disabled={!isConnected || isProcessing}
@@ -280,7 +284,11 @@ export const ConsolePage: React.FC<ConsolePageProps> = ({
             )}
             <div className="spacer" />
             <Button
-              label={isConnected ? "End Conversation" : "Start Conversation"}
+              label={
+                isConnected
+                  ? t("console.endConversation")
+                  : t("console.startConversation")
+              }
               iconPosition={isConnected ? "end" : "start"}
               icon={isConnected ? X : Zap}
               buttonStyle={isConnected ? "regular" : "action"}

@@ -5,7 +5,7 @@ import { useUsers } from "../../context/UserContext";
 import Breadcrumb from "../../components/Breadcrumbs/Breadcrumb";
 import { ConsolePage } from "./ConsolePage";
 import Swal from "sweetalert2";
-
+import { useTranslation } from "react-i18next";
 interface User {
   id: number;
   name: string;
@@ -27,6 +27,7 @@ interface Scenario {
 
 const ScenarioDetail = () => {
   const { id } = useParams();
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { getScenario, deleteScenario } = useScenarios();
   const { currentUser } = useUsers();
@@ -112,32 +113,32 @@ const ScenarioDetail = () => {
             <div className="border-b border-stroke py-4 px-6.5 dark:border-strokedark">
               <div className="flex flex-wrap items-center justify-between gap-3">
                 <h3 className="font-medium text-black dark:text-white">
-                  Scenario Details
+                  {t("scenarios.scenarioDetails")}
                 </h3>
                 <div className="flex gap-3">
                   <button
                     onClick={() => navigate(`/scenarios/${id}/conversations`)}
                     className="inline-flex items-center justify-center rounded-md bg-green-700 py-2 px-4 text-white hover:bg-opacity-90"
                   >
-                    View Conversations
+                    {t("scenarios.viewConversationsDetails")}
                   </button>
                   <button
                     onClick={handleDuplicate}
                     className="inline-flex items-center justify-center rounded-md bg-meta-3 py-2 px-4 text-white hover:bg-opacity-90"
                   >
-                    Duplicate
+                    {t("scenarios.duplicateDetails")}
                   </button>
                   <button
                     onClick={handleEdit}
                     className="inline-flex items-center justify-center rounded-md bg-primary py-2 px-4 text-white hover:bg-opacity-90"
                   >
-                    Edit
+                    {t("scenarios.editDetails")}
                   </button>
                   <button
                     onClick={handleDelete}
                     className="inline-flex items-center justify-center rounded-md bg-danger py-2 px-4 text-white hover:bg-opacity-90"
                   >
-                    Delete
+                    {t("scenarios.deleteDetails")}
                   </button>
                 </div>
               </div>
@@ -148,7 +149,7 @@ const ScenarioDetail = () => {
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <h4 className="font-medium text-black dark:text-white mb-2">
-                        Status
+                        {t("scenarios.status")}
                       </h4>
                       <span className="text-sm text-black dark:text-white">
                         {scenario.status}
@@ -156,7 +157,7 @@ const ScenarioDetail = () => {
                     </div>
                     <div>
                       <h4 className="font-medium text-black dark:text-white mb-2">
-                        Created At
+                        {t("scenarios.createdAt")}
                       </h4>
                       <span className="text-sm text-black dark:text-white">
                         {new Date(scenario.created_at).toLocaleString()}
@@ -165,7 +166,7 @@ const ScenarioDetail = () => {
                   </div>
                   <div>
                     <h4 className="font-medium text-black dark:text-white mb-2">
-                      Description
+                      {t("scenarios.description")}
                     </h4>
                     <p className="text-sm text-black dark:text-white">
                       {scenario.description}
@@ -174,7 +175,7 @@ const ScenarioDetail = () => {
                   {scenario.aspects && scenario.aspects.length > 0 && (
                     <div>
                       <h4 className="font-medium text-black dark:text-white mb-2">
-                        Aspects to Evaluate
+                        {t("scenarios.aspects")}
                       </h4>
                       <div className="flex flex-wrap gap-2">
                         {scenario.aspects.map((aspect, index) => (
@@ -191,7 +192,7 @@ const ScenarioDetail = () => {
                   {scenario.files && scenario.files.length > 0 && (
                     <div>
                       <h4 className="font-medium text-black dark:text-white mb-2">
-                        Attached Files
+                        {t("scenarios.attachFiles")}
                       </h4>
                       <div className="flex flex-wrap gap-2">
                         {scenario.files.map((file, index) => (
@@ -217,7 +218,7 @@ const ScenarioDetail = () => {
         <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
           <div className="border-b border-stroke py-4 px-6.5 dark:border-strokedark">
             <h3 className="font-medium text-black dark:text-white">
-              Chat Console
+              {t("scenarios.chatConsoleDetails")}
             </h3>
           </div>
           <div className="p-6.5">

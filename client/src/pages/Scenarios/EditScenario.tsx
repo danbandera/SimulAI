@@ -7,13 +7,14 @@ import Breadcrumb from "../../components/Breadcrumbs/Breadcrumb";
 import Select, { SingleValue } from "react-select";
 import CreatableSelect from "react-select/creatable";
 import { FiUpload } from "react-icons/fi";
-
+import { useTranslation } from "react-i18next";
 interface ExistingFile {
   path: string;
   name: string;
 }
 
 const EditScenario = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { getScenario, updateScenario } = useScenarios();
   const { users, getUsers } = useUsers();
@@ -132,14 +133,14 @@ const EditScenario = () => {
 
   return (
     <>
-      <Breadcrumb pageName="Edit Scenario" />
+      <Breadcrumb pageName={t("scenarios.editScenario")} />
 
       <div className="grid grid-cols-1 gap-9 sm:grid-cols-1">
         <div className="flex flex-col gap-9">
           <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
             <div className="border-b border-stroke py-4 px-6.5 dark:border-strokedark">
               <h3 className="font-medium text-black dark:text-white">
-                Edit Scenario
+                {t("scenarios.editScenario")}
               </h3>
             </div>
             <form onSubmit={handleSubmit}>
@@ -147,14 +148,15 @@ const EditScenario = () => {
                 <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
                   <div className="w-full xl:w-1/2">
                     <label className="mb-2.5 block text-black dark:text-white">
-                      Title <span className="text-meta-1">*</span>
+                      {t("scenarios.name")}{" "}
+                      <span className="text-meta-1">*</span>
                     </label>
                     <input
                       type="text"
                       name="title"
                       value={formData.title}
                       onChange={handleChange}
-                      placeholder="Enter scenario title"
+                      placeholder={t("scenarios.enterScenarioTitle")}
                       className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
                       required
                     />
@@ -162,7 +164,7 @@ const EditScenario = () => {
 
                   <div className="w-full xl:w-1/2">
                     <label className="mb-2.5 block text-black dark:text-white">
-                      Status
+                      {t("scenarios.status")}
                     </label>
                     <select
                       name="status"
@@ -170,22 +172,26 @@ const EditScenario = () => {
                       onChange={handleChange}
                       className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
                     >
-                      <option value="draft">Draft</option>
-                      <option value="published">Published</option>
-                      <option value="archived">Archived</option>
+                      <option value="draft">{t("scenarios.draft")}</option>
+                      <option value="published">
+                        {t("scenarios.published")}
+                      </option>
+                      <option value="archived">
+                        {t("scenarios.archived")}
+                      </option>
                     </select>
                   </div>
                 </div>
 
                 <div className="mb-4.5">
                   <label className="mb-2.5 block text-black dark:text-white">
-                    Description
+                    {t("scenarios.description")}
                   </label>
                   <textarea
                     name="description"
                     value={formData.description}
                     onChange={handleChange}
-                    placeholder="Enter scenario description"
+                    placeholder={t("scenarios.enterScenarioDescription")}
                     className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
                     rows={4}
                   />
@@ -193,7 +199,8 @@ const EditScenario = () => {
 
                 <div className="mb-4.5">
                   <label className="mb-2.5 block text-black dark:text-white">
-                    Aspects to evaluate <span className="text-meta-1">*</span>
+                    {t("scenarios.aspects")}{" "}
+                    <span className="text-meta-1">*</span>
                   </label>
                   <CreatableSelect
                     isMulti={true}
@@ -202,19 +209,19 @@ const EditScenario = () => {
                     onChange={handleAspectsChange}
                     className="react-select-container"
                     classNamePrefix="react-select"
-                    placeholder="Select aspects to evaluate..."
+                    placeholder={t("scenarios.selectAspects")}
                   />
                 </div>
 
                 <div className="mb-4.5">
                   <label className="mb-2.5 block text-black dark:text-white">
-                    Attach Files
+                    {t("scenarios.attachFiles")}
                   </label>
                   <div className="flex flex-col gap-4">
                     {formData.existingFiles.length > 0 && (
                       <div className="flex flex-col gap-2.5">
                         <label className="text-sm text-black dark:text-white">
-                          Existing Files:
+                          {t("scenarios.existingFiles")}
                         </label>
                         <div className="flex flex-wrap gap-3">
                           {formData.existingFiles.map((file, index) => (
@@ -257,14 +264,14 @@ const EditScenario = () => {
                       >
                         <FiUpload className="text-primary" />
                         <span className="text-primary">
-                          Click to upload files
+                          {t("scenarios.clickToUploadFiles")}
                         </span>
                       </label>
                     </div>
                     {formData.files.length > 0 && (
                       <div className="flex flex-col gap-2.5">
                         <label className="text-sm text-black dark:text-white">
-                          New Files to Upload:
+                          {t("scenarios.newFilesToUpload")}
                         </label>
                         <div className="flex flex-wrap gap-3">
                           {formData.files.map((file, index) => (
@@ -295,7 +302,7 @@ const EditScenario = () => {
                     type="submit"
                     className="flex w-1/3 justify-center rounded bg-primary p-3 font-medium text-gray hover:bg-opacity-90"
                   >
-                    Update Scenario
+                    {t("scenarios.updateScenario")}
                   </button>
                 </div>
               </div>

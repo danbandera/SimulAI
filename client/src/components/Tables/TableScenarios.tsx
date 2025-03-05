@@ -3,6 +3,7 @@ import { useScenarios } from "../../context/ScenarioContext";
 import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
 import { useUsers } from "../../context/UserContext";
+import { useTranslation } from "react-i18next";
 interface User {
   id: number;
   name: string;
@@ -23,6 +24,7 @@ interface Scenario {
 }
 
 const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { deleteScenario } = useScenarios();
   const { currentUser } = useUsers();
@@ -104,7 +106,7 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
   return (
     <div className="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
       <h4 className="mb-6 text-xl font-semibold text-black dark:text-white px-5">
-        Scenarios
+        {t("scenarios.title")}
       </h4>
 
       <div className="flex flex-col">
@@ -115,24 +117,24 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
         >
           <div className="p-2.5 xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Title
+              {t("scenarios.title")}
             </h5>
           </div>
           <div className="p-2.5 text-center xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Assigned To
+              {t("scenarios.assignedTo")}
             </h5>
           </div>
           {isAdmin && (
             <div className="p-2.5 text-center xl:p-5">
               <h5 className="text-sm font-medium uppercase xsm:text-base">
-                Created By
+                {t("scenarios.createdBy")}
               </h5>
             </div>
           )}
           <div className="p-2.5 text-center xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Details
+              {t("scenarios.details")}
             </h5>
           </div>
         </div>
@@ -174,7 +176,7 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
                 to={`/scenarios/${scenario.id}`}
                 className="inline-flex items-center justify-center rounded-md bg-green-700 py-2 px-4 text-center font-medium text-white hover:bg-opacity-90 lg:px-4 xl:px-6"
               >
-                Details
+                {t("scenarios.details")}
               </Link>
             </div>
           </div>

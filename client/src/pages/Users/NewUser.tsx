@@ -6,8 +6,9 @@ import SelectRole from "../../components/Forms/SelectGroup/SelectRole";
 import { toast } from "react-hot-toast";
 import { generateRandomPassword } from "../../utils/passwordUtils";
 import { sendEmail } from "../../api/email.api";
-
+import { useTranslation } from "react-i18next";
 const NewUser: React.FC = () => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { createUser } = useUsers();
   const { currentUser } = useUsers();
@@ -68,7 +69,7 @@ const NewUser: React.FC = () => {
 
   return (
     <>
-      <Breadcrumb pageName="New User" />
+      <Breadcrumb pageName={t("users.newUser")} />
 
       <div className="grid grid-cols-1 gap-12">
         <div className="flex flex-col gap-12">
@@ -76,7 +77,7 @@ const NewUser: React.FC = () => {
           <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
             <div className="border-b border-stroke py-4 px-6.5 dark:border-strokedark">
               <h3 className="font-medium text-black dark:text-white">
-                New User
+                {t("users.newUser")}
               </h3>
             </div>
             <form onSubmit={handleSubmit}>
@@ -84,7 +85,7 @@ const NewUser: React.FC = () => {
                 <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
                   <div className="w-full xl:w-1/2">
                     <label className="mb-2.5 block text-black dark:text-white">
-                      Name
+                      {t("users.name")}
                     </label>
                     <input
                       type="text"
@@ -99,7 +100,7 @@ const NewUser: React.FC = () => {
 
                   <div className="w-full xl:w-1/2">
                     <label className="mb-2.5 block text-black dark:text-white">
-                      Email
+                      {t("users.email")}
                     </label>
                     <input
                       type="email"
@@ -121,7 +122,7 @@ const NewUser: React.FC = () => {
                   type="submit"
                   className="flex w-full justify-center rounded bg-primary p-3 font-medium text-gray hover:bg-opacity-90"
                 >
-                  Create User
+                  {t("users.createUser")}
                 </button>
               </div>
             </form>

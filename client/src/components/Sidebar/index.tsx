@@ -3,8 +3,9 @@ import { NavLink, useLocation } from "react-router-dom";
 import SidebarLinkGroup from "./SidebarLinkGroup";
 import Logo from "../../images/logo/logo.svg";
 import { useUsers } from "../../context/UserContext";
-// import DashboardIcon from "../../images/icons/dashboard.svg";
-// import UsersIcon from "../../images/icons/users.svg";
+import { useTranslation } from "react-i18next";
+
+// import "../../i18n/config";
 
 interface SidebarProps {
   sidebarOpen: boolean;
@@ -12,6 +13,7 @@ interface SidebarProps {
 }
 
 const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
+  const { t } = useTranslation();
   const location = useLocation();
   const { pathname } = location;
   const { currentUser } = useUsers();
@@ -143,7 +145,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                               fill=""
                             />
                           </svg>
-                          Usuarios
+                          {t("sidebar.users")}
                           <svg
                             className={`absolute right-4 top-1/2 -translate-y-1/2 fill-current ${
                               open && "rotate-180"
@@ -177,7 +179,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                                   (isActive && "!text-white")
                                 }
                               >
-                                All Users
+                                {t("sidebar.allUsers")}
                               </NavLink>
                             </li>
                             <li>
@@ -188,7 +190,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                                   (isActive && "!text-white")
                                 }
                               >
-                                New User
+                                {t("sidebar.newUser")}
                               </NavLink>
                             </li>
                           </ul>
@@ -231,7 +233,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                             d="M8.5 2a.5.5 0 0 1 .5.5v11a.5.5 0 0 1-1 0v-11a.5.5 0 0 1 .5-.5m-2 2a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m4 0a.5.5 0 0 1 .5.5v7a.5.5 0 0 1-1 0v-7a.5.5 0 0 1 .5-.5m-6 1.5A.5.5 0 0 1 5 6v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m8 0a.5.5 0 0 1 .5.5v4a.5.5 0 0 1-1 0V6a.5.5 0 0 1 .5-.5m-10 1A.5.5 0 0 1 3 7v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5m12 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0V7a.5.5 0 0 1 .5-.5"
                           />
                         </svg>
-                        Scenarios
+                        {t("sidebar.scenarios")}
                         <svg
                           className={`absolute right-4 top-1/2 -translate-y-1/2 fill-current ${
                             open && "rotate-180"
@@ -264,7 +266,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                                 (isActive && "!text-white")
                               }
                             >
-                              List Scenarios
+                              {t("sidebar.allScenarios")}
                             </NavLink>
                           </li>
                           {/* Show New Scenario only to admin and company roles */}
@@ -277,7 +279,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                                   (isActive && "!text-white")
                                 }
                               >
-                                New Scenario
+                                {t("sidebar.newScenario")}
                               </NavLink>
                             </li>
                           )}

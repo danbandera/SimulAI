@@ -4,16 +4,16 @@ import { Link } from "react-router-dom";
 // import DropdownUser from "./DropdownUser";
 import LogoIcon from "../../images/logo/logo-icon.svg";
 import DarkModeSwitcher from "./DarkModeSwitcher";
-import { useAuth } from "../../context/AuthContext";
-import { useUsers } from "../../context/UserContext";
 import DropdownUser from "./DropdownUser";
+import LanguageSwitcher from "./LanguageSwitcher";
+import { useTranslation } from "react-i18next";
+import "../../i18n/config";
 
 const Header = (props: {
   sidebarOpen: string | boolean | undefined;
   setSidebarOpen: (arg0: boolean) => void;
 }) => {
-  const { logout, user } = useAuth();
-  const { currentUser } = useUsers();
+  const { t } = useTranslation();
 
   return (
     <header className="sticky top-0 z-999 flex w-full bg-white drop-shadow-1 dark:bg-boxdark dark:drop-shadow-none">
@@ -109,6 +109,7 @@ const Header = (props: {
             {/* <DarkModeSwitcher /> */}
             {/* <!-- Dark Mode Toggler --> */}
             <DarkModeSwitcher />
+            <LanguageSwitcher />
             {/* <!-- Notification Menu Area --> */}
             {/* <DropdownNotification /> */}
             {/* <!-- Notification Menu Area --> */}

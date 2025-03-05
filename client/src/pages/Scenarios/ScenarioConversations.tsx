@@ -2,10 +2,10 @@ import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useScenarios } from "../../context/ScenarioContext";
 import Breadcrumb from "../../components/Breadcrumbs/Breadcrumb";
-// import { jsPDF } from "jspdf";
+import { jsPDF } from "jspdf";
+import { useTranslation } from "react-i18next";
 
 import fs from "fs";
-import { jsPDF } from "jspdf";
 
 interface ConversationMessage {
   role: string;
@@ -22,6 +22,7 @@ interface ConversationData {
 
 const ScenarioConversations = () => {
   const { id } = useParams();
+  const { t } = useTranslation();
   const { getConversations } = useScenarios();
   const [conversations, setConversations] = useState<ConversationData[]>([]);
   const [expandedConversations, setExpandedConversations] = useState<{
@@ -95,7 +96,7 @@ const ScenarioConversations = () => {
 
   return (
     <>
-      <Breadcrumb pageName="Conversations History" />
+      <Breadcrumb pageName={t("scenarios.conversationsHistory")} />
 
       <div className="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-7.5">
         <div className="flex flex-col gap-5.5">
@@ -125,7 +126,9 @@ const ScenarioConversations = () => {
                       TXT
                     </button>
                     <button className="text-sm text-blue-500">
-                      {isExpanded ? "Collapse" : "Expand"}
+                      {isExpanded
+                        ? t("scenarios.collapse")
+                        : t("scenarios.expand")}
                     </button>
                   </div>
                 </div>
@@ -160,7 +163,7 @@ const ScenarioConversations = () => {
 
           {conversations.length === 0 && (
             <p className="text-center text-gray-500">
-              No conversations found for this scenario
+              {t("scenarios.noConversationsFound")}
             </p>
           )}
         </div>

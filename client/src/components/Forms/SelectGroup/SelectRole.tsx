@@ -1,11 +1,12 @@
 import React, { useState } from "react";
-
+import { useTranslation } from "react-i18next";
 interface SelectRoleProps {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLSelectElement>) => void;
 }
 
 const SelectRole: React.FC<SelectRoleProps> = ({ value, onChange }) => {
+  const { t } = useTranslation();
   const [isOptionSelected, setIsOptionSelected] = useState<boolean>(false);
 
   const changeTextColor = () => {
@@ -14,7 +15,9 @@ const SelectRole: React.FC<SelectRoleProps> = ({ value, onChange }) => {
 
   return (
     <div className="w-full">
-      <label className="mb-2.5 block text-black dark:text-white">Role</label>
+      <label className="mb-2.5 block text-black dark:text-white">
+        {t("users.role")}
+      </label>
       <select
         name="role"
         value={value}
@@ -27,10 +30,10 @@ const SelectRole: React.FC<SelectRoleProps> = ({ value, onChange }) => {
         }`}
         required
       >
-        <option value="">Select Role</option>
-        <option value="admin">Admin</option>
-        <option value="company">Company</option>
-        <option value="user">User</option>
+        <option value="">{t("users.selectRole")}</option>
+        <option value="admin">{t("users.admin")}</option>
+        <option value="company">{t("users.company")}</option>
+        <option value="user">{t("users.user")}</option>
       </select>
     </div>
   );

@@ -3,8 +3,10 @@ import { useUsers } from "../../context/UserContext";
 import { toast } from "react-hot-toast";
 import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
+import { useTranslation } from "react-i18next";
 
 const TableUsers = ({ users }: { users: any }) => {
+  const { t } = useTranslation();
   const navigate = useNavigate();
   const { deleteUser } = useUsers();
   const { currentUser } = useUsers();
@@ -58,32 +60,34 @@ const TableUsers = ({ users }: { users: any }) => {
   return (
     <div className="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
       <h4 className="mb-6 text-xl font-semibold text-black dark:text-white px-5">
-        Usuarios
+        {t("users.title")}
       </h4>
 
       <div className="flex flex-col">
         <div className="grid grid-cols-3 rounded-sm bg-gray-2 dark:bg-meta-4 sm:grid-cols-5">
           <div className="p-2.5 xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Nombre
+              {t("users.name")}
             </h5>
           </div>
           <div className="p-2.5 text-center xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Email
+              {t("users.email")}
             </h5>
           </div>
           <div className="p-2.5 text-center xl:p-5">
-            <h5 className="text-sm font-medium uppercase xsm:text-base">Rol</h5>
-          </div>
-          <div className="hidden p-2.5 text-center sm:block xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Editar
+              {t("users.role")}
             </h5>
           </div>
           <div className="hidden p-2.5 text-center sm:block xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Eliminar
+              {t("users.edit")}
+            </h5>
+          </div>
+          <div className="hidden p-2.5 text-center sm:block xl:p-5">
+            <h5 className="text-sm font-medium uppercase xsm:text-base">
+              {t("users.delete")}
             </h5>
           </div>
         </div>
@@ -110,10 +114,10 @@ const TableUsers = ({ users }: { users: any }) => {
             <div className="flex items-center justify-center p-2.5 xl:p-5">
               <p className="text-meta-3">
                 {user.role === "admin"
-                  ? "Admin"
+                  ? t("users.admin")
                   : user.role == "company"
-                    ? "Company"
-                    : "User"}
+                    ? t("users.company")
+                    : t("users.user")}
               </p>
             </div>
             <div className="flex items-center justify-center p-2.5 xl:p-5">
@@ -122,7 +126,7 @@ const TableUsers = ({ users }: { users: any }) => {
                 onClick={(e) => handleEdit(e, user.id)}
                 className="inline-flex items-center justify-center rounded-md bg-primary py-2 px-4 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
               >
-                Editar
+                {t("users.edit")}
               </Link>
             </div>
             <div className="flex items-center justify-center p-2.5 xl:p-5">
@@ -131,7 +135,7 @@ const TableUsers = ({ users }: { users: any }) => {
                 onClick={(e) => handleDelete(e, user.id)}
                 className="inline-flex items-center justify-center rounded-md bg-danger py-2 px-4 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
               >
-                Eliminar
+                {t("users.delete")}
               </Link>
             </div>
           </div>

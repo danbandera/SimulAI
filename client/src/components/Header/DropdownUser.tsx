@@ -4,11 +4,13 @@ import ClickOutside from "../ClickOutside";
 import UserOne from "../../images/user/default-user.jpg";
 import { useUsers } from "../../context/UserContext";
 import { useAuth } from "../../context/AuthContext";
+import { useTranslation } from "react-i18next";
 
 const DropdownUser = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const { currentUser } = useUsers();
   const { logout } = useAuth();
+  const { t } = useTranslation();
   return (
     <ClickOutside onClick={() => setDropdownOpen(false)} className="relative">
       <Link
@@ -77,7 +79,7 @@ const DropdownUser = () => {
                     fill=""
                   />
                 </svg>
-                My Profile
+                {t("settings.myAccount")}
               </Link>
             </li>
           </ul>
@@ -104,7 +106,7 @@ const DropdownUser = () => {
                 fill=""
               />
             </svg>
-            Log Out
+            {t("settings.logout")}
           </button>
         </div>
       )}

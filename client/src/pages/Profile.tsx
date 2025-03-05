@@ -4,7 +4,7 @@ import { useUsers } from "../context/UserContext";
 import { toast } from "react-hot-toast";
 import userDefaultImage from "../images/user/default-user.jpg";
 import Swal from "sweetalert2";
-
+import { useTranslation } from "react-i18next";
 interface UpdateUserData {
   name: string;
   email: string;
@@ -23,6 +23,7 @@ interface ProfileResponse {
 }
 
 const Profile = () => {
+  const { t } = useTranslation();
   const { currentUser, updateUser, updateUserProfileImage } = useUsers();
   const [isEditing, setIsEditing] = useState(false);
   const [profileImage, setProfileImage] = useState<string>(userDefaultImage);
@@ -129,7 +130,7 @@ const Profile = () => {
 
   return (
     <>
-      <Breadcrumb pageName="Profile" />
+      <Breadcrumb pageName={t("settings.myAccount")} />
 
       <div className="overflow-hidden rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
         <div className="pt-4 px-4 text-center">
@@ -190,14 +191,14 @@ const Profile = () => {
                   onClick={() => setIsEditing(!isEditing)}
                   className="inline-flex items-center justify-center rounded-md border border-primary py-2 px-6 text-center font-medium text-primary hover:bg-opacity-90"
                 >
-                  {isEditing ? "Cancel" : "Edit Profile"}
+                  {isEditing ? t("settings.cancel") : t("settings.editProfile")}
                 </button>
               </div>
 
               <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
                 <div className="w-full xl:w-1/2">
                   <label className="mb-2.5 block text-black dark:text-white">
-                    Name
+                    {t("settings.name")}
                   </label>
                   <input
                     type="text"
@@ -211,7 +212,7 @@ const Profile = () => {
 
                 <div className="w-full xl:w-1/2">
                   <label className="mb-2.5 block text-black dark:text-white">
-                    Email
+                    {t("settings.email")}
                   </label>
                   <input
                     type="email"
@@ -229,7 +230,7 @@ const Profile = () => {
                   <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
                     <div className="w-full xl:w-1/2">
                       <label className="mb-2.5 block text-black dark:text-white">
-                        New Password
+                        {t("settings.newPassword")}
                       </label>
                       <input
                         type="password"
@@ -242,7 +243,7 @@ const Profile = () => {
 
                     <div className="w-full xl:w-1/2">
                       <label className="mb-2.5 block text-black dark:text-white">
-                        Confirm New Password
+                        {t("settings.confirmNewPassword")}
                       </label>
                       <input
                         type="password"
@@ -258,7 +259,7 @@ const Profile = () => {
                     type="submit"
                     className="flex w-full justify-center rounded bg-primary p-3 font-medium text-gray hover:bg-opacity-90"
                   >
-                    Save Changes
+                    {t("settings.saveChanges")}
                   </button>
                 </>
               )}

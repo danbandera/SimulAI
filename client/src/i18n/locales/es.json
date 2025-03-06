@@ -116,5 +116,27 @@
     "email": "Correo Electrónico",
     "newPassword": "Nueva Contraseña",
     "confirmNewPassword": "Confirmar Nueva Contraseña"
+  },
+  "settingsAdmin": {
+    "title": "Configuración",
+    "AIKeys": "Claves de IA",
+    "openAIKey": "Clave de OpenAI",
+    "mistralKey": "Clave de Mistral",
+    "llamaKey": "Clave de Llama",
+    "saveKeys": "Guardar",
+    "cancelKeys": "Cancelar",
+    "mailSettings": "Configuración de Correo",
+    "mailUsername": "Nombre de Usuario",
+    "mailPassword": "Contraseña",
+    "mailHost": "Host",
+    "mailPort": "Puerto",
+    "mailFrom": "De",
+    "mailFromName": "Nombre de Remitente",
+    "awsSettings": "Configuración de AWS",
+    "awsAccessKey": "Clave de Acceso de AWS",
+    "awsSecretKey": "Clave Secreta de AWS",
+    "awsRegion": "Región de AWS",
+    "awsBucket": "Bucket de AWS",
+    "awsBucketUrl": "URL del Bucket de AWS"
   }
 }

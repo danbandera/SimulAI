@@ -35,3 +35,43 @@ CREATE TABLE password_resets (
   expires_at TIMESTAMP NOT NULL,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Create settings table
+CREATE TABLE IF NOT EXISTS settings (
+    id SERIAL PRIMARY KEY,
+    -- AI Keys
+    openai_key TEXT,
+    mistral_key TEXT,
+    llama_key TEXT,
+    -- Mail Settings
+    mail_username TEXT,
+    mail_password TEXT,
+    mail_host TEXT,
+    mail_port INTEGER,
+    mail_from TEXT,
+    mail_from_name TEXT,
+    -- AWS Settings
+    aws_access_key TEXT,
+    aws_secret_key TEXT,
+    aws_region TEXT,
+    aws_bucket TEXT,
+    aws_bucket_url TEXT,
+    -- Metadata
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create function to update timestamp
+CREATE OR REPLACE FUNCTION update_updated_at_column()
+RETURNS TRIGGER AS $$
+BEGIN
+    NEW.updated_at = CURRENT_TIMESTAMP;
+    RETURN NEW;
+END;
+$$ language 'plpgsql';
+
+-- Create trigger to update timestamp
+CREATE TRIGGER update_settings_updated_at
+    BEFORE UPDATE ON settings
+    FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column(); 

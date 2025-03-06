@@ -5,6 +5,9 @@ import {
   resetPasswordRequest,
   resetPassword,
 } from "../api/auth.api";
+
+import { getSettings, updateSettings } from "../api/settings.api";
+
 import Cookies from "js-cookie";
 
 interface User {
@@ -23,6 +26,8 @@ interface AuthContextType {
   logout: () => void;
   resetPassword: (token: string, newPassword: string) => Promise<void>;
   resetPasswordRequest: (email: string) => Promise<void>;
+  loadSettings: () => Promise<any>;
+  updateSettings: (settings: any) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -132,6 +137,24 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
+  const loadSettings = async () => {
+    try {
+      const response = await getSettings();
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  };
+
+  const updateSettingsFn = async (settings: any) => {
+    try {
+      const response = await updateSettings(settings);
+      return response;
+    } catch (error) {
+      throw error;
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
@@ -143,6 +166,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
         loading,
         resetPassword: resetPasswordFn,
         resetPasswordRequest,
+        loadSettings,
+        updateSettings: updateSettingsFn,
       }}
     >
       {children}

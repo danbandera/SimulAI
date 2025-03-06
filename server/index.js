@@ -7,6 +7,7 @@ import { dirname } from "path";
 import userRoutes from "./routes/user.routes.js";
 import scenarioRoutes from "./routes/scenario.routes.js";
 import authRoutes from "./routes/auth.routes.js";
+import settingsRoutes from "./routes/settings.routes.js";
 import cookieParser from "cookie-parser";
 import emailRoutes from "./routes/email.routes.js";
 import morgan from "morgan";
@@ -138,6 +139,7 @@ app.use("/api", userRoutes);
 app.use("/api", scenarioRoutes);
 app.use("/api", authRoutes);
 app.use("/api/email", emailRoutes);
+app.use("/api/settings", settingsRoutes);
 
 // Serve static files from the React app
 app.use(express.static(path.join(__dirname, "../client/dist")));

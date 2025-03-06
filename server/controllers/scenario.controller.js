@@ -6,12 +6,7 @@ import fs from "fs";
 import { uploadToS3, deleteFromS3 } from "../utils/s3.utils.js";
 import OpenAI from "openai";
 import ffmpeg from "fluent-ffmpeg";
-
-// Check for required environment variables
-if (!process.env.VITE_OPENAI_API_KEY) {
-  console.error("Missing VITE_OPENAI_API_KEY environment variable");
-  process.exit(1);
-}
+import { decryptValue } from "../libs/encryption.js";
 
 // Set FFmpeg path based on OS
 const ffmpegPath =
@@ -24,9 +19,37 @@ const ffmpegPath =
 console.log("Using FFmpeg path:", ffmpegPath);
 ffmpeg.setFfmpegPath(ffmpegPath);
 
-const openai = new OpenAI({
-  apiKey: process.env.VITE_OPENAI_API_KEY,
-});
+// Initialize OpenAI client with null API key
+let openai = null;
+
+// Function to get OpenAI API key from settings
+const getOpenAIKey = async () => {
+  try {
+    const { data: settings, error } = await connectSqlDB
+      .from("settings")
+      .select("openai_key")
+      .single();
+
+    if (error || !settings || !settings.openai_key) {
+      console.error("Error fetching OpenAI API key from settings:", error);
+      throw new Error("OpenAI API key not found in settings");
+    }
+
+    return decryptValue(settings.openai_key);
+  } catch (error) {
+    console.error("Error getting OpenAI API key:", error);
+    throw error;
+  }
+};
+
+// Function to ensure OpenAI client is initialized
+const ensureOpenAIClient = async () => {
+  if (!openai) {
+    const apiKey = await getOpenAIKey();
+    openai = new OpenAI({ apiKey });
+  }
+  return openai;
+};
 
 // Create uploads directory if it doesn't exist
 const uploadDir = path.join(process.cwd(), "uploads", "scenarios");
@@ -408,10 +431,18 @@ export const processAudio = async (req, res) => {
       throw new Error(`Error fetching scenario: ${error.message}`);
     }
 
+    // Ensure OpenAI client is initialized with valid API key
+    const openaiClient = await ensureOpenAIClient();
+
     // Build the system context using scenario data
     const systemContext = `You are an AI interviewer conducting an evaluation. Here is your context:
     - Scenario Title: ${scenario.title}
     - Description: ${scenario.description}
+    - Aspects to evaluate: ${scenario.aspects
+      .map((aspect) => aspect.label)
+      .join(
+        ", "
+      )}. Give a score for each aspect from 0 to 100. Example: Aspect 1: 80, Aspect 2: 70, Aspect 3: 90.
     ${
       scenario.aspects
         ? `- Aspects to evaluate: ${scenario.aspects
@@ -479,7 +510,7 @@ export const processAudio = async (req, res) => {
 
     console.log("Starting transcription...");
     // Transcribe audio
-    const transcript = await openai.audio.transcriptions.create({
+    const transcript = await openaiClient.audio.transcriptions.create({
       file: fs.createReadStream(wavFile),
       model: "whisper-1",
     });
@@ -487,7 +518,7 @@ export const processAudio = async (req, res) => {
 
     console.log("Getting ChatGPT response...");
     // Get ChatGPT response
-    const completion = await openai.chat.completions.create({
+    const completion = await openaiClient.chat.completions.create({
       model: "gpt-4o-mini",
       messages: [
         {
@@ -502,7 +533,7 @@ export const processAudio = async (req, res) => {
 
     console.log("Converting to speech...");
     // Convert response to speech
-    const mp3 = await openai.audio.speech.create({
+    const mp3 = await openaiClient.audio.speech.create({
       model: "tts-1",
       voice: "fable",
       input: response,

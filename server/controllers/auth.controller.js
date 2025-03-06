@@ -5,6 +5,31 @@ import { createAccessToken } from "../libs/jwt.js";
 import jwt from "jsonwebtoken";
 import nodemailer from "nodemailer";
 import crypto from "crypto";
+import { decryptValue } from "../libs/encryption.js";
+
+const getMailCredentials = async () => {
+  const { data: settings, error } = await connectSqlDB
+    .from("settings")
+    .select(
+      "mail_username, mail_password, mail_host, mail_port, mail_from, mail_from_name"
+    )
+    .single();
+
+  if (error || !settings) {
+    throw new Error("Mail credentials not found");
+  }
+
+  return {
+    username: decryptValue(settings.mail_username),
+    password: decryptValue(settings.mail_password),
+    host: settings.mail_host,
+    port: settings.mail_port,
+    from: settings.mail_from,
+    fromName: settings.mail_from_name,
+  };
+};
+
+const mailCredentials = await getMailCredentials();
 
 export const loginUser = async (req, res) => {
   const { email, password } = req.body;
@@ -152,16 +177,16 @@ export const requestPasswordReset = async (req, res) => {
     // Send email
     const transporter = nodemailer.createTransport({
       // Configure your email service here
-      host: process.env.SMTP_HOST,
-      port: process.env.SMTP_PORT,
+      host: mailCredentials.host,
+      port: mailCredentials.port,
       auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD,
+        user: mailCredentials.username,
+        pass: mailCredentials.password,
       },
     });
 
     await transporter.sendMail({
-      from: process.env.SMTP_FROM_EMAIL,
+      from: mailCredentials.from,
       to: email,
       subject: "Password Reset Request",
       html: `

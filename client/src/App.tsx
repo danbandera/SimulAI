@@ -31,6 +31,7 @@ import ScenarioConversations from "./pages/Scenarios/ScenarioConversations";
 import EditScenario from "./pages/Scenarios/EditScenario";
 import RecoverPassword from "./pages/RecoverPassword/RecoverPassword";
 import ResetPassword from "./pages/ResetPassword/ResetPassword";
+import SettingsAdmin from "./pages/SettingsAdmin";
 
 function App() {
   return (
@@ -130,6 +131,15 @@ function App() {
                   }
                 />
 
+                <Route
+                  path="/settings-admin"
+                  element={
+                    <>
+                      <PageTitle title="Settings | Admin Dashboard" />
+                      <SettingsAdmin />
+                    </>
+                  }
+                />
                 <Route
                   path="/dashboard"
                   element={

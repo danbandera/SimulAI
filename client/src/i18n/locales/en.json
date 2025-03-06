@@ -116,5 +116,27 @@
     "email": "Email",
     "newPassword": "New Password",
     "confirmNewPassword": "Confirm New Password"
+  },
+  "settingsAdmin": {
+    "title": "Settings",
+    "AIKeys": "AI Keys",
+    "openAIKey": "OpenAI API Key",
+    "mistralKey": "Mistral API Key",
+    "llamaKey": "Llama API Key",
+    "saveKeys": "Save",
+    "cancelKeys": "Cancel",
+    "mailSettings": "Mail Settings",
+    "mailUsername": "Mail Username",
+    "mailPassword": "Mail Password",
+    "mailHost": "Mail Host",
+    "mailPort": "Mail Port",
+    "mailFrom": "Mail From",
+    "mailFromName": "Mail From Name",
+    "awsSettings": "AWS Settings",
+    "awsAccessKey": "AWS Access Key",
+    "awsSecretKey": "AWS Secret Key",
+    "awsRegion": "AWS Region",
+    "awsBucket": "AWS Bucket",
+    "awsBucketUrl": "AWS Bucket URL"
   }
 }

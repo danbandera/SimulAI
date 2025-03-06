@@ -12,7 +12,7 @@ export const uploadToS3 = async (file, folder = "") => {
     const fileExtension = file.originalname.split(".").pop();
     const randomName = crypto.randomBytes(16).toString("hex");
     const fileName = `${folder}/${randomName}.${fileExtension}`;
-
+    console.log(fileName);
     const params = {
       Bucket: process.env.AWS_BUCKET_NAME,
       Key: fileName,
@@ -21,7 +21,7 @@ export const uploadToS3 = async (file, folder = "") => {
     };
 
     await s3Client.send(new PutObjectCommand(params));
-    const fileUrl = `${process.env.AWS_BUCKET_URL}/${fileName}`;
+    const fileUrl = `${process.env.AWS_BUCKET_URL + fileName}`;
     return fileUrl;
   } catch (error) {
     console.error("Error in uploadToS3:", error);

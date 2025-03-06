@@ -24,6 +24,8 @@ CREATE TABLE scenarios (
   parent_scenario INTEGER,
   aspects JSONB DEFAULT '[]'::jsonb,
   files TEXT[] DEFAULT '{}',
+  assignedIA VARCHAR(255),
+  assignedIAModel VARCHAR(255),
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP
 );

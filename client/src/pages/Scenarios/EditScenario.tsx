@@ -29,6 +29,16 @@ const EditScenario = () => {
     aspects: [] as { value: string; label: string }[],
     files: [] as File[],
     existingFiles: [] as string[],
+    assignedIA: "openai" as "openai" | "mistral" | "llama",
+    assignedIAModel: "gpt-4o" as
+      | "gpt-4o"
+      | "gpt-4o-mini"
+      | "gpt-3.5-turbo"
+      | "gpt-3.5-turbo-mini"
+      | "mistral-large"
+      | "mistral-small"
+      | "llama-3.1-70b"
+      | "llama-3.1-8b",
   });
 
   const aspectOptions = [
@@ -52,6 +62,18 @@ const EditScenario = () => {
         aspects: scenario.aspects || [],
         files: [],
         existingFiles: scenario.files || [],
+        assignedIA:
+          (scenario.assignedIA as "openai" | "mistral" | "llama") || "openai",
+        assignedIAModel:
+          (scenario.assignedIAModel as
+            | "gpt-4o"
+            | "gpt-4o-mini"
+            | "gpt-3.5-turbo"
+            | "gpt-3.5-turbo-mini"
+            | "mistral-large"
+            | "mistral-small"
+            | "llama-3.1-70b"
+            | "llama-3.1-8b") || "gpt-4o",
       });
     };
     loadScenario();
@@ -113,6 +135,8 @@ const EditScenario = () => {
         "existingFiles",
         JSON.stringify(formData.existingFiles),
       );
+      formDataToSend.append("assignedIA", formData.assignedIA);
+      formDataToSend.append("assignedIAModel", formData.assignedIAModel);
 
       formData.files.forEach((file) => {
         formDataToSend.append("files", file);
@@ -182,6 +206,61 @@ const EditScenario = () => {
                     </select>
                   </div>
                 </div>
+                {currentUser?.role === "admin" && (
+                  <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
+                    <div className="w-full xl:w-1/2">
+                      <label className="mb-2.5 block text-black dark:text-white">
+                        {t("scenarios.assignedIA")}
+                        <span className="text-meta-1">*</span>
+                      </label>
+                      <select
+                        name="assignedIA"
+                        value={formData.assignedIA}
+                        onChange={handleChange}
+                        className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
+                      >
+                        <option value="openai">OpenAI</option>
+                        <option value="mistral">Mistral</option>
+                        <option value="llama">Llama</option>
+                      </select>
+                    </div>
+
+                    <div className="w-full xl:w-1/2">
+                      <label className="mb-2.5 block text-black dark:text-white">
+                        {t("scenarios.assignedIAModel")}
+                      </label>
+                      <select
+                        name="assignedIAModel"
+                        value={formData.assignedIAModel}
+                        onChange={handleChange}
+                        className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
+                      >
+                        {formData.assignedIA === "openai" && (
+                          <>
+                            <option value="gpt-4o">GPT-4o</option>
+                            <option value="gpt-4o-mini">GPT-4o-mini</option>
+                            <option value="gpt-3.5-turbo">GPT-3.5-turbo</option>
+                            <option value="gpt-3.5-turbo-mini">
+                              GPT-3.5-turbo-mini
+                            </option>
+                          </>
+                        )}
+                        {formData.assignedIA === "mistral" && (
+                          <>
+                            <option value="mistral-large">Mistral-large</option>
+                            <option value="mistral-small">Mistral-small</option>
+                          </>
+                        )}
+                        {formData.assignedIA === "llama" && (
+                          <>
+                            <option value="llama-3.1-70b">Llama-3.1-70b</option>
+                            <option value="llama-3.1-8b">Llama-3.1-8b</option>
+                          </>
+                        )}
+                      </select>
+                    </div>
+                  </div>
+                )}
 
                 <div className="mb-4.5">
                   <label className="mb-2.5 block text-black dark:text-white">

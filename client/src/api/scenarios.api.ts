@@ -30,6 +30,8 @@ export interface Scenario {
   created_by_user?: User;
   aspects?: { value: string; label: string }[];
   files?: string[];
+  assignedIA?: string;
+  assignedIAModel?: string;
 }
 
 export const getScenariosRequest = async () => {

@@ -24,6 +24,8 @@ interface Scenario {
   created_by?: number;
   aspects?: { value: string; label: string }[];
   files?: File[];
+  assignedIA?: string;
+  assignedIAModel?: string;
 }
 
 interface ScenarioContextValue {

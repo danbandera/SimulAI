@@ -166,6 +166,8 @@ export const createScenario = async (req, res) => {
           parent_scenario,
           status,
           aspects,
+          assignedIA,
+          assignedIAModel,
         } = req.body;
 
         // Handle file uploads to S3
@@ -200,6 +202,8 @@ export const createScenario = async (req, res) => {
             parent_scenario: parent_scenario || null,
             aspects: parsedAspects,
             files: fileUrls,
+            assignedIA,
+            assignedIAModel,
           })
           .select(
             `
@@ -245,8 +249,17 @@ export const createScenario = async (req, res) => {
 export const updateScenario = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, description, status, aspects, existingFiles } = req.body;
-
+    const {
+      title,
+      description,
+      status,
+      aspects,
+      existingFiles,
+      assignedIA,
+      assignedIAModel,
+    } = req.body;
+    console.log("assignedIA", assignedIA);
+    console.log("assignedIAModel", assignedIAModel);
     // Upload new files to S3
     const newFileUrls = [];
     if (req.files && req.files.length > 0) {
@@ -289,12 +302,14 @@ export const updateScenario = async (req, res) => {
         status,
         aspects: parsedAspects,
         files: allFiles,
+        assignedIA,
+        assignedIAModel,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
       .select()
       .single();
-
+    console.log("scenario", scenario);
     if (scenarioError) {
       // Clean up newly uploaded files if update fails
       for (const fileUrl of newFileUrls) {

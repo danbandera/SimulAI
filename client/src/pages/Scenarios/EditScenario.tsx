@@ -247,14 +247,45 @@ const EditScenario = () => {
                         )}
                         {formData.assignedIA === "mistral" && (
                           <>
-                            <option value="mistral-large">Mistral-large</option>
-                            <option value="mistral-small">Mistral-small</option>
+                            <option value="mistral-large-latest">
+                              Mistral-large-latest
+                            </option>
+                            <option value="pixtral-large-latest">
+                              Pixtral-large-latest
+                            </option>
+                            <option value="mistral-moderation-latest">
+                              Mistral-moderation-latest
+                            </option>
+                            <option value="ministral-3b-latest">
+                              Ministral-3b-latest
+                            </option>
+                            <option value="ministral-8b-latest">
+                              Ministral-8b-latest
+                            </option>
+                            <option value="open-mistral-nemo">
+                              Open-mistral-nemo
+                            </option>
+                            <option value="mistral-small-latest">
+                              Mistral-small-latest
+                            </option>
+                            <option value="mistral-saba-latest">
+                              Mistral-saba-latest
+                            </option>
+                            <option value="codestral-latest">
+                              Codestral-latest
+                            </option>
                           </>
                         )}
                         {formData.assignedIA === "llama" && (
                           <>
-                            <option value="llama-3.1-70b">Llama-3.1-70b</option>
-                            <option value="llama-3.1-8b">Llama-3.1-8b</option>
+                            <option value="llama3.3-70b">Llama 3.3 70B</option>
+                            <option value="llama3.1-405b">
+                              Llama 3.1 405B
+                            </option>
+                            <option value="llama3.1-8b">Llama 3.1 8B</option>
+                            <option value="llama3.1-8b-instruct">
+                              Llama 3.1 8B Instruct
+                            </option>
                           </>
                         )}
                       </select>

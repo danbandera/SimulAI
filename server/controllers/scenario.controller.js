@@ -7,6 +7,8 @@ import { uploadToS3, deleteFromS3 } from "../utils/s3.utils.js";
 import OpenAI from "openai";
 import ffmpeg from "fluent-ffmpeg";
 import { decryptValue } from "../libs/encryption.js";
+import MistralClient from "../clients/mistral.client.js";
+import LlamaClient from "../clients/llama.client.js";
 
 // Set FFmpeg path based on OS
 const ffmpegPath =
@@ -42,13 +44,101 @@ const getOpenAIKey = async () => {
   }
 };
 
-// Function to ensure OpenAI client is initialized
-const ensureOpenAIClient = async () => {
-  if (!openai) {
-    const apiKey = await getOpenAIKey();
-    openai = new OpenAI({ apiKey });
+// Function to get Mistral API key from settings
+const getMistralKey = async () => {
+  try {
+    const { data: settings, error } = await connectSqlDB
+      .from("settings")
+      .select("mistral_key")
+      .single();
+
+    if (error || !settings || !settings.mistral_key) {
+      console.error("Error fetching Mistral API key from settings:", error);
+      throw new Error("Mistral API key not found in settings");
+    }
+
+    return decryptValue(settings.mistral_key);
+  } catch (error) {
+    console.error("Error getting Mistral API key:", error);
+    throw error;
   }
-  return openai;
+};
+
+// Function to get Llama API key from settings
+const getLlamaKey = async () => {
+  try {
+    const { data: settings, error } = await connectSqlDB
+      .from("settings")
+      .select("llama_key")
+      .single();
+
+    if (error || !settings || !settings.llama_key) {
+      console.error("Error fetching Llama API key from settings:", error);
+      throw new Error("Llama API key not found in settings");
+    }
+
+    return decryptValue(settings.llama_key);
+  } catch (error) {
+    console.error("Error getting Llama API key:", error);
+    throw error;
+  }
+};
+
+// Function to get the appropriate AI client based on the scenario settings
+const getAIClient = async (assignedIA) => {
+  switch (assignedIA) {
+    case "openai":
+      const openaiKey = await getOpenAIKey();
+      return new OpenAI({ apiKey: openaiKey });
+    case "mistral":
+      const mistralKey = await getMistralKey();
+      // Initialize Mistral client here
+      return new MistralClient({ apiKey: mistralKey });
+    case "llama":
+      const llamaKey = await getOpenAIKey();
+      // Initialize Llama client here
+      return new LlamaClient({ apiKey: llamaKey });
+    default:
+      throw new Error(`Unsupported AI provider: ${assignedIA}`);
+  }
+};
+
+// Function to process text with the appropriate AI model
+const processWithAI = async (client, model, systemContext, userContent) => {
+  switch (client.constructor.name) {
+    case "OpenAI":
+      const completion = await client.chat.completions.create({
+        model: model,
+        messages: [
+          { role: "system", content: systemContext },
+          { role: "user", content: userContent },
+        ],
+      });
+      return completion.choices[0].message.content;
+
+    case "MistralClient":
+      // Add Mistral API call here
+      const mistralResponse = await client.chat({
+        model: model,
+        messages: [
+          { role: "system", content: systemContext },
+          { role: "user", content: userContent },
+        ],
+      });
+      return mistralResponse.choices[0].message.content;
+
+    case "LlamaClient":
+      // Add Llama API call here
+      const llamaResponse = await client.complete({
+        model: model,
+        system: systemContext,
+        prompt: userContent,
+      });
+      return llamaResponse.choices[0].text;
+
+    default:
+      throw new Error(`Unsupported AI client type: ${client.constructor.name}`);
+  }
 };
 
 // Create uploads directory if it doesn't exist
@@ -446,8 +536,8 @@ export const processAudio = async (req, res) => {
       throw new Error(`Error fetching scenario: ${error.message}`);
     }
 
-    // Ensure OpenAI client is initialized with valid API key
-    const openaiClient = await ensureOpenAIClient();
+    // Get the appropriate AI client based on the scenario's assigned AI
+    const aiClient = await getAIClient(scenario.assignedIA);
 
     // Build the system context using scenario data
     const systemContext = `You are an AI interviewer conducting an evaluation. Here is your context:
@@ -524,31 +614,29 @@ export const processAudio = async (req, res) => {
     });
 
     console.log("Starting transcription...");
-    // Transcribe audio
-    const transcript = await openaiClient.audio.transcriptions.create({
-      file: fs.createReadStream(wavFile),
-      model: "whisper-1",
-    });
+    // Use OpenAI's Whisper for transcription (as specified)
+    const openaiForTranscription = new OpenAI({ apiKey: await getOpenAIKey() });
+    const transcript = await openaiForTranscription.audio.transcriptions.create(
+      {
+        file: fs.createReadStream(wavFile),
+        model: "whisper-1",
+      }
+    );
     console.log("Transcription complete:", transcript.text);
 
-    console.log("Getting ChatGPT response...");
-    // Get ChatGPT response
-    const completion = await openaiClient.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        {
-          role: "system",
-          content: systemContext,
-        },
-        { role: "user", content: transcript.text },
-      ],
-    });
-    const response = completion.choices[0].message.content;
-    console.log("ChatGPT response:", response);
+    console.log("Getting AI response...");
+    // Process with the appropriate AI model
+    const response = await processWithAI(
+      aiClient,
+      scenario.assignedIAModel,
+      systemContext,
+      transcript.text
+    );
+    console.log("AI response:", response);
 
     console.log("Converting to speech...");
-    // Convert response to speech
-    const mp3 = await openaiClient.audio.speech.create({
+    // Use OpenAI's TTS for speech conversion (as specified)
+    const mp3 = await openaiForTranscription.audio.speech.create({
       model: "tts-1",
       voice: "fable",
       input: response,

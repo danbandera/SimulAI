@@ -253,13 +253,12 @@ export const ConsolePage: React.FC<ConsolePageProps> = ({
               {items.map((item, index) => (
                 <div className="conversation-item" key={index}>
                   <div className={`speaker ${item.role}`}>
-                    <div>{item.role}</div>
+                    <div>
+                      {item.role.charAt(0).toUpperCase() + item.role.slice(1)}:
+                    </div>
                   </div>
                   <div className="speaker-content">
-                    <div>
-                      {item.role.charAt(0).toUpperCase() + item.role.slice(1)}:{" "}
-                      {item.message}
-                    </div>
+                    <div>{item.message}</div>
                   </div>
                 </div>
               ))}

@@ -57,7 +57,7 @@ function App() {
                   </ProtectedRoute>
                 }
               >
-                <Route path="/" element={<h3>Dashboard</h3>} />
+                <Route path="/" element={<ECommerce />} />
                 <Route
                   path="/users"
                   element={

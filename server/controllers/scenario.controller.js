@@ -9,6 +9,7 @@ import ffmpeg from "fluent-ffmpeg";
 import { decryptValue } from "../libs/encryption.js";
 import MistralClient from "../clients/mistral.client.js";
 import LlamaClient from "../clients/llama.client.js";
+import OpenAIClient from "../clients/openai.client.js";
 
 // Set FFmpeg path based on OS
 const ffmpegPath =
@@ -89,14 +90,12 @@ const getAIClient = async (assignedIA) => {
   switch (assignedIA) {
     case "openai":
       const openaiKey = await getOpenAIKey();
-      return new OpenAI({ apiKey: openaiKey });
+      return new OpenAIClient({ apiKey: openaiKey });
     case "mistral":
       const mistralKey = await getMistralKey();
-      // Initialize Mistral client here
       return new MistralClient({ apiKey: mistralKey });
     case "llama":
-      const llamaKey = await getOpenAIKey();
-      // Initialize Llama client here
+      const llamaKey = await getLlamaKey();
       return new LlamaClient({ apiKey: llamaKey });
     default:
       throw new Error(`Unsupported AI provider: ${assignedIA}`);
@@ -105,30 +104,21 @@ const getAIClient = async (assignedIA) => {
 
 // Function to process text with the appropriate AI model
 const processWithAI = async (client, model, systemContext, userContent) => {
-  switch (client.constructor.name) {
-    case "OpenAI":
-      const completion = await client.chat.completions.create({
-        model: model,
-        messages: [
-          { role: "system", content: systemContext },
-          { role: "user", content: userContent },
-        ],
-      });
-      return completion.choices[0].message.content;
+  const messages = [
+    { role: "system", content: systemContext },
+    { role: "user", content: userContent },
+  ];
 
+  switch (client.constructor.name) {
+    case "OpenAIClient":
     case "MistralClient":
-      // Add Mistral API call here
-      const mistralResponse = await client.chat({
+      const response = await client.chat({
         model: model,
-        messages: [
-          { role: "system", content: systemContext },
-          { role: "user", content: userContent },
-        ],
+        messages: messages,
       });
-      return mistralResponse.choices[0].message.content;
+      return response.choices[0].message.content;
 
     case "LlamaClient":
-      // Add Llama API call here
       const llamaResponse = await client.complete({
         model: model,
         system: systemContext,
@@ -537,6 +527,10 @@ export const processAudio = async (req, res) => {
     // Get the appropriate AI client based on the scenario's assigned AI
     const aiClient = await getAIClient(scenario.assignedIA);
 
+    // Get OpenAI client specifically for audio processing
+    const openaiKey = await getOpenAIKey();
+    const openaiClient = new OpenAIClient({ apiKey: openaiKey });
+
     // Build the system context using scenario data
     const systemContext = `You are an AI interviewer conducting an evaluation. Here is your context:
     - Scenario Title: ${scenario.title}
@@ -606,12 +600,8 @@ export const processAudio = async (req, res) => {
     });
 
     // Use OpenAI's Whisper for transcription
-    const openaiForTranscription = new OpenAI({ apiKey: await getOpenAIKey() });
-    const transcript = await openaiForTranscription.audio.transcriptions.create(
-      {
-        file: fs.createReadStream(wavFile),
-        model: "whisper-1",
-      }
+    const transcript = await openaiClient.createTranscription(
+      fs.createReadStream(wavFile)
     );
 
     // Process with the appropriate AI model
@@ -623,11 +613,7 @@ export const processAudio = async (req, res) => {
     );
 
     // Generate speech from response
-    const mp3 = await openaiForTranscription.audio.speech.create({
-      model: "tts-1",
-      voice: "fable",
-      input: response,
-    });
+    const mp3 = await openaiClient.createSpeech(response);
 
     const buffer = Buffer.from(await mp3.arrayBuffer());
     const tempResponseFile = path.join(

@@ -13,6 +13,7 @@ import {
   processAudio,
 } from "../controllers/scenario.controller.js";
 import multer from "multer";
+import { authRequired } from "../middlewares/validateToken.js";
 
 // Configure multer for file uploads
 const upload = multer({
@@ -36,7 +37,7 @@ router.put("/scenarios/:id", upload.array("files"), updateScenario);
 router.delete("/scenarios/:id", deleteScenario);
 router.get("/scenarios/user/:id", getScenarioByUserId);
 
-// Audio processing route with its own multer config
+// Audio processing route with its own multer config and auth middleware
 const audioUpload = multer({
   storage: multer.memoryStorage(),
   limits: {
@@ -45,6 +46,7 @@ const audioUpload = multer({
 });
 router.post(
   "/scenarios/:id/process-audio",
+  authRequired,
   audioUpload.single("audio"),
   processAudio
 );

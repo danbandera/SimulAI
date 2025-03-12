@@ -149,12 +149,12 @@ export const ConsolePage: React.FC<ConsolePageProps> = ({
       ]);
 
       // Play the audio response
-      if (audioRef.current && response.data.audioUrl) {
+      if (audioRef.current && response.data.aiAudioUrl) {
         try {
-          const audioUrl = response.data.audioUrl.startsWith("http")
-            ? response.data.audioUrl
+          const audioUrl = response.data.aiAudioUrl.startsWith("http")
+            ? response.data.aiAudioUrl
             : new URL(
-                response.data.audioUrl,
+                response.data.aiAudioUrl,
                 axios.defaults.baseURL,
               ).toString();
 

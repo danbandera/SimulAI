@@ -475,15 +475,13 @@ export const saveConversation = async (req, res) => {
 export const getConversations = async (req, res) => {
   try {
     const { scenarioId } = req.params;
-    const conversations = await Conversation.find({ scenarioId });
 
-    if (!conversations || conversations.length === 0) {
-      return res.status(404).json({
-        message: `No conversations found for scenario ${scenarioId}`,
-      });
-    }
+    const conversations = await Conversation.find({
+      scenarioId: Number(scenarioId),
+    });
 
-    res.json(conversations);
+    // Return empty array if no conversations found instead of 404
+    res.json(conversations || []);
   } catch (error) {
     console.error("Get Conversations Error:", error);
     res.status(500).json({ message: error.message });
@@ -566,33 +564,27 @@ export const processAudio = async (req, res) => {
     const uploadsDir = path.join(process.cwd(), "uploads");
     const scenariosDir = path.join(uploadsDir, "scenarios");
 
-    console.log("Current directory:", process.cwd());
-    console.log("Uploads directory:", uploadsDir);
-    console.log("Scenarios directory:", scenariosDir);
-
+    // Ensure directories exist
     if (!fs.existsSync(uploadsDir)) {
       fs.mkdirSync(uploadsDir, { recursive: true });
-      console.log("Created uploads directory");
     }
     if (!fs.existsSync(scenariosDir)) {
       fs.mkdirSync(scenariosDir, { recursive: true });
-      console.log("Created scenarios directory");
     }
-
-    // List directory contents before processing
-    console.log(
-      "Initial uploads directory contents:",
-      fs.readdirSync(uploadsDir)
-    );
-    console.log(
-      "Initial scenarios directory contents:",
-      fs.readdirSync(scenariosDir)
-    );
 
     // Create temporary file path for the uploaded audio
     const tempFile = path.join(scenariosDir, `temp-${Date.now()}.webm`);
     fs.writeFileSync(tempFile, req.file.buffer);
-    console.log("Temporary file created:", tempFile);
+
+    // Upload user's audio to S3 first
+    const userAudioUrl = await uploadToS3(
+      {
+        buffer: req.file.buffer,
+        originalname: `user-audio-${Date.now()}.webm`,
+        mimetype: req.file.mimetype,
+      },
+      "audio-responses"
+    );
 
     // Convert webm to wav
     const wavFile = path.join(scenariosDir, `temp-${Date.now()}.wav`);
@@ -613,8 +605,7 @@ export const processAudio = async (req, res) => {
         .save(wavFile);
     });
 
-    console.log("Starting transcription...");
-    // Use OpenAI's Whisper for transcription (as specified)
+    // Use OpenAI's Whisper for transcription
     const openaiForTranscription = new OpenAI({ apiKey: await getOpenAIKey() });
     const transcript = await openaiForTranscription.audio.transcriptions.create(
       {
@@ -622,9 +613,7 @@ export const processAudio = async (req, res) => {
         model: "whisper-1",
       }
     );
-    console.log("Transcription complete:", transcript.text);
 
-    console.log("Getting AI response...");
     // Process with the appropriate AI model
     const response = await processWithAI(
       aiClient,
@@ -632,10 +621,8 @@ export const processAudio = async (req, res) => {
       systemContext,
       transcript.text
     );
-    console.log("AI response:", response);
 
-    console.log("Converting to speech...");
-    // Use OpenAI's TTS for speech conversion (as specified)
+    // Generate speech from response
     const mp3 = await openaiForTranscription.audio.speech.create({
       model: "tts-1",
       voice: "fable",
@@ -643,41 +630,58 @@ export const processAudio = async (req, res) => {
     });
 
     const buffer = Buffer.from(await mp3.arrayBuffer());
-    const responseFile = path.join(scenariosDir, `response-${Date.now()}.mp3`);
-    fs.writeFileSync(responseFile, buffer);
-    console.log("Speech file saved:", responseFile);
+    const tempResponseFile = path.join(
+      scenariosDir,
+      `response-${Date.now()}.mp3`
+    );
+    fs.writeFileSync(tempResponseFile, buffer);
 
-    // Verify the file was created and log its details
-    if (!fs.existsSync(responseFile)) {
-      throw new Error("Failed to save audio file");
-    }
-    console.log("Response file size:", fs.statSync(responseFile).size);
-
-    // List directory contents after saving
-    console.log(
-      "Final scenarios directory contents:",
-      fs.readdirSync(scenariosDir)
+    // Upload the AI response audio to S3
+    const s3AudioUrl = await uploadToS3(
+      {
+        buffer: buffer,
+        originalname: `ai-response-${Date.now()}.mp3`,
+        mimetype: "audio/mpeg",
+      },
+      "audio-responses"
     );
 
-    // Clean up temporary files
+    // Clean up all temporary files
     try {
       fs.unlinkSync(tempFile);
       fs.unlinkSync(wavFile);
+      fs.unlinkSync(tempResponseFile);
       console.log("Temporary files cleaned up");
     } catch (cleanupError) {
       console.error("Error cleaning up temporary files:", cleanupError);
     }
 
-    // Send the response with the file path relative to the uploads directory
-    const audioUrl = `/uploads/scenarios/${path.basename(responseFile)}`;
-    console.log("Audio URL:", audioUrl);
-    console.log("Full file path:", responseFile);
-    console.log("File exists check:", fs.existsSync(responseFile));
+    // Save the conversation with both audio URLs
+    const conversationToSave = await Conversation.create({
+      scenarioId: Number(id),
+      userId: req.user.id,
+      conversation: [
+        {
+          role: "user",
+          message: transcript.text,
+          audioUrl: userAudioUrl,
+        },
+        {
+          role: "assistant",
+          message: response,
+          audioUrl: s3AudioUrl,
+        },
+      ],
+    });
+
+    console.log("Saved conversation with audio:", conversationToSave);
 
     res.json({
       transcription: transcript.text,
       response,
-      audioUrl,
+      userAudioUrl: userAudioUrl,
+      aiAudioUrl: s3AudioUrl,
+      conversation: conversationToSave,
     });
   } catch (error) {
     console.error("Detailed error in processAudio:", error);

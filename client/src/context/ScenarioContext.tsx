@@ -26,6 +26,7 @@ interface Scenario {
   files?: File[];
   assignedIA?: string;
   assignedIAModel?: string;
+  audio_url?: string;
 }
 
 interface ScenarioContextValue {
@@ -37,7 +38,7 @@ interface ScenarioContextValue {
   updateScenario: (id: number, scenarioData: FormData) => Promise<void>;
   saveConversation: (
     scenarioId: number,
-    conversation: { role: string; message: string }[],
+    conversation: Array<{ role: string; message: string; audioUrl?: string }>,
     userId: number,
   ) => Promise<void>;
   getConversations: (scenarioId: number) => Promise<Conversation[]>;
@@ -121,7 +122,7 @@ export const ScenarioProvider = ({ children }: ScenarioProviderProps) => {
 
   const saveConversation = async (
     scenarioId: number,
-    conversation: Conversation,
+    conversation: Array<{ role: string; message: string; audioUrl?: string }>,
     userId: number,
   ) => {
     try {
@@ -140,8 +141,10 @@ export const ScenarioProvider = ({ children }: ScenarioProviderProps) => {
   };
 
   const getConversations = async (scenarioId: number) => {
+    console.log("scenarioId", scenarioId);
     try {
       const response = await getConversationsRequest(scenarioId);
+      console.log("response", response);
       return response;
     } catch (error) {
       console.error("Error getting conversations:", error);

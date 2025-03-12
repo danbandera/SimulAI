@@ -6,37 +6,53 @@ import { jsPDF } from "jspdf";
 import { useTranslation } from "react-i18next";
 
 import fs from "fs";
+import { log } from "console";
 
 interface ConversationMessage {
   role: string;
   message: string;
+  audioUrl?: string;
 }
 
-interface ConversationData {
+interface Conversation {
   _id: string;
-  scenario_id: number;
-  user_id: number;
+  scenarioId: number;
+  userId: number;
   conversation: ConversationMessage[];
   createdAt: string;
+  updatedAt: string;
 }
 
 const ScenarioConversations = () => {
   const { id } = useParams();
   const { t } = useTranslation();
   const { getConversations } = useScenarios();
-  const [conversations, setConversations] = useState<ConversationData[]>([]);
+
+  const [conversations, setConversations] = useState<Conversation[]>([]);
   const [expandedConversations, setExpandedConversations] = useState<{
-    [key: number]: boolean;
+    [key: string]: boolean;
   }>({});
 
   useEffect(() => {
     const loadConversations = async () => {
       if (id) {
         try {
-          const data = await getConversations(Number(id));
-          setConversations(data);
+          const apiData = await getConversations(Number(id));
+          console.log("Number(id)", Number(id));
+          // Transform API response to match our interface
+          const transformedData = apiData.map((conv: any) => ({
+            _id: conv._id,
+            scenarioId: conv.scenarioId,
+            userId: conv.userId,
+            conversation: conv.conversation,
+            createdAt: conv.createdAt,
+            updatedAt: conv.updatedAt || conv.createdAt,
+          }));
+          setConversations(transformedData);
         } catch (error) {
           console.error("Error loading conversations:", error);
+          // Set empty array on error to avoid undefined state
+          setConversations([]);
         }
       }
     };
@@ -44,14 +60,14 @@ const ScenarioConversations = () => {
     loadConversations();
   }, [id, getConversations]);
 
-  const toggleExpand = (convId: number) => {
+  const toggleExpand = (convId: string) => {
     setExpandedConversations((prev) => ({
       ...prev,
       [convId]: !prev[convId],
     }));
   };
 
-  const exportAsPDF = (conv: ConversationData, e: React.MouseEvent) => {
+  const exportAsPDF = (conv: Conversation, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent expanding the conversation when clicking export
     const doc = new jsPDF();
     const timestamp = new Date(conv.createdAt).toLocaleString();
@@ -76,7 +92,7 @@ const ScenarioConversations = () => {
     doc.save(`conversation-${timestamp}.pdf`);
   };
 
-  const exportAsTXT = (conv: ConversationData, e: React.MouseEvent) => {
+  const exportAsTXT = (conv: Conversation, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent expanding the conversation when clicking export
     const timestamp = new Date(conv.createdAt).toLocaleString();
     let content = `Conversation Export - ${timestamp}\n\n`;
@@ -152,6 +168,21 @@ const ScenarioConversations = () => {
                           }`}
                         >
                           <p className="text-sm">{msg.message}</p>
+                          {msg.audioUrl && (
+                            <div className="mt-2">
+                              <audio controls className="w-full">
+                                <source
+                                  src={msg.audioUrl}
+                                  type={
+                                    msg.role === "user"
+                                      ? "audio/webm"
+                                      : "audio/mpeg"
+                                  }
+                                />
+                                {t("scenarios.audioNotSupported")}
+                              </audio>
+                            </div>
+                          )}
                         </div>
                       </div>
                     ))}

@@ -690,9 +690,7 @@ export const processAudio = async (req, res) => {
     - Description: ${scenario.description}
     - Aspects to evaluate: ${scenario.aspects
       .map((aspect) => aspect.label)
-      .join(
-        ", "
-      )}. Give a score for each aspect from 0 to 100. Example: Aspect 1: 80, Aspect 2: 70, Aspect 3: 90.
+      .join(", ")}.
     ${
       scenario.aspects
         ? `- Aspects to evaluate: ${scenario.aspects
@@ -700,7 +698,9 @@ export const processAudio = async (req, res) => {
             .join(", ")}`
         : ""
     }
-    - PDF contents: ${scenario.pdf_contents}
+    - This content from a (or many) PDF use this information to evaluate the candidate: ${
+      scenario.pdf_contents
+    }
     
     IMPORTANT INSTRUCTIONS:
     1. You MUST ONLY respond in Spanish
@@ -793,30 +793,12 @@ export const processAudio = async (req, res) => {
       console.error("Error cleaning up temporary files:", cleanupError);
     }
 
-    // Save the conversation with both audio URLs
-    const conversationToSave = await Conversation.create({
-      scenarioId: Number(id),
-      userId: req.user.id,
-      conversation: [
-        {
-          role: "user",
-          message: transcript.text,
-          audioUrl: userAudioUrl,
-        },
-        {
-          role: "assistant",
-          message: response,
-          audioUrl: s3AudioUrl,
-        },
-      ],
-    });
-
+    // Return the transcription, response, and audio URLs without saving the conversation
     res.json({
       transcription: transcript.text,
       response,
       userAudioUrl: userAudioUrl,
       aiAudioUrl: s3AudioUrl,
-      conversation: conversationToSave,
     });
   } catch (error) {
     console.error("Detailed error in processAudio:", error);

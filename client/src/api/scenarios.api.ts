@@ -6,6 +6,7 @@ export interface Conversation {
   conversation: Array<{
     role: string;
     message: string;
+    audioUrl?: string;
   }>;
 }
 
@@ -106,7 +107,7 @@ export const updateScenarioRequest = async (
 
 export const saveConversationRequest = async (
   scenarioId: number | string,
-  conversation: Array<{ role: string; message: string }>,
+  conversation: Array<{ role: string; message: string; audioUrl?: string }>,
   userId: number | undefined,
 ) => {
   if (!scenarioId || !userId) {

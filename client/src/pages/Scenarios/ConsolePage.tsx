@@ -18,6 +18,7 @@ interface ConsolePageProps {
 interface ConversationItem {
   role: string;
   message: string;
+  audioUrl?: string;
 }
 
 export const ConsolePage: React.FC<ConsolePageProps> = ({
@@ -74,13 +75,20 @@ export const ConsolePage: React.FC<ConsolePageProps> = ({
       mediaRecorderRef.current?.stream
         .getTracks()
         .forEach((track) => track.stop());
+
+      // Save the complete conversation before clearing
+      if (scenarioId && currentUser?.id && items.length > 0) {
+        await saveConversation(Number(scenarioId), items, currentUser.id);
+        toast.success(t("console.conversationSaved"));
+      }
+
       setIsConnected(false);
       setItems([]);
     } catch (error) {
       console.error("Error ending conversation:", error);
       toast.error("Error ending conversation");
     }
-  }, []);
+  }, [items, scenarioId, currentUser, saveConversation, t]);
 
   const startRecording = async () => {
     try {
@@ -139,13 +147,21 @@ export const ConsolePage: React.FC<ConsolePageProps> = ({
       // Add user's transcribed message to conversation
       setItems((prevItems) => [
         ...prevItems,
-        { role: "user", message: response.data.transcription },
+        {
+          role: "user",
+          message: response.data.transcription,
+          audioUrl: response.data.userAudioUrl,
+        },
       ]);
 
       // Add assistant's response to conversation
       setItems((prevItems) => [
         ...prevItems,
-        { role: "assistant", message: response.data.response },
+        {
+          role: "assistant",
+          message: response.data.response,
+          audioUrl: response.data.aiAudioUrl,
+        },
       ]);
 
       // Play the audio response
@@ -291,21 +307,7 @@ export const ConsolePage: React.FC<ConsolePageProps> = ({
               iconPosition={isConnected ? "end" : "start"}
               icon={isConnected ? X : Zap}
               buttonStyle={isConnected ? "regular" : "action"}
-              onClick={
-                isConnected
-                  ? async () => {
-                      // Save the conversation before ending
-                      if (scenarioId && currentUser?.id) {
-                        await saveConversation(
-                          Number(scenarioId),
-                          items,
-                          currentUser.id,
-                        );
-                      }
-                      endConversation();
-                    }
-                  : startConversation
-              }
+              onClick={isConnected ? endConversation : startConversation}
             />
           </div>
         </div>

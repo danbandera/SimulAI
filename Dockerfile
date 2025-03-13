@@ -1,5 +1,5 @@
 # Build stage for client
-FROM node:18-alpine as client-builder
+FROM node:20-alpine as client-builder
 
 WORKDIR /app/client
 
@@ -19,14 +19,27 @@ EXPOSE 5173
 RUN npm run build
 
 # Final stage
-FROM node:18-slim
+FROM node:20-slim
+
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    python3 \
+    make \
+    g++ \
+    libjpeg-dev \
+    libcairo2-dev \
+    libgif-dev \
+    libpango1.0-dev \
+    libtool \
+    autoconf \
+    automake \
+    pkg-config \
+    libpixman-1-dev \
+    ffmpeg \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
-
-RUN apt-get update && \
-    apt-get install -y ffmpeg && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/*
 
 # Copy server package files
 COPY package*.json ./

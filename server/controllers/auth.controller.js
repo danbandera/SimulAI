@@ -58,7 +58,7 @@ export const loginUser = async (req, res) => {
       // httpOnly: true,
       // secure: process.env.NODE_ENV === "production", // Use secure in production
       // sameSite: "none", // Changed from strict to lax for better compatibility
-      // maxAge: 24 * 60 * 60 * 1000 // 1 day
+      maxAge: 24 * 60 * 60 * 1000, // 1 day
     });
 
     res.json({
@@ -157,7 +157,6 @@ export const requestPasswordReset = async (req, res) => {
 
     // Generate reset token
     const resetToken = crypto.randomBytes(32).toString("hex");
-    console.log("Generated token:", resetToken);
 
     const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour
 
@@ -171,8 +170,6 @@ export const requestPasswordReset = async (req, res) => {
       })
       .select()
       .single();
-
-    console.log("Token storage result:", { insertData, insertError });
 
     // Send email
     const transporter = nodemailer.createTransport({
@@ -207,7 +204,6 @@ export const requestPasswordReset = async (req, res) => {
 
 export const resetPassword = async (req, res) => {
   const { token, newPassword } = req.body;
-  console.log("Received token:", token);
 
   try {
     // First check if token exists
@@ -216,8 +212,6 @@ export const resetPassword = async (req, res) => {
       .select("*") // Select all fields for debugging
       .eq("token", token)
       .single();
-
-    console.log("Query result:", { resetData, resetError });
 
     if (!resetData || resetError) {
       return res.status(400).json({

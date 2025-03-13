@@ -23,12 +23,6 @@ const uploadsDir =
     : path.join(process.cwd(), "uploads");
 const scenariosDir = path.join(uploadsDir, "scenarios");
 
-console.log("Server starting...");
-console.log("Environment:", process.env.NODE_ENV);
-console.log("Current directory:", process.cwd());
-console.log("Uploads directory:", uploadsDir);
-console.log("Scenarios directory:", scenariosDir);
-
 // Ensure directories exist
 try {
   if (!fs.existsSync(uploadsDir)) {
@@ -43,17 +37,6 @@ try {
   // Verify directories are writable
   fs.accessSync(uploadsDir, fs.constants.W_OK);
   fs.accessSync(scenariosDir, fs.constants.W_OK);
-  console.log("Directories are writable");
-
-  // List initial directory contents
-  console.log(
-    "Initial uploads directory contents:",
-    fs.readdirSync(uploadsDir)
-  );
-  console.log(
-    "Initial scenarios directory contents:",
-    fs.readdirSync(scenariosDir)
-  );
 } catch (error) {
   console.error("Directory setup error:", error);
 }
@@ -103,19 +86,12 @@ app.use(
     if (req.path.endsWith(".mp3")) {
       res.type("audio/mpeg");
       const fullPath = path.join(uploadsDir, req.path);
-      console.log("Serving MP3 file from:", fullPath);
 
       try {
         if (fs.existsSync(fullPath)) {
           const stats = fs.statSync(fullPath);
-          console.log("File exists, size:", stats.size);
           res.set("Content-Length", stats.size);
         } else {
-          console.log("File not found at:", fullPath);
-          console.log(
-            "Directory contents:",
-            fs.readdirSync(path.dirname(fullPath))
-          );
           return res.status(404).send("File not found");
         }
       } catch (error) {
@@ -153,7 +129,6 @@ app.get("*", (req, res) => {
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
-  console.log(`Uploads directory: ${uploadsDir}`);
 });
 
 // export default app;

@@ -40,12 +40,29 @@ export const getScenariosRequest = async () => {
 };
 
 export const createScenarioRequest = async (scenarioData: FormData) => {
-  const response = await axios.post(`/scenarios`, scenarioData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
-  return response.data;
+  try {
+    // Log the FormData contents for debugging
+    // console.log("FormData contents:");
+    // for (const pair of scenarioData.entries()) {
+    //   if (pair[0] === "files") {
+    //     console.log(pair[0], pair[1], "File object present");
+    //   } else {
+    //     console.log(pair[0], pair[1]);
+    //   }
+    // }
+
+    // Make sure Content-Type is NOT set (let the browser set it with the boundary)
+    const response = await axios.post(`/scenarios`, scenarioData, {
+      headers: {
+        // Don't set Content-Type for FormData
+      },
+      timeout: 60000, // 60 seconds timeout
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error in createScenarioRequest:", error);
+    throw error;
+  }
 };
 
 export const deleteScenarioRequest = async (id: number) => {
@@ -62,12 +79,29 @@ export const updateScenarioRequest = async (
   id: number,
   scenarioData: FormData,
 ) => {
-  const response = await axios.put(`/scenarios/${id}`, scenarioData, {
-    headers: {
-      "Content-Type": "multipart/form-data",
-    },
-  });
-  return response.data;
+  try {
+    // Log the FormData contents for debugging
+    // console.log("Update FormData contents:");
+    // for (const pair of scenarioData.entries()) {
+    //   if (pair[0] === "files") {
+    //     console.log(pair[0], pair[1], "File object present");
+    //   } else {
+    //     console.log(pair[0], pair[1]);
+    //   }
+    // }
+
+    // Make sure Content-Type is NOT set (let the browser set it with the boundary)
+    const response = await axios.put(`/scenarios/${id}`, scenarioData, {
+      headers: {
+        // Don't set Content-Type for FormData
+      },
+      timeout: 60000, // 60 seconds timeout
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error in updateScenarioRequest:", error);
+    throw error;
+  }
 };
 
 export const saveConversationRequest = async (

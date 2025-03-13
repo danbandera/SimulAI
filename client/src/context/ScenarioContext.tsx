@@ -126,12 +126,7 @@ export const ScenarioProvider = ({ children }: ScenarioProviderProps) => {
     userId: number,
   ) => {
     try {
-      const response = await saveConversationRequest(
-        scenarioId,
-        conversation,
-        userId,
-      );
-      console.log(response);
+      await saveConversationRequest(scenarioId, conversation, userId);
       toast.success("Conversation saved successfully");
     } catch (error) {
       console.error("Error saving conversation:", error);
@@ -141,10 +136,8 @@ export const ScenarioProvider = ({ children }: ScenarioProviderProps) => {
   };
 
   const getConversations = async (scenarioId: number) => {
-    console.log("scenarioId", scenarioId);
     try {
       const response = await getConversationsRequest(scenarioId);
-      console.log("response", response);
       return response;
     } catch (error) {
       console.error("Error getting conversations:", error);

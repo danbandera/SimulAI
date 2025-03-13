@@ -19,7 +19,6 @@ const ffmpegPath =
     ? "/usr/bin/ffmpeg"
     : "ffmpeg";
 
-console.log("Using FFmpeg path:", ffmpegPath);
 ffmpeg.setFfmpegPath(ffmpegPath);
 
 // Initialize OpenAI client with null API key
@@ -149,10 +148,14 @@ const storage = multer.diskStorage({
   },
 });
 
+// Create a more robust multer instance with error handling
 const upload = multer({
   storage: multer.memoryStorage(), // Use memory storage instead of disk
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB limit
+    fieldSize: 20 * 1024 * 1024, // Increase field size limit
+    fields: 20, // Allow more fields
+    files: 10, // Allow up to 10 files
   },
 }).array("files"); // Configure for multiple files with field name 'files'
 
@@ -228,10 +231,12 @@ export const createScenario = async (req, res) => {
     // Use multer as middleware
     upload(req, res, async (err) => {
       if (err instanceof multer.MulterError) {
+        console.error("Multer error:", err);
         return res
           .status(400)
           .json({ message: "File upload error", error: err.message });
       } else if (err) {
+        console.error("Upload error:", err);
         return res
           .status(500)
           .json({ message: "Error uploading files", error: err.message });
@@ -250,6 +255,21 @@ export const createScenario = async (req, res) => {
           assignedIAModel,
         } = req.body;
 
+        // Validate required fields
+        if (!title) {
+          return res.status(400).json({ message: "Title is required" });
+        }
+        if (!user_id_assigned) {
+          return res
+            .status(400)
+            .json({ message: "User assignment is required" });
+        }
+        if (!created_by) {
+          return res
+            .status(400)
+            .json({ message: "Creator information is required" });
+        }
+
         // Handle file uploads to S3
         const fileUrls = [];
         if (req.files && req.files.length > 0) {
@@ -259,6 +279,7 @@ export const createScenario = async (req, res) => {
               fileUrls.push(fileUrl);
             } catch (error) {
               console.error("Error uploading file to S3:", error);
+              console.error("Error stack:", error.stack);
             }
           }
         }
@@ -270,7 +291,6 @@ export const createScenario = async (req, res) => {
         } catch (error) {
           console.error("Error parsing aspects:", error);
         }
-
         const { data: scenario, error: scenarioError } = await connectSqlDB
           .from("scenarios")
           .insert({
@@ -317,97 +337,135 @@ export const createScenario = async (req, res) => {
         res.status(201).json(scenario);
       } catch (error) {
         console.error("Create Scenario Error:", error);
-        res.status(500).json({ message: error.message });
+        console.error("Error stack:", error.stack);
+        res.status(500).json({
+          message: error.message,
+          stack: error.stack,
+          details: "Error occurred while processing scenario creation",
+        });
       }
     });
   } catch (error) {
-    console.error("Create Scenario Error:", error);
-    res.status(500).json({ message: error.message });
+    console.error("Create Scenario Error (outer):", error);
+    console.error("Error stack:", error.stack);
+    res.status(500).json({
+      message: error.message,
+      stack: error.stack,
+      details: "Error occurred in the outer try-catch block",
+    });
   }
 };
 
 export const updateScenario = async (req, res) => {
   try {
-    const { id } = req.params;
-    const {
-      title,
-      description,
-      status,
-      aspects,
-      existingFiles,
-      assignedIA,
-      assignedIAModel,
-    } = req.body;
-    console.log("assignedIA", assignedIA);
-    console.log("assignedIAModel", assignedIAModel);
-    // Upload new files to S3
-    const newFileUrls = [];
-    if (req.files && req.files.length > 0) {
-      for (const file of req.files) {
+    // Use multer as middleware
+    upload(req, res, async (err) => {
+      if (err instanceof multer.MulterError) {
+        console.error("Multer error during update:", err);
+        return res
+          .status(400)
+          .json({ message: "File upload error", error: err.message });
+      } else if (err) {
+        console.error("Upload error during update:", err);
+        return res
+          .status(500)
+          .json({ message: "Error uploading files", error: err.message });
+      }
+
+      try {
+        const { id } = req.params;
+        const {
+          title,
+          description,
+          status,
+          aspects,
+          existingFiles,
+          assignedIA,
+          assignedIAModel,
+        } = req.body;
+
+        // Upload new files to S3
+        const newFileUrls = [];
+        if (req.files && req.files.length > 0) {
+          for (const file of req.files) {
+            try {
+              const fileUrl = await uploadToS3(file, "documents");
+              newFileUrls.push(fileUrl);
+            } catch (error) {
+              console.error("Error uploading update file to S3:", error);
+              console.error("Error stack:", error.stack);
+              return res.status(500).json({
+                message: "Error uploading files to storage",
+                error: error.message,
+              });
+            }
+          }
+        }
+
+        // Parse existing files and aspects
+        let parsedExistingFiles = [];
+        let parsedAspects = [];
         try {
-          const fileUrl = await uploadToS3(file, "documents");
-          newFileUrls.push(fileUrl);
+          parsedExistingFiles = existingFiles ? JSON.parse(existingFiles) : [];
+          parsedAspects = aspects ? JSON.parse(aspects) : [];
         } catch (error) {
-          console.error("Error uploading file to S3:", error);
-          return res.status(500).json({
-            message: "Error uploading files to storage",
+          console.error("Error parsing JSON data:", error);
+          return res.status(400).json({
+            message: "Invalid JSON data provided",
             error: error.message,
           });
         }
-      }
-    }
 
-    // Parse existing files and aspects
-    let parsedExistingFiles = [];
-    let parsedAspects = [];
-    try {
-      parsedExistingFiles = existingFiles ? JSON.parse(existingFiles) : [];
-      parsedAspects = aspects ? JSON.parse(aspects) : [];
-    } catch (error) {
-      console.error("Error parsing JSON data:", error);
-      return res.status(400).json({
-        message: "Invalid JSON data provided",
-        error: error.message,
-      });
-    }
+        // Combine existing and new file URLs
+        const allFiles = [...parsedExistingFiles, ...newFileUrls];
 
-    // Combine existing and new file URLs
-    const allFiles = [...parsedExistingFiles, ...newFileUrls];
+        const { data: scenario, error: scenarioError } = await connectSqlDB
+          .from("scenarios")
+          .update({
+            title,
+            description,
+            status,
+            aspects: parsedAspects,
+            files: allFiles,
+            assignedIA,
+            assignedIAModel,
+            updated_at: new Date().toISOString(),
+          })
+          .eq("id", id)
+          .select()
+          .single();
 
-    const { data: scenario, error: scenarioError } = await connectSqlDB
-      .from("scenarios")
-      .update({
-        title,
-        description,
-        status,
-        aspects: parsedAspects,
-        files: allFiles,
-        assignedIA,
-        assignedIAModel,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", id)
-      .select()
-      .single();
-    console.log("scenario", scenario);
-    if (scenarioError) {
-      // Clean up newly uploaded files if update fails
-      for (const fileUrl of newFileUrls) {
-        try {
-          await deleteFromS3(fileUrl);
-        } catch (error) {
-          console.error("Error deleting file from S3:", error);
+        if (scenarioError) {
+          console.error("Database error updating scenario:", scenarioError);
+          // Clean up newly uploaded files if update fails
+          for (const fileUrl of newFileUrls) {
+            try {
+              await deleteFromS3(fileUrl);
+            } catch (error) {
+              console.error("Error deleting file from S3:", error);
+            }
+          }
+          return res.status(400).json({ message: scenarioError.message });
         }
-      }
-      return res.status(400).json({ message: scenarioError.message });
-    }
 
-    res.json(scenario);
+        res.json(scenario);
+      } catch (error) {
+        console.error("Update Scenario Error:", error);
+        console.error("Error stack:", error.stack);
+        res.status(500).json({
+          message: "Internal server error while updating scenario",
+          error: error.message,
+          stack: error.stack,
+        });
+      }
+    });
   } catch (error) {
-    console.error("Update Scenario Error:", error);
+    console.error("Update Scenario Error (outer):", error);
+    console.error("Error stack:", error.stack);
     res.status(500).json({
       message: "Internal server error while updating scenario",
       error: error.message,
+      stack: error.stack,
     });
   }
 };
@@ -508,8 +566,6 @@ export const processAudio = async (req, res) => {
   }
 
   try {
-    console.log("Processing audio file:", req.file);
-
     // Get the scenario ID from the request parameters
     const { id } = req.params;
 
@@ -582,7 +638,6 @@ export const processAudio = async (req, res) => {
 
     // Convert webm to wav
     const wavFile = path.join(scenariosDir, `temp-${Date.now()}.wav`);
-    console.log("Converting to WAV:", wavFile);
 
     await new Promise((resolve, reject) => {
       ffmpeg(tempFile)
@@ -593,7 +648,6 @@ export const processAudio = async (req, res) => {
           reject(err);
         })
         .on("end", () => {
-          console.log("FFmpeg conversion complete");
           resolve();
         })
         .save(wavFile);
@@ -637,7 +691,6 @@ export const processAudio = async (req, res) => {
       fs.unlinkSync(tempFile);
       fs.unlinkSync(wavFile);
       fs.unlinkSync(tempResponseFile);
-      console.log("Temporary files cleaned up");
     } catch (cleanupError) {
       console.error("Error cleaning up temporary files:", cleanupError);
     }
@@ -659,8 +712,6 @@ export const processAudio = async (req, res) => {
         },
       ],
     });
-
-    console.log("Saved conversation with audio:", conversationToSave);
 
     res.json({
       transcription: transcript.text,

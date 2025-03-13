@@ -1,20 +1,46 @@
 import express from "express";
 import nodemailer from "nodemailer";
+import { connectSqlDB } from "../db.cjs";
+import { decryptValue } from "../libs/encryption.js";
 
 const router = express.Router();
+
+const getMailCredentials = async () => {
+  const { data: settings, error } = await connectSqlDB
+    .from("settings")
+    .select(
+      "mail_username, mail_password, mail_host, mail_port, mail_from, mail_from_name"
+    )
+    .single();
+
+  if (error || !settings) {
+    throw new Error("Mail credentials not found");
+  }
+
+  return {
+    username: decryptValue(settings.mail_username),
+    password: decryptValue(settings.mail_password),
+    host: settings.mail_host,
+    port: settings.mail_port,
+    from: settings.mail_from,
+    fromName: settings.mail_from_name,
+  };
+};
+
+const mailCredentials = await getMailCredentials();
 
 function sendEmail({ email, subject, message }) {
   return new Promise((resolve, reject) => {
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
-        user: process.env.SMTP_USER,
-        pass: process.env.SMTP_PASSWORD,
+        user: mailCredentials.username,
+        pass: mailCredentials.password,
       },
     });
 
     const mail_configs = {
-      from: process.env.SMTP_FROM_EMAIL,
+      from: mailCredentials.from,
       to: email,
       subject: subject,
       html: `

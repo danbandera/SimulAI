@@ -15,11 +15,14 @@ import {
 import multer from "multer";
 import { authRequired } from "../middlewares/validateToken.js";
 
-// Configure multer for file uploads
+// Configure multer for file uploads with more robust settings
 const upload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB limit
+    fieldSize: 20 * 1024 * 1024, // Increase field size limit
+    fields: 20, // Allow more fields
+    files: 10, // Allow up to 10 files
   },
 });
 
@@ -31,9 +34,11 @@ router.get("/scenarios/:scenarioId/conversations", getConversations);
 router.get("/scenarios/:id/conversations/:conversationId", getConversation);
 
 router.get("/scenarios", getScenarios);
-router.post("/scenarios", upload.array("files"), createScenario);
+// Let the controller handle the file upload middleware
+router.post("/scenarios", createScenario);
 router.get("/scenarios/:id", getScenarioById);
-router.put("/scenarios/:id", upload.array("files"), updateScenario);
+// Let the controller handle the file upload middleware
+router.put("/scenarios/:id", updateScenario);
 router.delete("/scenarios/:id", deleteScenario);
 router.get("/scenarios/user/:id", getScenarioByUserId);
 
@@ -42,6 +47,7 @@ const audioUpload = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 10 * 1024 * 1024, // 10MB limit
+    fieldSize: 20 * 1024 * 1024, // Increase field size limit
   },
 });
 router.post(

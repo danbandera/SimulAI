@@ -117,7 +117,7 @@ const NewScenario = () => {
       formDataToSend.append("aspects", JSON.stringify(formData.aspects));
 
       // Append each file
-      formData.files.forEach((file) => {
+      formData.files.forEach((file, index) => {
         formDataToSend.append("files", file);
       });
 
@@ -141,23 +141,6 @@ const NewScenario = () => {
             <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
               <p><strong>Scenario:</strong> ${formData.title}</p>
               <p><strong>Description:</strong> ${formData.description || "No description provided"}</p>
-              ${
-                formData.aspects.length > 0
-                  ? `
-                <p><strong>Aspects to evaluate:</strong></p>
-                <ul>
-                  ${formData.aspects.map((aspect) => `<li>${aspect.label}</li>`).join("")}
-                </ul>
-              `
-                  : ""
-              }
-              ${
-                formData.files.length > 0
-                  ? `
-                <p><strong>Attached files:</strong> ${formData.files.length} file(s)</p>
-              `
-                  : ""
-              }
             </div>
             
             <p>You can access this scenario from your dashboard.</p>

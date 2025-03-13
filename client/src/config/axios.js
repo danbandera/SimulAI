@@ -13,6 +13,10 @@ const api = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  // Add default timeout and max content length
+  timeout: 30000, // 30 seconds
+  maxContentLength: 20 * 1024 * 1024, // 20MB
+  maxBodyLength: 20 * 1024 * 1024, // 20MB
 });
 
 // Add request interceptor to log requests
@@ -21,6 +25,12 @@ api.interceptors.request.use((request) => {
   if (token) {
     request.headers.Authorization = `Bearer ${token}`;
   }
+
+  // For multipart/form-data requests, don't set Content-Type
+  if (request.data instanceof FormData) {
+    delete request.headers["Content-Type"];
+  }
+
   return request;
 });
 

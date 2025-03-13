@@ -92,7 +92,8 @@ const ECommerce: React.FC = () => {
               </CardDataStats>
             </Link>
             <div className="col-span-2">
-              <ChartOne scenario={scenario} />
+              {/* <ChartOne scenario={scenario} /> */}
+              <ChartTwo scenario={scenario} />
             </div>
           </div>
         ))}

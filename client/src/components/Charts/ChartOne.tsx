@@ -1,7 +1,9 @@
 import { ApexOptions } from "apexcharts";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import ReactApexChart from "react-apexcharts";
 import { Scenario } from "../../api/scenarios.api";
+import { useScenarios } from "../../context/ScenarioContext";
+import { log } from "console";
 
 interface ChartOneState {
   series: {
@@ -12,19 +14,109 @@ interface ChartOneState {
 
 interface ChartOneProps {
   scenario: {
+    id?: number;
     aspects?: { value: string; label: string }[];
   };
 }
 
 const ChartOne: React.FC<ChartOneProps> = ({ scenario }) => {
+  const { getConversations } = useScenarios();
   const [state, setState] = useState<ChartOneState>({
     series: [
       {
         name: "Calificación",
-        data: [60, 20, 100, 40, 50],
+        data: scenario.aspects ? scenario.aspects.map(() => 0) : [0],
       },
     ],
   });
+
+  // Fetch conversations when component mounts
+  useEffect(() => {
+    const fetchConversations = async () => {
+      if (scenario && scenario.id) {
+        try {
+          console.log("Scenario aspects:", scenario.aspects);
+          const conversations = await getConversations(scenario.id);
+          console.log(
+            `Conversations for scenario ${scenario.id}:`,
+            conversations,
+          );
+
+          // Process conversations to extract aspect scores
+          if (
+            conversations &&
+            conversations.length > 0 &&
+            scenario.aspects &&
+            scenario.aspects.length > 0
+          ) {
+            // Initialize scores array with zeros
+            const aspectScores = scenario.aspects.map(() => 0);
+
+            // Get the most recent conversation
+            const latestConversation = conversations[conversations.length - 1];
+            // Get the last message from the conversation
+            const lastMessage =
+              latestConversation.conversation[
+                latestConversation.conversation.length - 1
+              ];
+            console.log("Last message:", lastMessage.message);
+
+            // Extract aspect scores from the message
+            scenario.aspects.forEach((aspect, index) => {
+              // Try different patterns to match aspect scores
+              // Pattern 1: "Aspecto Amigable: 85"
+              // Pattern 2: "Aspecto Amigable - 85"
+              // Pattern 3: "Aspecto Amigable 85"
+              const patterns = [
+                new RegExp(`${aspect.label}\\s*:\\s*(\\d+)`, "i"),
+                new RegExp(`${aspect.label}\\s*-\\s*(\\d+)`, "i"),
+                new RegExp(`${aspect.label}\\s+(\\d+)`, "i"),
+                // Also try with the value field
+                new RegExp(`${aspect.value}\\s*:\\s*(\\d+)`, "i"),
+                new RegExp(`${aspect.value}\\s*-\\s*(\\d+)`, "i"),
+                new RegExp(`${aspect.value}\\s+(\\d+)`, "i"),
+              ];
+
+              // Try each pattern until we find a match
+              let score = 0;
+              for (const pattern of patterns) {
+                const match = lastMessage.message.match(pattern);
+                if (match) {
+                  score = parseInt(match[1]);
+                  console.log(
+                    `Found aspect ${aspect.label || aspect.value} with score ${score} using pattern ${pattern}`,
+                  );
+                  break;
+                }
+              }
+
+              // If we found a score, update the array
+              if (score > 0) {
+                aspectScores[index] = score;
+              }
+            });
+
+            // Update chart data with extracted scores
+            setState({
+              series: [
+                {
+                  name: "Calificación",
+                  data: aspectScores,
+                },
+              ],
+            });
+          }
+        } catch (error) {
+          console.error(
+            `Error fetching conversations for scenario ${scenario.id}:`,
+            error,
+          );
+        }
+      }
+    };
+
+    fetchConversations();
+  }, [scenario, getConversations]);
 
   const options: ApexOptions = {
     legend: {
@@ -62,7 +154,7 @@ const ChartOne: React.FC<ChartOneProps> = ({ scenario }) => {
         breakpoint: 1366,
         options: {
           chart: {
-            height: 350,
+            height: 500,
           },
         },
       },
@@ -113,7 +205,7 @@ const ChartOne: React.FC<ChartOneProps> = ({ scenario }) => {
         style: {
           fontSize: "12px",
         },
-        rotate: -45,
+        rotate: 0,
         rotateAlways: true,
       },
     },
@@ -125,6 +217,12 @@ const ChartOne: React.FC<ChartOneProps> = ({ scenario }) => {
       },
       min: 0,
       max: 100,
+      tickAmount: 10,
+      labels: {
+        formatter: function (val) {
+          return val.toFixed(0);
+        },
+      },
     },
   };
 

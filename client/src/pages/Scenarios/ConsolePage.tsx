@@ -19,6 +19,7 @@ interface ConversationItem {
   role: string;
   message: string;
   audioUrl?: string;
+  hidden?: boolean;
 }
 
 export const ConsolePage: React.FC<ConsolePageProps> = ({
@@ -76,19 +77,85 @@ export const ConsolePage: React.FC<ConsolePageProps> = ({
         .getTracks()
         .forEach((track) => track.stop());
 
-      // Save the complete conversation before clearing
-      if (scenarioId && currentUser?.id && items.length > 0) {
+      // First, get the evaluation from the AI (not visible to the user)
+      if (scenarioId && currentUser?.id) {
+        try {
+          console.log("Sending final evaluation message...");
+          const finalMessage =
+            "Give a score for each aspect from 0 to 100 at the end of the conversation. Example: Aspect 1: 80, Aspect 2: 70, Aspect 3: 90. Show every aspect score in a new line.";
+
+          const response = await axios.post(
+            `/scenarios/${scenarioId}/process-final-message`,
+            { message: finalMessage },
+            {
+              headers: {
+                "Content-Type": "application/json",
+              },
+              timeout: 60000, // Increase timeout to 60 seconds
+            },
+          );
+
+          // Add the evaluation to the conversation items
+          if (response.data && response.data.response) {
+            console.log(
+              "Received evaluation response, adding to conversation...",
+            );
+
+            // Add the evaluation message to the items array (hidden from UI)
+            const updatedItems = [
+              ...items,
+              { role: "user", message: finalMessage, hidden: true },
+              { role: "assistant", message: response.data.response },
+            ];
+
+            // Save the complete conversation with the evaluation
+            await saveConversation(
+              Number(scenarioId),
+              updatedItems,
+              currentUser.id,
+            );
+            console.log("Conversation with evaluation saved successfully");
+            toast.success(t("console.conversationSaved"));
+          } else {
+            console.warn("Received empty response from evaluation endpoint");
+            // Save the conversation without evaluation
+            if (items.length > 0) {
+              await saveConversation(Number(scenarioId), items, currentUser.id);
+              toast.success(t("console.conversationSaved"));
+            }
+          }
+        } catch (error: any) {
+          // Log detailed error but don't show to user since this is a background operation
+          console.error("Error processing final evaluation:", error);
+
+          if (error.response) {
+            console.error(
+              "Server response:",
+              error.response.status,
+              error.response.data,
+            );
+          }
+
+          // Save the conversation without the evaluation
+          if (items.length > 0) {
+            await saveConversation(Number(scenarioId), items, currentUser.id);
+            toast.success(t("console.conversationSaved"));
+          }
+        }
+      } else if (scenarioId && currentUser?.id && items.length > 0) {
+        // If we can't get an evaluation, just save the conversation
         await saveConversation(Number(scenarioId), items, currentUser.id);
         toast.success(t("console.conversationSaved"));
       }
 
+      // Clear the conversation display and disconnect
       setIsConnected(false);
       setItems([]);
     } catch (error) {
       console.error("Error ending conversation:", error);
-      toast.error("Error ending conversation");
+      toast.error(t("console.errorEndingConversation"));
     }
-  }, [items, scenarioId, currentUser, saveConversation, t]);
+  }, [scenarioId, currentUser, items, saveConversation, t]);
 
   const startRecording = async () => {
     try {
@@ -174,8 +241,6 @@ export const ConsolePage: React.FC<ConsolePageProps> = ({
                 axios.defaults.baseURL,
               ).toString();
 
-          console.log("Playing audio from:", audioUrl);
-
           // Validate that the audio URL exists
           const checkResponse = await fetch(audioUrl, { method: "HEAD" });
           if (!checkResponse.ok) {
@@ -186,19 +251,19 @@ export const ConsolePage: React.FC<ConsolePageProps> = ({
           const audio = new Audio();
 
           // Add event listeners for debugging
-          audio.addEventListener("loadstart", () => {
-            console.log("Audio loading started");
-          });
+          // audio.addEventListener("loadstart", () => {
+          //   console.log("Audio loading started");
+          // });
 
-          audio.addEventListener("loadedmetadata", () => {
-            console.log("Audio metadata loaded:", {
-              duration: audio.duration,
-            });
-          });
+          // audio.addEventListener("loadedmetadata", () => {
+          //   console.log("Audio metadata loaded:", {
+          //     duration: audio.duration,
+          //   });
+          // });
 
-          audio.addEventListener("canplay", () => {
-            console.log("Audio can play");
-          });
+          // audio.addEventListener("canplay", () => {
+          //   console.log("Audio can play");
+          // });
 
           audio.addEventListener("error", (e) => {
             console.error("Audio loading error:", {
@@ -266,18 +331,23 @@ export const ConsolePage: React.FC<ConsolePageProps> = ({
             </div>
             <div className="content-block-body" data-conversation-content>
               {!items.length && t("console.awaitingConnection")}
-              {items.map((item, index) => (
-                <div className="conversation-item" key={index}>
-                  <div className={`speaker ${item.role}`}>
-                    <div>
-                      {item.role.charAt(0).toUpperCase() + item.role.slice(1)}:
+              {items.map(
+                (item, index) =>
+                  !item.hidden && (
+                    <div className="conversation-item" key={index}>
+                      <div className={`speaker ${item.role}`}>
+                        <div>
+                          {item.role.charAt(0).toUpperCase() +
+                            item.role.slice(1)}
+                          :
+                        </div>
+                      </div>
+                      <div className="speaker-content">
+                        <div>{item.message}</div>
+                      </div>
                     </div>
-                  </div>
-                  <div className="speaker-content">
-                    <div>{item.message}</div>
-                  </div>
-                </div>
-              ))}
+                  ),
+              )}
             </div>
           </div>
           <div className="content-actions">

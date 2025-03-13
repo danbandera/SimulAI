@@ -40,7 +40,6 @@ const ScenarioDetail = () => {
   // get the aspects from the scenario as string
   const aspects =
     scenario?.aspects?.map((aspect) => aspect.label).join(", ") || "";
-  console.log(scenario?.pdf_contents);
   const description = scenario?.description || "";
   useEffect(() => {
     const loadScenario = async () => {

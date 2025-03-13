@@ -119,4 +119,232 @@ router.post(
   processAudio
 );
 
+// Add a route to process the final evaluation message
+router.post(
+  "/scenarios/:id/process-final-message",
+  authRequired,
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { message } = req.body;
+
+      console.log(`Processing final message for scenario ${id}`);
+
+      // Get the scenario data from the database
+      const { data: scenario, error } = await connectSqlDB
+        .from("scenarios")
+        .select("*")
+        .eq("id", id)
+        .single();
+
+      if (error) {
+        console.error("Error fetching scenario:", error);
+        return res.status(400).json({
+          error: "Failed to fetch scenario",
+          details: error.message,
+        });
+      }
+
+      if (!scenario) {
+        console.error(`Scenario with ID ${id} not found`);
+        return res.status(404).json({ error: "Scenario not found" });
+      }
+
+      console.log(`Scenario found: ${scenario.title}`);
+
+      // Check if aspects exist and are in the expected format
+      if (!scenario.aspects) {
+        console.log("No aspects found in scenario, using empty array");
+        scenario.aspects = [];
+      } else if (typeof scenario.aspects === "string") {
+        try {
+          console.log("Parsing aspects from string");
+          scenario.aspects = JSON.parse(scenario.aspects);
+        } catch (parseError) {
+          console.error("Error parsing aspects:", parseError);
+          scenario.aspects = [];
+        }
+      }
+
+      // Get OpenAI API key from settings
+      const { data: settings, error: settingsError } = await connectSqlDB
+        .from("settings")
+        .select("openai_key, mistral_key, llama_key")
+        .single();
+
+      if (settingsError) {
+        console.error("Error fetching API keys:", settingsError);
+        return res.status(500).json({
+          error: "Failed to fetch API keys",
+          details: settingsError.message,
+        });
+      }
+
+      if (!settings) {
+        console.error("No settings found");
+        return res.status(500).json({ error: "No API settings found" });
+      }
+
+      console.log("API settings found");
+
+      // Initialize the appropriate AI client based on scenario settings
+      let aiClient;
+      let apiKey;
+
+      try {
+        // Import the decryption function if needed
+        let decryptValue;
+        try {
+          const { decryptValue: decrypt } = await import(
+            "../libs/encryption.js"
+          );
+          decryptValue = decrypt;
+          console.log("Decryption function imported successfully");
+        } catch (importError) {
+          console.error("Error importing decryption function:", importError);
+          // If we can't import the decryption function, we'll try to use the key as is
+          decryptValue = (value) => value;
+        }
+
+        switch (scenario.assignedIA) {
+          case "openai":
+            console.log("Using OpenAI provider");
+            const OpenAI = (await import("openai")).default;
+
+            try {
+              apiKey = decryptValue(settings.openai_key);
+              console.log("OpenAI API key decrypted");
+            } catch (decryptError) {
+              console.error("Error decrypting OpenAI API key:", decryptError);
+              // Try using the key as is
+              apiKey = settings.openai_key;
+              console.log("Using raw OpenAI API key");
+            }
+
+            if (!apiKey) {
+              console.error("OpenAI API key is missing");
+              return res
+                .status(500)
+                .json({ error: "OpenAI API key is missing" });
+            }
+
+            aiClient = new OpenAI({ apiKey });
+            break;
+          case "mistral":
+            console.log("Using Mistral provider");
+            apiKey = settings.mistral_key;
+            // You would need to implement Mistral client handling here
+            return res
+              .status(501)
+              .json({ error: "Mistral provider not implemented yet" });
+          case "llama":
+            console.log("Using Llama provider");
+            apiKey = settings.llama_key;
+            // You would need to implement Llama client handling here
+            return res
+              .status(501)
+              .json({ error: "Llama provider not implemented yet" });
+          default:
+            console.error(`Unsupported AI provider: ${scenario.assignedIA}`);
+            return res.status(400).json({
+              error: `Unsupported AI provider: ${
+                scenario.assignedIA || "none"
+              }`,
+            });
+        }
+      } catch (clientError) {
+        console.error("Error initializing AI client:", clientError);
+        return res.status(500).json({
+          error: "Failed to initialize AI client",
+          details: clientError.message,
+        });
+      }
+
+      if (!aiClient) {
+        console.error("Failed to initialize AI client");
+        return res
+          .status(500)
+          .json({ error: "Failed to initialize AI client" });
+      }
+
+      // Build the system context using scenario data
+      const aspectsText =
+        scenario.aspects && Array.isArray(scenario.aspects)
+          ? scenario.aspects
+              .map((aspect) => aspect.label || aspect.value || aspect)
+              .join(", ")
+          : "";
+
+      const systemContext = `You are an AI evaluator reviewing a conversation. 
+      Here is your context:
+      - Scenario Title: ${scenario.title || "No title"}
+      - Description: ${scenario.description || "No description"}
+      ${
+        aspectsText
+          ? `- Aspects to evaluate: ${aspectsText}`
+          : "- No specific aspects to evaluate"
+      }
+      ${
+        scenario.pdf_contents
+          ? `- Content from PDFs: ${scenario.pdf_contents}`
+          : ""
+      }
+      
+      IMPORTANT INSTRUCTIONS:
+      1. You MUST ONLY respond in Spanish
+      2. You should evaluate the candidate based on the aspects mentioned above
+      3. Keep your responses professional and constructive
+      4. Provide a numerical score from 0 to 100 for each aspect
+      5. Format your response with one aspect score per line`;
+
+      console.log("System context created, sending to AI");
+
+      // Process with the appropriate AI model
+      let response;
+      try {
+        if (scenario.assignedIA === "openai") {
+          const model = scenario.assignedIAModel || "gpt-4o";
+          console.log(`Using OpenAI model: ${model}`);
+
+          const completion = await aiClient.chat.completions.create({
+            model: model,
+            messages: [
+              { role: "system", content: systemContext },
+              { role: "user", content: message },
+            ],
+            temperature: 0.7,
+            max_tokens: 500,
+          });
+
+          response = completion.choices[0].message.content;
+          console.log("Received response from OpenAI");
+        } else {
+          // Handle other AI providers here
+          response =
+            "No se pudo procesar la solicitud con el proveedor de IA seleccionado.";
+        }
+      } catch (aiError) {
+        console.error("Error calling AI service:", aiError);
+        if (aiError.response) {
+          console.error("AI service response:", aiError.response.data);
+        }
+        return res.status(500).json({
+          error: "Failed to process with AI service",
+          details: aiError.message,
+        });
+      }
+
+      console.log("Successfully processed final message");
+      res.json({ response });
+    } catch (error) {
+      console.error("Unhandled error in process-final-message:", error);
+      res.status(500).json({
+        error: "Failed to process final message",
+        details: error.message,
+        stack: error.stack,
+      });
+    }
+  }
+);
+
 export default router;

@@ -4,21 +4,26 @@ import { useScenarios } from "../../context/ScenarioContext";
 import { useUsers } from "../../context/UserContext";
 import Breadcrumb from "../../components/Breadcrumbs/Breadcrumb";
 import { ConsolePage } from "./ConsolePage";
+import PDFContentViewer from "../../components/PDFViewer/PDFContentViewer";
 import Swal from "sweetalert2";
 import { useTranslation } from "react-i18next";
-interface User {
-  id: number;
-  name: string;
-  email: string;
-}
 
-interface Scenario {
+// Define a local interface that matches what we get from the API
+interface ScenarioDetail {
   id: number;
   title: string;
   description: string;
   status: string;
-  assigned_user: User;
-  created_by: User;
+  assigned_user?: {
+    id: number;
+    name: string;
+    email: string;
+  };
+  created_by?: {
+    id: number;
+    name: string;
+    email: string;
+  };
   created_at: string;
   updated_at?: string;
   aspects?: { value: string; label: string }[];
@@ -31,11 +36,11 @@ const ScenarioDetail = () => {
   const navigate = useNavigate();
   const { getScenario, deleteScenario } = useScenarios();
   const { currentUser } = useUsers();
-  const [scenario, setScenario] = useState<Scenario | null>(null);
+  const [scenario, setScenario] = useState<ScenarioDetail | null>(null);
   // get the aspects from the scenario as string
   const aspects =
     scenario?.aspects?.map((aspect) => aspect.label).join(", ") || "";
-  console.log(scenario);
+  console.log(scenario?.pdf_contents);
   const description = scenario?.description || "";
   useEffect(() => {
     const loadScenario = async () => {
@@ -43,7 +48,8 @@ const ScenarioDetail = () => {
         try {
           const data = await getScenario(parseInt(id));
           if (data) {
-            setScenario(data);
+            // Cast the data to our local interface
+            setScenario(data as unknown as ScenarioDetail);
           }
         } catch (error) {
           console.error("Error loading scenario:", error);

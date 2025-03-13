@@ -4,6 +4,7 @@ import multer from "multer";
 import path from "path";
 import fs from "fs";
 import { uploadToS3, deleteFromS3 } from "../utils/s3.utils.js";
+import { processPDFFiles } from "../utils/pdf.utils.js";
 import OpenAI from "openai";
 import ffmpeg from "fluent-ffmpeg";
 import { decryptValue } from "../libs/encryption.js";
@@ -157,6 +158,13 @@ const upload = multer({
     fields: 20, // Allow more fields
     files: 10, // Allow up to 10 files
   },
+  fileFilter: (req, file, cb) => {
+    // Accept all file types, but flag PDFs for special processing
+    if (file.mimetype === "application/pdf") {
+      file.isPdf = true;
+    }
+    cb(null, true);
+  },
 }).array("files"); // Configure for multiple files with field name 'files'
 
 export const getScenarios = async (req, res) => {
@@ -272,7 +280,19 @@ export const createScenario = async (req, res) => {
 
         // Handle file uploads to S3
         const fileUrls = [];
+        let pdfContents = "";
+
         if (req.files && req.files.length > 0) {
+          // Process PDF files to extract content
+          try {
+            pdfContents = await processPDFFiles(req.files);
+            console.log(`Processed PDF files`);
+          } catch (pdfError) {
+            console.error("Error processing PDF files:", pdfError);
+            // Continue with the scenario creation even if PDF processing fails
+          }
+
+          // Upload all files to S3
           for (const file of req.files) {
             try {
               const fileUrl = await uploadToS3(file, "documents");
@@ -291,20 +311,29 @@ export const createScenario = async (req, res) => {
         } catch (error) {
           console.error("Error parsing aspects:", error);
         }
+
+        // Create scenario with PDF contents
+        const scenarioData = {
+          title,
+          description,
+          status,
+          user_id_assigned,
+          created_by,
+          parent_scenario: parent_scenario || null,
+          aspects: parsedAspects,
+          files: fileUrls,
+          assignedIA,
+          assignedIAModel,
+        };
+
+        // Only add pdf_contents if we have any
+        if (pdfContents) {
+          scenarioData.pdf_contents = pdfContents;
+        }
+
         const { data: scenario, error: scenarioError } = await connectSqlDB
           .from("scenarios")
-          .insert({
-            title,
-            description,
-            status,
-            user_id_assigned,
-            created_by,
-            parent_scenario: parent_scenario || null,
-            aspects: parsedAspects,
-            files: fileUrls,
-            assignedIA,
-            assignedIAModel,
-          })
+          .insert(scenarioData)
           .select(
             `
             *,
@@ -384,9 +413,31 @@ export const updateScenario = async (req, res) => {
           assignedIAModel,
         } = req.body;
 
+        // Get existing scenario data to access current PDF contents and files
+        const { data: existingScenario } = await connectSqlDB
+          .from("scenarios")
+          .select("pdf_contents, files")
+          .eq("id", id)
+          .single();
+
+        let existingPdfContents = existingScenario?.pdf_contents || "";
+        const currentStoredFiles = existingScenario?.files || [];
+
         // Upload new files to S3
         const newFileUrls = [];
+        let newPdfContents = "";
+
         if (req.files && req.files.length > 0) {
+          // Process new PDF files
+          try {
+            newPdfContents = await processPDFFiles(req.files);
+            console.log(`Processed new PDF files`);
+          } catch (pdfError) {
+            console.error("Error processing new PDF files:", pdfError);
+            // Continue with the scenario update even if PDF processing fails
+          }
+
+          // Upload all new files to S3
           for (const file of req.files) {
             try {
               const fileUrl = await uploadToS3(file, "documents");
@@ -402,7 +453,7 @@ export const updateScenario = async (req, res) => {
           }
         }
 
-        // Parse existing files and aspects
+        // Parse existing files from request body
         let parsedExistingFiles = [];
         let parsedAspects = [];
         try {
@@ -416,28 +467,74 @@ export const updateScenario = async (req, res) => {
           });
         }
 
+        // Determine if we need to regenerate PDF contents
+        const filesChanged =
+          JSON.stringify(currentStoredFiles) !==
+          JSON.stringify(parsedExistingFiles);
+
+        // Always regenerate PDF contents if files have changed
+        let finalPdfContents = existingPdfContents;
+
+        if (filesChanged) {
+          // Process new PDF files to extract content
+          try {
+            finalPdfContents = await processPDFFiles(req.files);
+            console.log(`Processed new PDF files`);
+          } catch (pdfError) {
+            console.error("Error processing new PDF files:", pdfError);
+            // Continue with the scenario update even if PDF processing fails
+          }
+        } else if (newPdfContents) {
+          // No files were removed, but new ones were added
+          finalPdfContents = existingPdfContents
+            ? `${existingPdfContents}
+
+--- NEW CONTENT ---
+
+${newPdfContents}`
+            : newPdfContents;
+        }
+
         // Combine existing and new file URLs
         const allFiles = [...parsedExistingFiles, ...newFileUrls];
 
+        // Prepare update data
+        const updateData = {
+          title,
+          description,
+          status,
+          aspects: parsedAspects,
+          files: allFiles,
+          assignedIA,
+          assignedIAModel,
+          updated_at: new Date().toISOString(),
+          pdf_contents: finalPdfContents,
+        };
+
         const { data: scenario, error: scenarioError } = await connectSqlDB
           .from("scenarios")
-          .update({
-            title,
-            description,
-            status,
-            aspects: parsedAspects,
-            files: allFiles,
-            assignedIA,
-            assignedIAModel,
-            updated_at: new Date().toISOString(),
-          })
+          .update(updateData)
           .eq("id", id)
-          .select()
+          .select(
+            `
+            *,
+            assigned_user:user_id_assigned (
+              id,
+              name,
+              email
+            ),
+            created_by (
+              id,
+              name,
+              email
+            )
+          `
+          )
           .single();
 
         if (scenarioError) {
           console.error("Database error updating scenario:", scenarioError);
-          // Clean up newly uploaded files if update fails
+          // Clean up uploaded files if update fails
           for (const fileUrl of newFileUrls) {
             try {
               await deleteFromS3(fileUrl);
@@ -603,6 +700,7 @@ export const processAudio = async (req, res) => {
             .join(", ")}`
         : ""
     }
+    - PDF contents: ${scenario.pdf_contents}
     
     IMPORTANT INSTRUCTIONS:
     1. You MUST ONLY respond in Spanish

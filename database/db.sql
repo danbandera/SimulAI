@@ -17,7 +17,7 @@ CREATE TABLE users (
 CREATE TABLE scenarios (
   id SERIAL PRIMARY KEY,
   title VARCHAR(255) NOT NULL,
-  description TEXT,
+  context TEXT,
   user_id_assigned INTEGER REFERENCES users(id) ON DELETE CASCADE,
   user_id_created INTEGER REFERENCES users(id) ON DELETE CASCADE,
   status VARCHAR(50) DEFAULT 'draft',

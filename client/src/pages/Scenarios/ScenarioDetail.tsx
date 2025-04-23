@@ -4,7 +4,7 @@ import { useScenarios } from "../../context/ScenarioContext";
 import { useUsers } from "../../context/UserContext";
 import Breadcrumb from "../../components/Breadcrumbs/Breadcrumb";
 import { ConsolePage } from "./ConsolePage";
-import PDFContentViewer from "../../components/PDFViewer/PDFContentViewer";
+import InteractiveAvatar from "../../components/InteractiveAvatar/InteractiveAvatar";
 import Swal from "sweetalert2";
 import { useTranslation } from "react-i18next";
 
@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 interface ScenarioDetail {
   id: number;
   title: string;
-  description: string;
+  context: string;
   status: string;
   assigned_user?: {
     id: number;
@@ -40,7 +40,7 @@ const ScenarioDetail = () => {
   // get the aspects from the scenario as string
   const aspects =
     scenario?.aspects?.map((aspect) => aspect.label).join(", ") || "";
-  const description = scenario?.description || "";
+  const context = scenario?.context || "";
   useEffect(() => {
     const loadScenario = async () => {
       if (id) {
@@ -67,7 +67,7 @@ const ScenarioDetail = () => {
       state: {
         duplicateData: {
           title: scenario?.title,
-          description: scenario?.description,
+          context: scenario?.context,
           status: scenario?.status,
         },
       },
@@ -171,10 +171,10 @@ const ScenarioDetail = () => {
                   </div>
                   <div>
                     <h4 className="font-medium text-black dark:text-white mb-2">
-                      {t("scenarios.description")}
+                      {t("scenarios.context")}
                     </h4>
                     <p className="text-sm text-black dark:text-white">
-                      {scenario.description}
+                      {scenario.context}
                     </p>
                   </div>
                   {scenario.aspects && scenario.aspects.length > 0 && (
@@ -220,14 +220,29 @@ const ScenarioDetail = () => {
           </div>
         )}
         {/* Chat Console Card */}
-        <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+        {/* <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
           <div className="border-b border-stroke py-4 px-6.5 dark:border-strokedark">
             <h3 className="font-medium text-black dark:text-white">
               {t("scenarios.chatConsoleDetails")}
             </h3>
           </div>
           <div className="p-6.5">
-            <ConsolePage aspects={aspects} description={description} />
+            <ConsolePage aspects={aspects} context={context} />
+          </div>
+        </div> */}
+
+        {/* Interactive Avatar Card */}
+        <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+          <div className="border-b border-stroke py-4 px-6.5 dark:border-strokedark">
+            <h3 className="font-medium text-black dark:text-white">
+              {t("scenarios.interactiveAvatar")}
+            </h3>
+          </div>
+          <div className="p-6.5">
+            <InteractiveAvatar
+              scenarioId={parseInt(id || "0")}
+              scenarioTitle={scenario.title}
+            />
           </div>
         </div>
       </div>

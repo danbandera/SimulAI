@@ -253,7 +253,7 @@ export const createScenario = async (req, res) => {
       try {
         const {
           title,
-          description,
+          context,
           user_id_assigned,
           created_by,
           parent_scenario,
@@ -315,7 +315,7 @@ export const createScenario = async (req, res) => {
         // Create scenario with PDF contents
         const scenarioData = {
           title,
-          description,
+          context,
           status,
           user_id_assigned,
           created_by,
@@ -405,7 +405,7 @@ export const updateScenario = async (req, res) => {
         const { id } = req.params;
         const {
           title,
-          description,
+          context,
           status,
           aspects,
           existingFiles,
@@ -501,7 +501,7 @@ ${newPdfContents}`
         // Prepare update data
         const updateData = {
           title,
-          description,
+          context,
           status,
           aspects: parsedAspects,
           files: allFiles,
@@ -687,7 +687,7 @@ export const processAudio = async (req, res) => {
     // Build the system context using scenario data
     const systemContext = `You are an AI interviewer conducting an evaluation. Here is your context:
     - Scenario Title: ${scenario.title}
-    - Description: ${scenario.description}
+    - Description: ${scenario.context}
     - Aspects to evaluate: ${scenario.aspects
       .map((aspect) => aspect.label)
       .join(", ")}.

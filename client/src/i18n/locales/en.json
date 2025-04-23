@@ -68,7 +68,7 @@
     "draft": "Draft",
     "published": "Published",
     "archived": "Archived",
-    "description": "Description",
+    "context": "Context",
     "assignUser": "Assign User",
     "selectUser": "Select User",
     "aspects": "Aspects to evaluate",
@@ -89,7 +89,8 @@
     "conversationsHistory": "Conversations History",
     "noConversationsFound": "No conversations found for this scenario",
     "collapse": "Collapse",
-    "expand": "Expand"
+    "expand": "Expand",
+    "enterScenarioContext": "Enter scenario context"
   },
   "console": {
     "startConversation": "Start Conversation",

@@ -12,7 +12,7 @@ interface User {
 interface Scenario {
   id: number;
   title: string;
-  description: string;
+  context: string;
   status: string;
   assigned_user: User;
   created_by: User;
@@ -63,7 +63,7 @@ const ScenarioDetail = () => {
                   {scenario.title}
                 </h4>
                 <p className="text-sm text-black dark:text-white">
-                  {scenario.description}
+                  {scenario.context}
                 </p>
               </div>
 

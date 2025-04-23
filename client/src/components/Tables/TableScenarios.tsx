@@ -13,7 +13,7 @@ interface User {
 interface Scenario {
   id: number;
   title: string;
-  description: string;
+  context: string;
   status: string;
   assigned_user: User;
   created_by: User;
@@ -96,7 +96,7 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
       state: {
         duplicateData: {
           title: scenario.title,
-          description: scenario.description,
+          context: scenario.context,
           status: scenario.status,
         },
       },

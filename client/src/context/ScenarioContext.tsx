@@ -14,7 +14,7 @@ import {
 interface Scenario {
   id?: number;
   title: string;
-  description: string;
+  context: string;
   status: string;
   users: number[];
   created_at?: string;

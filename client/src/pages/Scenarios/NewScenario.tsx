@@ -28,7 +28,7 @@ const NewScenario = () => {
 
   const [formData, setFormData] = useState({
     title: duplicateData?.title || "",
-    description: duplicateData?.description || "",
+    context: duplicateData?.context || "",
     status: duplicateData?.status || "draft",
     user: null as number | null,
     aspects: [] as { value: string; label: string }[],
@@ -110,7 +110,7 @@ const NewScenario = () => {
       // Create FormData object to send files
       const formDataToSend = new FormData();
       formDataToSend.append("title", formData.title);
-      formDataToSend.append("description", formData.description);
+      formDataToSend.append("context", formData.context);
       formDataToSend.append("status", formData.status);
       formDataToSend.append("user_id_assigned", String(formData.user));
       formDataToSend.append("created_by", String(currentUser?.id));
@@ -140,7 +140,7 @@ const NewScenario = () => {
             
             <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
               <p><strong>Scenario:</strong> ${formData.title}</p>
-              <p><strong>Description:</strong> ${formData.description || "No description provided"}</p>
+              <p><strong>Context:</strong> ${formData.context || "No context provided"}</p>
             </div>
             
             <p>You can access this scenario from your dashboard.</p>
@@ -211,13 +211,13 @@ const NewScenario = () => {
 
                 <div className="mb-4.5">
                   <label className="mb-2.5 block text-black dark:text-white">
-                    {t("scenarios.description")}
+                    {t("scenarios.context")}
                   </label>
                   <textarea
-                    name="description"
-                    value={formData.description}
+                    name="context"
+                    value={formData.context}
                     onChange={handleChange}
-                    placeholder="Enter scenario description"
+                    placeholder="Enter scenario context"
                     className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
                     rows={4}
                   />

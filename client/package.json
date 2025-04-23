@@ -14,6 +14,7 @@
     "url": "https://tailadmin.com"
   },
   "dependencies": {
+    "@heygen/streaming-avatar": "^2.0.13",
     "@openai/realtime-api-beta": "github:openai/openai-realtime-api-beta",
     "@types/audioworklet": "^0.0.50",
     "apexcharts": "^4.0.0",

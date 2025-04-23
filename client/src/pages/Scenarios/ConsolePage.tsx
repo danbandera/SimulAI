@@ -12,7 +12,7 @@ import { useTranslation } from "react-i18next";
 
 interface ConsolePageProps {
   aspects: string;
-  description: string;
+  context: string;
 }
 
 interface ConversationItem {
@@ -24,14 +24,13 @@ interface ConversationItem {
 
 export const ConsolePage: React.FC<ConsolePageProps> = ({
   aspects,
-  description,
+  context,
 }) => {
   const { t } = useTranslation();
   const { id: scenarioId } = useParams();
   const { currentUser } = useUsers();
   const { saveConversation } = useScenarios();
-  const newInstructions =
-    instructions + `\n\n${description}` + `\n\n${aspects}`;
+  const newInstructions = instructions + `\n\n${context}` + `\n\n${aspects}`;
 
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);

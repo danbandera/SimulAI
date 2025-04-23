@@ -17,7 +17,7 @@ const NewScenario = () => {
   const { users, getUsers } = useUsers();
   const [formData, setFormData] = useState({
     title: "",
-    description: "",
+    context: "",
     status: "draft",
     user: null as number | null,
   });
@@ -119,13 +119,13 @@ const NewScenario = () => {
 
                 <div className="mb-4.5">
                   <label className="mb-2.5 block text-black dark:text-white">
-                    Description
+                    Context
                   </label>
                   <textarea
-                    name="description"
-                    value={formData.description}
+                    name="context"
+                    value={formData.context}
                     onChange={handleChange}
-                    placeholder="Enter scenario description"
+                    placeholder="Enter scenario context"
                     className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
                     rows={4}
                   />

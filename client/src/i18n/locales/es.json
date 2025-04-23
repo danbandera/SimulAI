@@ -68,7 +68,7 @@
     "draft": "Borrador",
     "published": "Publicado",
     "archived": "Archivado",
-    "description": "Descripción",
+    "context": "Contexto",
     "assignUser": "Asignar Usuario",
     "selectUser": "Seleccionar Usuario",
     "aspects": "Aspectos a evaluar",

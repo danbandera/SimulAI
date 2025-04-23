@@ -23,7 +23,7 @@ const EditScenario = () => {
 
   const [formData, setFormData] = useState({
     title: "",
-    description: "",
+    context: "",
     status: "draft",
     user: null as number | null,
     aspects: [] as { value: string; label: string }[],
@@ -56,7 +56,7 @@ const EditScenario = () => {
       const scenario = await getScenario(Number(id));
       setFormData({
         title: scenario.title,
-        description: scenario.description,
+        context: scenario.context,
         status: scenario.status,
         user: scenario.user_id_assigned,
         aspects: scenario.aspects || [],
@@ -128,7 +128,7 @@ const EditScenario = () => {
     try {
       const formDataToSend = new FormData();
       formDataToSend.append("title", formData.title);
-      formDataToSend.append("description", formData.description);
+      formDataToSend.append("context", formData.context);
       formDataToSend.append("status", formData.status);
       formDataToSend.append("aspects", JSON.stringify(formData.aspects));
       formDataToSend.append(
@@ -295,13 +295,13 @@ const EditScenario = () => {
 
                 <div className="mb-4.5">
                   <label className="mb-2.5 block text-black dark:text-white">
-                    {t("scenarios.description")}
+                    {t("scenarios.context")}
                   </label>
                   <textarea
-                    name="description"
-                    value={formData.description}
+                    name="context"
+                    value={formData.context}
                     onChange={handleChange}
-                    placeholder={t("scenarios.enterScenarioDescription")}
+                    placeholder={t("scenarios.enterScenarioContext")}
                     className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
                     rows={4}
                   />

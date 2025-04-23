@@ -278,7 +278,7 @@ router.post(
       const systemContext = `You are an AI evaluator reviewing a conversation. 
       Here is your context:
       - Scenario Title: ${scenario.title || "No title"}
-      - Description: ${scenario.description || "No description"}
+      - Description: ${scenario.context || "No context"}
       ${
         aspectsText
           ? `- Aspects to evaluate: ${aspectsText}`

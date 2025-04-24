@@ -261,6 +261,7 @@ export const createScenario = async (req, res) => {
           aspects,
           assignedIA,
           assignedIAModel,
+          generatedImageUrl,
         } = req.body;
 
         // Validate required fields
@@ -281,6 +282,30 @@ export const createScenario = async (req, res) => {
         // Handle file uploads to S3
         const fileUrls = [];
         let pdfContents = "";
+
+        // Handle generated image URL if present
+        let generatedImageS3Url = null;
+        if (generatedImageUrl) {
+          try {
+            // Download the image from OpenAI URL
+            const imageFetchResponse = await fetch(generatedImageUrl);
+            const imageBuffer = await imageFetchResponse.arrayBuffer();
+
+            // Upload to S3
+            generatedImageS3Url = await uploadToS3(
+              {
+                buffer: Buffer.from(imageBuffer),
+                originalname: `generated-${Date.now()}.png`,
+                mimetype: "image/png",
+              },
+              "generated-images"
+            );
+            console.log("Generated image uploaded to S3:", generatedImageS3Url);
+          } catch (imageError) {
+            console.error("Error processing generated image:", imageError);
+            // Continue with scenario creation even if image processing fails
+          }
+        }
 
         if (req.files && req.files.length > 0) {
           // Process PDF files to extract content
@@ -324,6 +349,7 @@ export const createScenario = async (req, res) => {
           files: fileUrls,
           assignedIA,
           assignedIAModel,
+          generated_image_url: generatedImageS3Url,
         };
 
         // Only add pdf_contents if we have any
@@ -358,6 +384,14 @@ export const createScenario = async (req, res) => {
               await deleteFromS3(fileUrl);
             } catch (error) {
               console.error("Error deleting file from S3:", error);
+            }
+          }
+          // Also clean up the generated image if it was uploaded
+          if (generatedImageS3Url) {
+            try {
+              await deleteFromS3(generatedImageS3Url);
+            } catch (error) {
+              console.error("Error deleting generated image from S3:", error);
             }
           }
           return res.status(400).json({ message: scenarioError.message });
@@ -411,12 +445,13 @@ export const updateScenario = async (req, res) => {
           existingFiles,
           assignedIA,
           assignedIAModel,
+          generatedImageUrl,
         } = req.body;
 
         // Get existing scenario data to access current PDF contents and files
         const { data: existingScenario } = await connectSqlDB
           .from("scenarios")
-          .select("pdf_contents, files")
+          .select("pdf_contents, files, generated_image_url")
           .eq("id", id)
           .single();
 
@@ -498,6 +533,30 @@ ${newPdfContents}`
         // Combine existing and new file URLs
         const allFiles = [...parsedExistingFiles, ...newFileUrls];
 
+        // Handle generated image URL if present
+        let generatedImageS3Url = null;
+        if (generatedImageUrl) {
+          try {
+            // Download the image from OpenAI URL
+            const imageFetchResponse = await fetch(generatedImageUrl);
+            const imageBuffer = await imageFetchResponse.arrayBuffer();
+
+            // Upload to S3
+            generatedImageS3Url = await uploadToS3(
+              {
+                buffer: Buffer.from(imageBuffer),
+                originalname: `generated-${Date.now()}.png`,
+                mimetype: "image/png",
+              },
+              "generated-images"
+            );
+            console.log("Generated image uploaded to S3:", generatedImageS3Url);
+          } catch (imageError) {
+            console.error("Error processing generated image:", imageError);
+            // Continue with scenario update even if image processing fails
+          }
+        }
+
         // Prepare update data
         const updateData = {
           title,
@@ -509,6 +568,8 @@ ${newPdfContents}`
           assignedIAModel,
           updated_at: new Date().toISOString(),
           pdf_contents: finalPdfContents,
+          generated_image_url:
+            generatedImageS3Url || existingScenario?.generated_image_url,
         };
 
         const { data: scenario, error: scenarioError } = await connectSqlDB
@@ -808,5 +869,80 @@ export const processAudio = async (req, res) => {
     res
       .status(500)
       .json({ error: "Failed to process audio", details: error.message });
+  }
+};
+
+export const generateImage = async (req, res) => {
+  try {
+    const { prompt } = req.body;
+    if (!prompt) {
+      return res.status(400).json({ message: "Prompt is required" });
+    }
+
+    console.log("Fetching OpenAI API key from settings...");
+    // Get OpenAI API key from settings
+    const { data: settings, error: settingsError } = await connectSqlDB
+      .from("settings")
+      .select("openai_key")
+      .single();
+
+    if (settingsError) {
+      console.error("Database error:", settingsError);
+      return res
+        .status(500)
+        .json({ message: "Database error", error: settingsError.message });
+    }
+
+    if (!settings || !settings.openai_key) {
+      console.error("OpenAI API key not found in settings");
+      return res.status(500).json({ message: "OpenAI API key not found" });
+    }
+
+    console.log("Decrypting API key...");
+    let apiKey;
+    try {
+      apiKey = decryptValue(settings.openai_key);
+      console.log("API key decrypted successfully");
+    } catch (decryptError) {
+      console.error("Error decrypting API key:", decryptError);
+      // If decryption fails, try using the key as is
+      apiKey = settings.openai_key;
+      console.log("Using raw API key");
+    }
+
+    if (!apiKey) {
+      console.error("No valid API key available");
+      return res.status(500).json({ message: "No valid API key available" });
+    }
+
+    console.log("Initializing OpenAI client...");
+    // Initialize OpenAI client
+    const openai = new OpenAI({
+      apiKey: apiKey,
+    });
+
+    console.log("Generating image with prompt:", prompt);
+    // Generate image using DALL-E
+    const imageResponse = await openai.images.generate({
+      model: "dall-e-3",
+      prompt: prompt,
+      n: 1,
+      size: "1024x1024",
+      quality: "standard",
+    });
+
+    console.log("Image generated successfully");
+    // Return the OpenAI image URL directly
+    res.json({ url: imageResponse.data[0].url });
+  } catch (error) {
+    console.error("Detailed error in generateImage:", error);
+    if (error.response) {
+      console.error("OpenAI API error response:", error.response.data);
+    }
+    res.status(500).json({
+      message: "Error generating image",
+      error: error.message,
+      details: error.response?.data || "No additional details",
+    });
   }
 };

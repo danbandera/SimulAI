@@ -9,6 +9,7 @@ import {
   Conversation,
   saveConversationRequest,
   getConversationsRequest,
+  generateImageRequest,
 } from "../api/scenarios.api";
 
 interface Scenario {
@@ -27,6 +28,7 @@ interface Scenario {
   assignedIA?: string;
   assignedIAModel?: string;
   audio_url?: string;
+  generated_image_url?: string;
 }
 
 interface ScenarioContextValue {
@@ -42,6 +44,7 @@ interface ScenarioContextValue {
     userId: number,
   ) => Promise<void>;
   getConversations: (scenarioId: number) => Promise<Conversation[]>;
+  generateImage: (prompt: string) => Promise<string>;
 }
 
 interface ScenarioProviderProps {
@@ -145,6 +148,19 @@ export const ScenarioProvider = ({ children }: ScenarioProviderProps) => {
       throw error;
     }
   };
+
+  const generateImage = async (prompt: string) => {
+    try {
+      const response = await generateImageRequest(prompt);
+      toast.success("Image generated successfully");
+      return response.url;
+    } catch (error) {
+      console.error("Error generating image:", error);
+      toast.error("Error generating image");
+      throw error;
+    }
+  };
+
   return (
     <ScenarioContext.Provider
       value={{
@@ -156,6 +172,7 @@ export const ScenarioProvider = ({ children }: ScenarioProviderProps) => {
         updateScenario,
         saveConversation,
         getConversations,
+        generateImage,
       }}
     >
       {children}

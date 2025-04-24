@@ -6,40 +6,69 @@ import { toast } from "react-hot-toast";
 import Breadcrumb from "../../components/Breadcrumbs/Breadcrumb";
 import Select, { SingleValue } from "react-select";
 import CreatableSelect from "react-select/creatable";
-import { FiUpload } from "react-icons/fi";
+import { FiUpload, FiTrash } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
+
+interface UserOption {
+  value: number;
+  label: string;
+}
+
 interface ExistingFile {
   path: string;
   name: string;
 }
 
+interface Scenario {
+  id: number;
+  title: string;
+  context: string;
+  status: string;
+  user_id_assigned: number | null;
+  aspects: { value: string; label: string }[];
+  files: string[];
+  assignedIA: string;
+  assignedIAModel?: string;
+  generated_image_url?: string;
+}
+
+interface FormData {
+  title: string;
+  context: string;
+  status: string;
+  user: UserOption | null;
+  aspects: { value: string; label: string }[];
+  files: File[];
+  existingFiles: string[];
+  assignedIA: string;
+  assignedIAModel?: string;
+  imagePrompt: string;
+  generatedImageUrl: string;
+}
+
 const EditScenario = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { getScenario, updateScenario } = useScenarios();
+  const { getScenario, updateScenario, generateImage } = useScenarios();
   const { users, getUsers } = useUsers();
   const { currentUser } = useUsers();
   const { id } = useParams();
 
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     title: "",
     context: "",
     status: "draft",
-    user: null as number | null,
-    aspects: [] as { value: string; label: string }[],
-    files: [] as File[],
-    existingFiles: [] as string[],
-    assignedIA: "openai" as "openai" | "mistral" | "llama",
-    assignedIAModel: "gpt-4o" as
-      | "gpt-4o"
-      | "gpt-4o-mini"
-      | "gpt-3.5-turbo"
-      | "gpt-3.5-turbo-mini"
-      | "mistral-large"
-      | "mistral-small"
-      | "llama-3.1-70b"
-      | "llama-3.1-8b",
+    user: null,
+    aspects: [],
+    files: [],
+    existingFiles: [],
+    assignedIA: "openai",
+    assignedIAModel: "gpt-4o",
+    imagePrompt: "",
+    generatedImageUrl: "",
   });
+
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
   const aspectOptions = [
     { value: "aspect1", label: "Aspect 1" },
@@ -58,22 +87,19 @@ const EditScenario = () => {
         title: scenario.title,
         context: scenario.context,
         status: scenario.status,
-        user: scenario.user_id_assigned,
+        user: scenario.user_id_assigned
+          ? {
+              value: scenario.user_id_assigned,
+              label: scenario.user_id_assigned.toString(),
+            }
+          : null,
         aspects: scenario.aspects || [],
-        files: [],
+        files: scenario.files || [],
         existingFiles: scenario.files || [],
-        assignedIA:
-          (scenario.assignedIA as "openai" | "mistral" | "llama") || "openai",
-        assignedIAModel:
-          (scenario.assignedIAModel as
-            | "gpt-4o"
-            | "gpt-4o-mini"
-            | "gpt-3.5-turbo"
-            | "gpt-3.5-turbo-mini"
-            | "mistral-large"
-            | "mistral-small"
-            | "llama-3.1-70b"
-            | "llama-3.1-8b") || "gpt-4o",
+        assignedIA: scenario.assignedIA || "openai",
+        assignedIAModel: scenario.assignedIAModel,
+        imagePrompt: "",
+        generatedImageUrl: scenario.generated_image_url || "",
       });
     };
     loadScenario();
@@ -91,18 +117,10 @@ const EditScenario = () => {
     }));
   };
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || []);
+  const handleUserSelect = (selectedOption: SingleValue<UserOption>) => {
     setFormData((prev) => ({
       ...prev,
-      files: [...prev.files, ...files],
-    }));
-  };
-
-  const handleRemoveFile = (indexToRemove: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      files: prev.files.filter((_, index) => index !== indexToRemove),
+      user: selectedOption,
     }));
   };
 
@@ -115,43 +133,92 @@ const EditScenario = () => {
     }));
   };
 
-  const handleRemoveExistingFile = (fileToRemove: string) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      const newFiles = Array.from(e.target.files);
+      setFormData((prev) => ({
+        ...prev,
+        files: [...prev.files, ...newFiles],
+      }));
+    }
+  };
+
+  const handleRemoveFile = (index: number) => {
     setFormData((prev) => ({
       ...prev,
-      existingFiles: prev.existingFiles.filter((file) => file !== fileToRemove),
+      files: prev.files.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleRemoveExistingFile = (index: number) => {
+    setFormData((prev) => ({
+      ...prev,
+      existingFiles: prev.existingFiles.filter((_, i) => i !== index),
+    }));
+  };
+
+  const handleGenerateImage = async () => {
+    if (!formData.imagePrompt) {
+      toast.error("Please enter an image prompt");
+      return;
+    }
+
+    setIsGeneratingImage(true);
+    try {
+      const imageUrl = await generateImage(formData.imagePrompt);
+      setFormData((prev) => ({
+        ...prev,
+        generatedImageUrl: imageUrl,
+      }));
+    } catch (error) {
+      console.error("Error generating image:", error);
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setFormData((prev) => ({
+      ...prev,
+      generatedImageUrl: "",
+      imagePrompt: "",
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!formData.user) {
+      toast.error("Please select a user");
+      return;
+    }
 
     try {
       const formDataToSend = new FormData();
       formDataToSend.append("title", formData.title);
       formDataToSend.append("context", formData.context);
       formDataToSend.append("status", formData.status);
+      formDataToSend.append("user_id_assigned", String(formData.user.value));
+      formDataToSend.append("created_by", String(currentUser?.id));
       formDataToSend.append("aspects", JSON.stringify(formData.aspects));
-      formDataToSend.append(
-        "existingFiles",
-        JSON.stringify(formData.existingFiles),
-      );
-      formDataToSend.append("assignedIA", formData.assignedIA);
-      formDataToSend.append("assignedIAModel", formData.assignedIAModel);
+      formDataToSend.append("assigned_ia", formData.assignedIA);
+      formDataToSend.append("generatedImageUrl", formData.generatedImageUrl);
 
+      // Append files
       formData.files.forEach((file) => {
         formDataToSend.append("files", file);
       });
 
+      // Append existing files
+      formData.existingFiles.forEach((file) => {
+        formDataToSend.append("existing_files", file);
+      });
+
       await updateScenario(Number(id), formDataToSend);
       toast.success("Scenario updated successfully");
-      navigate(`/scenarios/${id}`);
-    } catch (error: any) {
+      navigate("/scenarios");
+    } catch (error) {
       console.error("Error updating scenario:", error);
-      if (error.response?.data?.message) {
-        toast.error(`Error: ${error.response.data.message}`);
-      } else {
-        toast.error("Error updating scenario");
-      }
+      toast.error("Error updating scenario");
     }
   };
 
@@ -292,7 +359,6 @@ const EditScenario = () => {
                     </div>
                   </div>
                 )}
-
                 <div className="mb-4.5">
                   <label className="mb-2.5 block text-black dark:text-white">
                     {t("scenarios.context")}
@@ -306,7 +372,6 @@ const EditScenario = () => {
                     rows={4}
                   />
                 </div>
-
                 <div className="mb-4.5">
                   <label className="mb-2.5 block text-black dark:text-white">
                     {t("scenarios.aspects")}{" "}
@@ -322,44 +387,11 @@ const EditScenario = () => {
                     placeholder={t("scenarios.selectAspects")}
                   />
                 </div>
-
                 <div className="mb-4.5">
                   <label className="mb-2.5 block text-black dark:text-white">
                     {t("scenarios.attachFiles")}
                   </label>
                   <div className="flex flex-col gap-4">
-                    {formData.existingFiles.length > 0 && (
-                      <div className="flex flex-col gap-2.5">
-                        <label className="text-sm text-black dark:text-white">
-                          {t("scenarios.existingFiles")}
-                        </label>
-                        <div className="flex flex-wrap gap-3">
-                          {formData.existingFiles.map((file, index) => (
-                            <div
-                              key={index}
-                              className="flex items-center gap-2 rounded-md bg-gray-2 px-3 py-1 dark:bg-meta-4"
-                            >
-                              <a
-                                href={file}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-sm text-primary hover:text-opacity-90"
-                              >
-                                File {index + 1}
-                              </a>
-                              <button
-                                type="button"
-                                onClick={() => handleRemoveExistingFile(file)}
-                                className="text-danger hover:text-meta-1"
-                              >
-                                ×
-                              </button>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
                     <div className="relative">
                       <input
                         type="file"
@@ -381,7 +413,7 @@ const EditScenario = () => {
                     {formData.files.length > 0 && (
                       <div className="flex flex-col gap-2.5">
                         <label className="text-sm text-black dark:text-white">
-                          {t("scenarios.newFilesToUpload")}
+                          {t("scenarios.attachedFiles")}
                         </label>
                         <div className="flex flex-wrap gap-3">
                           {formData.files.map((file, index) => (
@@ -390,7 +422,17 @@ const EditScenario = () => {
                               className="flex items-center gap-2 rounded-md bg-gray-2 px-3 py-1 dark:bg-meta-4"
                             >
                               <span className="text-sm text-black dark:text-white">
-                                {file.name}
+                                <a
+                                  href={
+                                    typeof file === "string"
+                                      ? file
+                                      : URL.createObjectURL(file)
+                                  }
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                >
+                                  File {index + 1} {file.name}
+                                </a>
                               </span>
                               <button
                                 type="button"
@@ -406,7 +448,58 @@ const EditScenario = () => {
                     )}
                   </div>
                 </div>
-
+                <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
+                  <div className="w-full xl:w-1/2">
+                    <div className="mb-4.5">
+                      <label className="mb-2.5 block text-black dark:text-white">
+                        {t("scenarios.imagePrompt")}
+                      </label>
+                      <div className="flex flex-col gap-2">
+                        <textarea
+                          rows={5}
+                          name="imagePrompt"
+                          value={formData.imagePrompt}
+                          onChange={handleChange}
+                          placeholder="Enter image prompt"
+                          className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleGenerateImage}
+                          disabled={isGeneratingImage}
+                          className="flex justify-center rounded bg-primary p-3 font-medium text-gray hover:bg-opacity-90"
+                        >
+                          {isGeneratingImage
+                            ? t("scenarios.generatingImage")
+                            : t("scenarios.generateImage")}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="w-full xl:w-1/2">
+                    {formData.generatedImageUrl && (
+                      <div className="mb-4.5">
+                        <label className="mb-2.5 block text-black dark:text-white">
+                          {t("scenarios.generatedImage")}
+                        </label>
+                        <div className="relative w-full">
+                          <img
+                            src={formData.generatedImageUrl}
+                            alt="Generated"
+                            className="w-full rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleRemoveImage}
+                            className="absolute top-2 right-2 rounded-full bg-danger p-2 text-white hover:bg-opacity-90"
+                          >
+                            <FiTrash />
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
                 <div className="flex justify-center">
                   <button
                     type="submit"

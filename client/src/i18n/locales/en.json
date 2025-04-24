@@ -90,7 +90,15 @@
     "noConversationsFound": "No conversations found for this scenario",
     "collapse": "Collapse",
     "expand": "Expand",
-    "enterScenarioContext": "Enter scenario context"
+    "enterScenarioContext": "Enter scenario context",
+    "imagePrompt": "Image Prompt",
+    "generateImage": "Generate Image",
+    "generatingImage": "Generating...",
+    "generatedImage": "Generated Image",
+    "imagePromptPlaceholder": "Enter a description for the image you want to generate",
+    "imageGenerationError": "Error generating image",
+    "imageGenerationSuccess": "Image generated successfully",
+    "clearImage": "Clear Image"
   },
   "console": {
     "startConversation": "Start Conversation",

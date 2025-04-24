@@ -28,6 +28,7 @@ interface ScenarioDetail {
   updated_at?: string;
   aspects?: { value: string; label: string }[];
   files?: string[];
+  generated_image_url?: string;
 }
 
 const ScenarioDetail = () => {
@@ -212,6 +213,18 @@ const ScenarioDetail = () => {
                           </a>
                         ))}
                       </div>
+                    </div>
+                  )}
+                  {scenario.generated_image_url && (
+                    <div>
+                      <h4 className="font-medium text-black dark:text-white mb-2">
+                        Generated Image
+                      </h4>
+                      <img
+                        src={scenario.generated_image_url}
+                        alt="Generated"
+                        className="w-full max-w-md rounded-lg"
+                      />
                     </div>
                   )}
                 </div>

@@ -6,9 +6,10 @@ import { toast } from "react-hot-toast";
 import Breadcrumb from "../../components/Breadcrumbs/Breadcrumb";
 import Select, { SingleValue } from "react-select";
 import CreatableSelect from "react-select/creatable";
-import { FiUpload } from "react-icons/fi";
+import { FiTrash, FiUpload } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
 import { sendEmail } from "../../api/email.api";
+import axios from "axios";
 
 interface UserOption {
   value: number;
@@ -19,7 +20,7 @@ const NewScenario = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const location = useLocation();
-  const { createScenario } = useScenarios();
+  const { createScenario, generateImage } = useScenarios();
   const { users, getUsers } = useUsers();
   const { currentUser } = useUsers();
 
@@ -33,7 +34,11 @@ const NewScenario = () => {
     user: null as number | null,
     aspects: [] as { value: string; label: string }[],
     files: [] as File[],
+    imagePrompt: "",
+    generatedImageUrl: "",
   });
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false);
+
   // Transform users data for react-select
   const userOptions: UserOption[] = users
     .filter((user) =>
@@ -99,6 +104,26 @@ const NewScenario = () => {
     }));
   };
 
+  const handleGenerateImage = async () => {
+    if (!formData.imagePrompt) {
+      toast.error("Please enter an image prompt");
+      return;
+    }
+
+    setIsGeneratingImage(true);
+    try {
+      const imageUrl = await generateImage(formData.imagePrompt);
+      setFormData((prev) => ({
+        ...prev,
+        generatedImageUrl: imageUrl,
+      }));
+    } catch (error) {
+      console.error("Error generating image:", error);
+    } finally {
+      setIsGeneratingImage(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!formData.user) {
@@ -115,6 +140,7 @@ const NewScenario = () => {
       formDataToSend.append("user_id_assigned", String(formData.user));
       formDataToSend.append("created_by", String(currentUser?.id));
       formDataToSend.append("aspects", JSON.stringify(formData.aspects));
+      formDataToSend.append("generatedImageUrl", formData.generatedImageUrl);
 
       // Append each file
       formData.files.forEach((file, index) => {
@@ -299,6 +325,64 @@ const NewScenario = () => {
                               </button>
                             </div>
                           ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+                <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
+                  <div className="w-full xl:w-1/2">
+                    <div className="mb-4.5">
+                      <label className="mb-2.5 block text-black dark:text-white">
+                        {t("scenarios.imagePrompt")}
+                      </label>
+                      <div className="flex flex-col gap-2">
+                        <textarea
+                          rows={5}
+                          name="imagePrompt"
+                          value={formData.imagePrompt}
+                          onChange={handleChange}
+                          placeholder="Enter image prompt"
+                          className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleGenerateImage}
+                          disabled={isGeneratingImage}
+                          className="flex justify-center rounded bg-primary p-3 font-medium text-gray hover:bg-opacity-90"
+                        >
+                          {isGeneratingImage
+                            ? t("scenarios.generatingImage")
+                            : t("scenarios.generateImage")}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="w-full xl:w-1/2">
+                    {formData.generatedImageUrl && (
+                      <div className="mb-4.5">
+                        <label className="mb-2.5 block text-black dark:text-white">
+                          {t("scenarios.generatedImage")}
+                        </label>
+                        <div className="relative">
+                          <img
+                            src={formData.generatedImageUrl}
+                            alt="Generated"
+                            className="w-full rounded-lg"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setFormData((prev) => ({
+                                ...prev,
+                                generatedImageUrl: "",
+                                imagePrompt: "",
+                              }));
+                            }}
+                            className="absolute top-2 right-2 rounded-full bg-danger p-2 text-white hover:bg-opacity-90"
+                          >
+                            <FiTrash />
+                          </button>
                         </div>
                       </div>
                     )}

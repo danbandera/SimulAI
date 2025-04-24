@@ -26,6 +26,7 @@ CREATE TABLE scenarios (
   files TEXT[] DEFAULT '{}',
   assignedIA VARCHAR(255),
   assignedIAModel VARCHAR(255),
+  generated_image_url TEXT,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP
 );

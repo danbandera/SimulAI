@@ -89,7 +89,15 @@
     "conversationsHistory": "Historial de Conversaciones",
     "noConversationsFound": "No hay conversaciones encontradas para este escenario",
     "collapse": "Colapsar",
-    "expand": "Expandir"
+    "expand": "Expandir",
+    "imagePrompt": "Prompt de Imagen",
+    "generateImage": "Generar Imagen",
+    "generatingImage": "Generando...",
+    "generatedImage": "Imagen Generada",
+    "imagePromptPlaceholder": "Ingresa una descripción para la imagen que deseas generar",
+    "imageGenerationError": "Error al generar la imagen",
+    "imageGenerationSuccess": "Imagen generada exitosamente",
+    "clearImage": "Borrar Imagen"
   },
   "console": {
     "startConversation": "Iniciar Conversación",

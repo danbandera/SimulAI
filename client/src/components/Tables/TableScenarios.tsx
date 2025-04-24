@@ -21,6 +21,7 @@ interface Scenario {
   updated_at?: string;
   aspects?: { value: string; label: string }[];
   files?: string[];
+  generated_image_url?: string;
 }
 
 const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
@@ -155,6 +156,13 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
               >
                 {scenario.title}
               </Link>
+              {scenario.generated_image_url && (
+                <img
+                  src={scenario.generated_image_url}
+                  alt="Generated"
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+              )}
             </div>
 
             <div className="flex items-center justify-center p-2.5 xl:p-5">

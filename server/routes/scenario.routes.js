@@ -11,6 +11,7 @@ import {
   getConversation,
   getAllConversations,
   processAudio,
+  generateImage,
 } from "../controllers/scenario.controller.js";
 import multer from "multer";
 import { authRequired } from "../middlewares/validateToken.js";
@@ -346,5 +347,8 @@ router.post(
     }
   }
 );
+
+// router.post("/scenarios/:id/audio", upload.single("audio"), processAudio);
+router.post("/scenarios/generate-image", generateImage);
 
 export default router;

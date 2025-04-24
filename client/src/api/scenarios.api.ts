@@ -33,6 +33,7 @@ export interface Scenario {
   files?: string[];
   assignedIA?: string;
   assignedIAModel?: string;
+  generated_image_url?: string;
 }
 
 export const getScenariosRequest = async () => {
@@ -140,4 +141,16 @@ export const getConversationRequest = async (
     `/scenarios/${scenarioId}/conversations/${conversationId}`,
   );
   return response.data;
+};
+
+export const generateImageRequest = async (prompt: string) => {
+  try {
+    const response = await axios.post("/scenarios/generate-image", {
+      prompt,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error in generateImageRequest:", error);
+    throw error;
+  }
 };

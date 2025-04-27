@@ -262,6 +262,7 @@ export const createScenario = async (req, res) => {
           assignedIA,
           assignedIAModel,
           generatedImageUrl,
+          show_image_prompt,
         } = req.body;
 
         // Validate required fields
@@ -350,6 +351,7 @@ export const createScenario = async (req, res) => {
           assignedIA,
           assignedIAModel,
           generated_image_url: generatedImageS3Url,
+          show_image_prompt: show_image_prompt,
         };
 
         // Only add pdf_contents if we have any
@@ -446,6 +448,7 @@ export const updateScenario = async (req, res) => {
           assignedIA,
           assignedIAModel,
           generatedImageUrl,
+          show_image_prompt,
         } = req.body;
 
         // Get existing scenario data to access current PDF contents and files
@@ -570,6 +573,7 @@ ${newPdfContents}`
           pdf_contents: finalPdfContents,
           generated_image_url:
             generatedImageS3Url || existingScenario?.generated_image_url,
+          show_image_prompt: show_image_prompt === "true",
         };
 
         const { data: scenario, error: scenarioError } = await connectSqlDB

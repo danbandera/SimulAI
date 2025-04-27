@@ -44,6 +44,7 @@ interface FormData {
   assignedIAModel?: string;
   imagePrompt: string;
   generatedImageUrl: string;
+  show_image_prompt: boolean;
 }
 
 const EditScenario = () => {
@@ -66,6 +67,7 @@ const EditScenario = () => {
     assignedIAModel: "gpt-4o",
     imagePrompt: "",
     generatedImageUrl: "",
+    show_image_prompt: false,
   });
 
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
@@ -100,6 +102,7 @@ const EditScenario = () => {
         assignedIAModel: scenario.assignedIAModel,
         imagePrompt: "",
         generatedImageUrl: scenario.generated_image_url || "",
+        show_image_prompt: scenario.show_image_prompt || false,
       });
     };
     loadScenario();
@@ -202,6 +205,10 @@ const EditScenario = () => {
       formDataToSend.append("aspects", JSON.stringify(formData.aspects));
       formDataToSend.append("assigned_ia", formData.assignedIA);
       formDataToSend.append("generatedImageUrl", formData.generatedImageUrl);
+      formDataToSend.append(
+        "show_image_prompt",
+        formData.show_image_prompt.toString(),
+      );
 
       // Append files
       formData.files.forEach((file) => {
@@ -215,13 +222,13 @@ const EditScenario = () => {
 
       await updateScenario(Number(id), formDataToSend);
       toast.success("Scenario updated successfully");
-      navigate("/scenarios");
+      navigate(`/scenarios/${id}`);
     } catch (error) {
       console.error("Error updating scenario:", error);
       toast.error("Error updating scenario");
     }
   };
-
+  console.log(formData);
   return (
     <>
       <Breadcrumb pageName={t("scenarios.editScenario")} />
@@ -448,58 +455,81 @@ const EditScenario = () => {
                     )}
                   </div>
                 </div>
-                <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
-                  <div className="w-full xl:w-1/2">
-                    <div className="mb-4.5">
-                      <label className="mb-2.5 block text-black dark:text-white">
-                        {t("scenarios.imagePrompt")}
-                      </label>
-                      <div className="flex flex-col gap-2">
-                        <textarea
-                          rows={5}
-                          name="imagePrompt"
-                          value={formData.imagePrompt}
-                          onChange={handleChange}
-                          placeholder="Enter image prompt"
-                          className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
-                        />
-                        <button
-                          type="button"
-                          onClick={handleGenerateImage}
-                          disabled={isGeneratingImage}
-                          className="flex justify-center rounded bg-primary p-3 font-medium text-gray hover:bg-opacity-90"
-                        >
-                          {isGeneratingImage
-                            ? t("scenarios.generatingImage")
-                            : t("scenarios.generateImage")}
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="w-full xl:w-1/2">
-                    {formData.generatedImageUrl && (
+                <div className="mb-4.5">
+                  <label className="inline-flex items-center cursor-pointer">
+                    <input
+                      type="checkbox"
+                      value=""
+                      className="sr-only peer"
+                      checked={formData.show_image_prompt}
+                      onChange={() =>
+                        setFormData((prev) => ({
+                          ...prev,
+                          show_image_prompt: !prev.show_image_prompt,
+                        }))
+                      }
+                    />
+                    <div className="relative w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 dark:peer-focus:ring-blue-800 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-blue-600 dark:peer-checked:bg-blue-600"></div>
+                    <span className="ms-3 text-sm font-medium text-gray-900 dark:text-gray-300">
+                      {t("scenarios.showImagePrompt")}
+                    </span>
+                  </label>
+                </div>
+                {formData.show_image_prompt && (
+                  <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
+                    <div className="w-full xl:w-1/2">
                       <div className="mb-4.5">
                         <label className="mb-2.5 block text-black dark:text-white">
-                          {t("scenarios.generatedImage")}
+                          {t("scenarios.imagePrompt")}
                         </label>
-                        <div className="relative w-full">
-                          <img
-                            src={formData.generatedImageUrl}
-                            alt="Generated"
-                            className="w-full rounded-lg"
+                        <div className="flex flex-col gap-2">
+                          <textarea
+                            rows={5}
+                            name="imagePrompt"
+                            value={formData.imagePrompt}
+                            onChange={handleChange}
+                            placeholder="Enter image prompt"
+                            className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 font-medium outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
                           />
                           <button
                             type="button"
-                            onClick={handleRemoveImage}
-                            className="absolute top-2 right-2 rounded-full bg-danger p-2 text-white hover:bg-opacity-90"
+                            onClick={handleGenerateImage}
+                            disabled={isGeneratingImage}
+                            className="flex justify-center rounded bg-primary p-3 font-medium text-gray hover:bg-opacity-90"
                           >
-                            <FiTrash />
+                            {isGeneratingImage
+                              ? t("scenarios.generatingImage")
+                              : t("scenarios.generateImage")}
                           </button>
                         </div>
                       </div>
-                    )}
+                    </div>
+                    <div className="w-full xl:w-1/2">
+                      {formData.generatedImageUrl && (
+                        <div className="mb-4.5">
+                          <label className="mb-2.5 block text-black dark:text-white">
+                            {t("scenarios.generatedImage")}
+                          </label>
+                          <div className="relative w-full">
+                            <img
+                              src={formData.generatedImageUrl}
+                              alt="Generated"
+                              className="w-full rounded-lg"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleRemoveImage}
+                              className="absolute top-2 right-2 rounded-full bg-danger p-2 text-white hover:bg-opacity-90"
+                            >
+                              <FiTrash />
+                            </button>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                </div>
+                )}
+
                 <div className="flex justify-center">
                   <button
                     type="submit"

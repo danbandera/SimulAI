@@ -29,6 +29,7 @@ interface ScenarioDetail {
   aspects?: { value: string; label: string }[];
   files?: string[];
   generated_image_url?: string;
+  show_image_prompt?: boolean;
 }
 
 const ScenarioDetail = () => {
@@ -215,18 +216,19 @@ const ScenarioDetail = () => {
                       </div>
                     </div>
                   )}
-                  {scenario.generated_image_url && (
-                    <div>
-                      <h4 className="font-medium text-black dark:text-white mb-2">
-                        Generated Image
-                      </h4>
-                      <img
-                        src={scenario.generated_image_url}
-                        alt="Generated"
-                        className="w-full max-w-md rounded-lg"
-                      />
-                    </div>
-                  )}
+                  {scenario.generated_image_url &&
+                    scenario.show_image_prompt && (
+                      <div>
+                        <h4 className="font-medium text-black dark:text-white mb-2">
+                          Generated Image
+                        </h4>
+                        <img
+                          src={scenario.generated_image_url}
+                          alt="Generated"
+                          className="w-full max-w-md rounded-lg"
+                        />
+                      </div>
+                    )}
                 </div>
               </div>
             </div>

@@ -29,6 +29,7 @@ interface Scenario {
   assignedIAModel?: string;
   audio_url?: string;
   generated_image_url?: string;
+  show_image_prompt?: boolean;
 }
 
 interface ScenarioContextValue {

@@ -10,13 +10,16 @@ import StreamingAvatar, {
 import { getAccessToken } from "../../api/get-access-token";
 import { AVATARS, STT_LANGUAGE_LIST } from "../../constants/avatars";
 import { setupChromaKey } from "./chromaKey";
+import { useParams } from "react-router-dom";
+import { useScenarios } from "../../context/ScenarioContext";
+import ScenarioDetail from "../../pages/Scenarios/ScenarioDetail";
+import { useAuth } from "../../context/AuthContext";
 
 interface InteractiveAvatarProps {
   scenarioId: number;
   scenarioTitle: string;
 }
-
-const InteractiveAvatar: React.FC<InteractiveAvatarProps> = () => {
+const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   const [isLoadingSession, setIsLoadingSession] = useState(false);
   const [stream, setStream] = useState<MediaStream>();
   const [avatarId, setAvatarId] = useState<string>(AVATARS[0].avatar_id);
@@ -29,9 +32,35 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = () => {
     (() => void) | null
   >(null);
 
+  // get scenarioId from InteractiveAvatarProps
+  const { scenarioId } = props;
+
   const mediaStream = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const avatar = useRef<StreamingAvatar | null>(null);
+  const [scenario, setScenario] = useState<ScenarioDetail | null>(null);
+
+  const { getScenario } = useScenarios();
+  useEffect(() => {
+    const loadScenario = async () => {
+      try {
+        const data = await getScenario(scenarioId);
+        setScenario(data as unknown as ScenarioDetail);
+      } catch (error) {
+        console.error("Error loading scenario:", error);
+      }
+    };
+    loadScenario();
+  }, [scenarioId, getScenario]);
+
+  const { loadSettings } = useAuth();
+  useEffect(() => {
+    const loadSettingsFn = async () => {
+      const settings = await loadSettings();
+      console.log(settings);
+    };
+    loadSettingsFn();
+  }, [loadSettings]);
 
   async function startSession() {
     setIsLoadingSession(true);
@@ -187,21 +216,22 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = () => {
             >
               <track kind="captions" />
             </video>
-            <canvas
-              ref={canvasRef}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "contain",
-                position: "absolute",
-                top: 0,
-                left: 0,
-                backgroundImage:
-                  "url('https://media.istockphoto.com/id/1505366087/es/foto/fondo-borroso-de-una-sala-vac%C3%ADa.jpg?s=612x612&w=0&k=20&c=M6T2f0429_mKDa3tX_pQ_iJ8tM17JzWOeZuPtPqBVeI=')",
-                backgroundSize: "cover",
-                backgroundPosition: "center",
-              }}
-            />
+            {scenario?.generated_image_url && scenario?.show_image_prompt && (
+              <canvas
+                ref={canvasRef}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  backgroundImage: `url(${scenario.generated_image_url})`,
+                  backgroundSize: "cover",
+                  backgroundPosition: "center",
+                }}
+              />
+            )}
           </div>
         )}
       </div>

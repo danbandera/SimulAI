@@ -27,6 +27,7 @@ CREATE TABLE scenarios (
   assignedIA VARCHAR(255),
   assignedIAModel VARCHAR(255),
   generated_image_url TEXT,
+  show_image_prompt BOOLEAN DEFAULT false,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP
 );

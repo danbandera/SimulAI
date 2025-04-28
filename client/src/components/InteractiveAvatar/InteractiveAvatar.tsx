@@ -12,6 +12,7 @@ import { setupChromaKey } from "./chromaKey";
 import { useScenarios } from "../../context/ScenarioContext";
 import ScenarioDetail from "../../pages/Scenarios/ScenarioDetail";
 import { useAuth } from "../../context/AuthContext";
+import * as faceapi from "face-api.js";
 
 interface InteractiveAvatarProps {
   scenarioId: number;
@@ -29,6 +30,115 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   const [stopChromaKeyProcessing, setStopChromaKeyProcessing] = useState<
     (() => void) | null
   >(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const toggleFullscreen = () => {
+    if (!containerRef.current) return;
+
+    if (!document.fullscreenElement) {
+      containerRef.current.requestFullscreen().catch((err) => {
+        console.error(`Error attempting to enable fullscreen: ${err.message}`);
+      });
+    } else {
+      document.exitFullscreen();
+    }
+  };
+
+  // Face Detection component modify later
+  const FaceDetection = () => {
+    const videoRef = useRef<HTMLVideoElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+
+    useEffect(() => {
+      const loadModels = async () => {
+        try {
+          const MODEL_URL =
+            "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights";
+          await Promise.all([
+            faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+            faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
+            faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+          ]);
+          startVideo();
+        } catch (error) {
+          console.error("Error loading models:", error);
+        }
+      };
+
+      const startVideo = () => {
+        navigator.mediaDevices
+          .getUserMedia({ video: true, audio: false })
+          .then((stream) => {
+            if (videoRef.current) {
+              videoRef.current.srcObject = stream;
+            }
+          })
+          .catch((err) => {
+            console.error("Error accessing camera:", err);
+          });
+      };
+
+      loadModels();
+
+      return () => {
+        if (videoRef.current && videoRef.current.srcObject) {
+          const stream = videoRef.current.srcObject as MediaStream;
+          stream.getTracks().forEach((track) => track.stop());
+        }
+      };
+    }, []);
+
+    useEffect(() => {
+      if (!videoRef.current || !canvasRef.current) return;
+
+      const video = videoRef.current;
+      const canvas = canvasRef.current;
+
+      video.addEventListener("play", () => {
+        const displaySize = { width: video.width, height: video.height };
+        faceapi.matchDimensions(canvas, displaySize);
+
+        const interval = setInterval(async () => {
+          const detections = await faceapi
+            .detectSingleFace(video)
+            .withFaceExpressions();
+
+          if (detections) {
+            const resizedDetections = faceapi.resizeResults(
+              detections,
+              displaySize,
+            );
+            const ctx = canvas.getContext("2d");
+            if (ctx) {
+              ctx.clearRect(0, 0, canvas.width, canvas.height);
+              faceapi.draw.drawFaceExpressions(canvas, resizedDetections);
+            }
+          }
+        }, 100);
+
+        return () => clearInterval(interval);
+      });
+    }, []);
+
+    return (
+      <div className="relative">
+        <video
+          ref={videoRef}
+          autoPlay
+          muted
+          width="320"
+          height="240"
+          className="rounded-lg"
+        />
+        <canvas
+          ref={canvasRef}
+          className="absolute top-0 left-0"
+          width="320"
+          height="240"
+        />
+      </div>
+    );
+  };
 
   // get scenarioId from InteractiveAvatarProps
   const { scenarioId } = props;
@@ -231,7 +341,10 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
             {isLoadingSession ? "Starting..." : "Start Session"}
           </button>
         ) : (
-          <div className="relative w-full h-full">
+          <div className="relative w-full h-full" ref={containerRef}>
+            <div className="absolute bottom-0 right-0 z-9">
+              <FaceDetection />
+            </div>
             <video
               ref={mediaStream}
               autoPlay
@@ -240,7 +353,6 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
                 width: "100%",
                 height: "100%",
                 objectFit: "contain",
-                // display: "none", // Hide the video element
               }}
             >
               <track kind="captions" />
@@ -261,6 +373,32 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
                 }}
               />
             )}
+            <button
+              onClick={endSession}
+              className="px-6 py-2 bg-danger text-white rounded-md hover:bg-opacity-90 absolute bottom-4 left-4"
+            >
+              End Session
+            </button>
+            <button
+              onClick={toggleFullscreen}
+              className="absolute bottom-2 right-2 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 z-10"
+              title="Toggle Fullscreen"
+            >
+              <svg
+                xmlns="http://www.w3.org/2000/svg"
+                className="h-5 w-5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+                />
+              </svg>
+            </button>
           </div>
         )}
       </div>
@@ -280,14 +418,17 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
           >
             Speak
           </button> */}
-          <button
+          {/* <button
             onClick={endSession}
-            className="px-6 py-2 bg-danger text-white rounded-md hover:bg-opacity-90"
+            className="px-6 py-2 bg-danger text-white rounded-md hover:bg-opacity-90 absolute bottom-2 left-2"
           >
             End Session
-          </button>
+          </button> */}
         </div>
       )}
+      {/* <div className="absolute bottom-0 right-0">
+        <FaceDetection />
+      </div> */}
     </div>
   );
 };

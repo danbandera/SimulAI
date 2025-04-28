@@ -100,7 +100,13 @@
     "imageGenerationSuccess": "Imagen generada exitosamente",
     "clearImage": "Borrar Imagen",
     "assignedIA": "IA Asignada",
-    "assignedIAModel": "Modelo de IA Asignado"
+    "assignedIAModel": "Modelo de IA Asignado",
+    "interactiveAvatar": "Avatar Interactivo",
+    "selectInteractiveAvatar": "Seleccionar Avatar Interactivo",
+    "avatarLanguage": "Idioma del Avatar",
+    "selectAvatarLanguage": "Seleccionar Idioma del Avatar",
+    "english": "Inglés",
+    "spanish": "Español"
   },
   "console": {
     "startConversation": "Iniciar Conversación",
@@ -137,6 +143,7 @@
     "PromtForAnalyseConversationDescription": "Ingresa el prompt para el análisis de conversación",
     "Aspects": "Aspectos",
     "AspectsDescription": "Ingresa los aspectos a evaluar con el siguiente formato (valor:etiqueta): aspecto1:Aspecto 1,aspecto2:Aspecto 2,...",
+    "heyGenKey": "Clave de HeyGen",
     "openAIKey": "Clave de OpenAI",
     "mistralKey": "Clave de Mistral",
     "llamaKey": "Clave de Llama",

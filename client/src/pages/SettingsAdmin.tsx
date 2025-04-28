@@ -9,6 +9,7 @@ const SettingsAdmin = () => {
   const { loadSettings, updateSettings } = useAuth();
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState({
+    heygen_key: "",
     openai_key: "",
     mistral_key: "",
     llama_key: "",
@@ -26,6 +27,7 @@ const SettingsAdmin = () => {
     promt_for_virtual_avatar: "",
     promt_for_analyse_conversation: "",
     aspects: "",
+    interactive_avatar: "",
   });
   useEffect(() => {
     loadSettingsFn();
@@ -36,6 +38,7 @@ const SettingsAdmin = () => {
       const data = await loadSettings();
       setSettings(
         data || {
+          heygen_key: "",
           openai_key: "",
           mistral_key: "",
           llama_key: "",
@@ -53,6 +56,7 @@ const SettingsAdmin = () => {
           promt_for_virtual_avatar: "",
           promt_for_analyse_conversation: "",
           aspects: "",
+          interactive_avatar: "",
         },
       );
     } catch (error) {
@@ -91,8 +95,14 @@ const SettingsAdmin = () => {
             aspects: settings.aspects,
           };
           break;
+        case "interactive_avatar":
+          dataToUpdate = {
+            interactive_avatar: settings.interactive_avatar,
+          };
+          break;
         case "ai":
           dataToUpdate = {
+            heygen_key: settings.heygen_key,
             openai_key: settings.openai_key,
             mistral_key: settings.mistral_key,
             llama_key: settings.llama_key,
@@ -159,7 +169,7 @@ const SettingsAdmin = () => {
                       className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                       name="promt_for_virtual_avatar"
                       id="promt_for_virtual_avatar"
-                      value={settings.promt_for_virtual_avatar}
+                      value={settings.promt_for_virtual_avatar || ""}
                       onChange={(e) =>
                         setSettings((prev) => ({
                           ...prev,
@@ -219,7 +229,7 @@ const SettingsAdmin = () => {
                       className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                       name="promt_for_analyse_conversation"
                       id="promt_for_analyse_conversation"
-                      value={settings.promt_for_analyse_conversation}
+                      value={settings.promt_for_analyse_conversation || ""}
                       onChange={(e) =>
                         setSettings((prev) => ({
                           ...prev,
@@ -277,7 +287,7 @@ const SettingsAdmin = () => {
                       className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
                       name="aspects"
                       id="aspects"
-                      value={settings.aspects}
+                      value={settings.aspects || ""}
                       onChange={(e) =>
                         setSettings((prev) => ({
                           ...prev,
@@ -286,6 +296,67 @@ const SettingsAdmin = () => {
                       }
                       rows={5}
                       placeholder={t("settingsAdmin.AspectsDescription")}
+                    />
+                  </div>
+                  <div className="flex justify-end gap-4.5">
+                    <button
+                      className="flex justify-center rounded border border-stroke py-2 px-6 font-medium text-black hover:shadow-1 dark:border-strokedark dark:text-white"
+                      type="button"
+                      onClick={loadSettings}
+                    >
+                      {t("settingsAdmin.cancelKeys")}
+                    </button>
+                    <button
+                      className="flex justify-center rounded bg-primary py-2 px-6 font-medium text-gray hover:bg-opacity-90"
+                      type="submit"
+                      disabled={loading}
+                    >
+                      {t("settingsAdmin.saveKeys")}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-5 gap-8 mt-8">
+          <div className="col-span-5">
+            <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+              <div className="border-b border-stroke py-4 px-7 dark:border-strokedark">
+                <h3 className="font-medium text-black dark:text-white">
+                  {t("settingsAdmin.interactiveAvatar")}
+                </h3>
+              </div>
+              <div className="p-7">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSubmit("interactive_avatar");
+                  }}
+                >
+                  <div className="mb-5.5">
+                    <label
+                      className="mb-3 block text-sm font-medium text-black dark:text-white"
+                      htmlFor="interactive_avatar"
+                    >
+                      {t("settingsAdmin.interactiveAvatarDescription")}
+                    </label>
+                    <textarea
+                      className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+                      name="interactive_avatar"
+                      id="interactive_avatar"
+                      value={settings.interactive_avatar || ""}
+                      onChange={(e) =>
+                        setSettings((prev) => ({
+                          ...prev,
+                          interactive_avatar: e.target.value,
+                        }))
+                      }
+                      rows={5}
+                      placeholder={t(
+                        "settingsAdmin.interactiveAvatarDescription",
+                      )}
                     />
                   </div>
                   <div className="flex justify-end gap-4.5">
@@ -329,6 +400,27 @@ const SettingsAdmin = () => {
                     <div className="w-full">
                       <label
                         className="mb-3 block text-sm font-medium text-black dark:text-white"
+                        htmlFor="heygen_key"
+                      >
+                        {t("settingsAdmin.heyGenKey")}
+                      </label>
+                      <div className="relative">
+                        <input
+                          className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+                          type="text"
+                          name="heygen_key"
+                          id="heygen_key"
+                          placeholder="NjE4ZjQ..."
+                          value={settings.heygen_key || ""}
+                          onChange={handleChange}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div className="mb-5.5">
+                    <div className="w-full">
+                      <label
+                        className="mb-3 block text-sm font-medium text-black dark:text-white"
                         htmlFor="openai_key"
                       >
                         {t("settingsAdmin.openAIKey")}
@@ -340,7 +432,7 @@ const SettingsAdmin = () => {
                           name="openai_key"
                           id="openai_key"
                           placeholder="sk-proj-..."
-                          value={settings.openai_key}
+                          value={settings.openai_key || ""}
                           onChange={handleChange}
                         />
                       </div>
@@ -361,7 +453,7 @@ const SettingsAdmin = () => {
                           name="mistral_key"
                           id="mistral_key"
                           placeholder="a1i2a..."
-                          value={settings.mistral_key}
+                          value={settings.mistral_key || ""}
                           onChange={handleChange}
                         />
                       </div>
@@ -382,7 +474,7 @@ const SettingsAdmin = () => {
                           name="llama_key"
                           id="llama_key"
                           placeholder="llx-..."
-                          value={settings.llama_key}
+                          value={settings.llama_key || ""}
                           onChange={handleChange}
                         />
                       </div>
@@ -409,6 +501,7 @@ const SettingsAdmin = () => {
             </div>
           </div>
         </div>
+
         <div className="grid grid-cols-5 gap-8 mt-8">
           <div className="col-span-5">
             <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
@@ -439,7 +532,7 @@ const SettingsAdmin = () => {
                           name="mail_username"
                           id="mail_username"
                           placeholder="user@example.com"
-                          value={settings.mail_username}
+                          value={settings.mail_username || ""}
                           onChange={handleChange}
                         />
                       </div>
@@ -458,7 +551,7 @@ const SettingsAdmin = () => {
                           name="mail_password"
                           id="mail_password"
                           placeholder="password"
-                          value={settings.mail_password}
+                          value={settings.mail_password || ""}
                           onChange={handleChange}
                         />
                       </div>
@@ -479,7 +572,7 @@ const SettingsAdmin = () => {
                           name="mail_host"
                           id="mail_host"
                           placeholder="smtp.example.com"
-                          value={settings.mail_host}
+                          value={settings.mail_host || ""}
                           onChange={handleChange}
                         />
                       </div>
@@ -498,7 +591,7 @@ const SettingsAdmin = () => {
                           name="mail_port"
                           id="mail_port"
                           placeholder="465"
-                          value={settings.mail_port}
+                          value={settings.mail_port || ""}
                           onChange={handleChange}
                         />
                       </div>
@@ -519,7 +612,7 @@ const SettingsAdmin = () => {
                           name="mail_from"
                           id="mail_from"
                           placeholder="user@example.com"
-                          value={settings.mail_from}
+                          value={settings.mail_from || ""}
                           onChange={handleChange}
                         />
                       </div>
@@ -538,7 +631,7 @@ const SettingsAdmin = () => {
                           name="mail_from_name"
                           id="mail_from_name"
                           placeholder="John Doe"
-                          value={settings.mail_from_name}
+                          value={settings.mail_from_name || ""}
                           onChange={handleChange}
                         />
                       </div>
@@ -565,6 +658,7 @@ const SettingsAdmin = () => {
             </div>
           </div>
         </div>
+
         <div className="grid grid-cols-5 gap-8 mt-8">
           <div className="col-span-5">
             <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
@@ -595,7 +689,7 @@ const SettingsAdmin = () => {
                           name="aws_access_key"
                           id="aws_access_key"
                           placeholder="AOEUIOE..."
-                          value={settings.aws_access_key}
+                          value={settings.aws_access_key || ""}
                           onChange={handleChange}
                         />
                       </div>
@@ -614,7 +708,7 @@ const SettingsAdmin = () => {
                           name="aws_secret_key"
                           id="aws_secret_key"
                           placeholder="Awoeus..."
-                          value={settings.aws_secret_key}
+                          value={settings.aws_secret_key || ""}
                           onChange={handleChange}
                         />
                       </div>
@@ -635,7 +729,7 @@ const SettingsAdmin = () => {
                           name="aws_region"
                           id="aws_region"
                           placeholder="eu-west-1"
-                          value={settings.aws_region}
+                          value={settings.aws_region || ""}
                           onChange={handleChange}
                         />
                       </div>
@@ -654,7 +748,7 @@ const SettingsAdmin = () => {
                           name="aws_bucket"
                           id="aws_bucket"
                           placeholder="my-bucket"
-                          value={settings.aws_bucket}
+                          value={settings.aws_bucket || ""}
                           onChange={handleChange}
                         />
                       </div>
@@ -675,7 +769,7 @@ const SettingsAdmin = () => {
                           name="aws_bucket_url"
                           id="aws_bucket_url"
                           placeholder="https://my-bucket.s3.region.amazonaws.com"
-                          value={settings.aws_bucket_url}
+                          value={settings.aws_bucket_url || ""}
                           onChange={handleChange}
                         />
                       </div>

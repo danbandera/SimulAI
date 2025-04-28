@@ -58,7 +58,10 @@ export const updateSettings = async (req, res) => {
     promt_for_analyse_conversation,
     // Aspects
     aspects,
+    // Interactive Avatar
+    interactive_avatar,
     // AI Keys
+    heygen_key,
     openai_key,
     mistral_key,
     llama_key,
@@ -88,6 +91,8 @@ export const updateSettings = async (req, res) => {
       promt_for_virtual_avatar,
       promt_for_analyse_conversation,
       aspects,
+      interactive_avatar,
+      heygen_key,
       openai_key,
       mistral_key,
       llama_key,

@@ -28,6 +28,8 @@ CREATE TABLE scenarios (
   assignedIAModel VARCHAR(255),
   generated_image_url TEXT,
   show_image_prompt BOOLEAN DEFAULT false,
+  interactive_avatar VARCHAR(255),
+  avatar_language VARCHAR(255),
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP
 );
@@ -47,8 +49,10 @@ CREATE TABLE IF NOT EXISTS settings (
     promt_for_virtual_avatar TEXT,
     -- Analyse Conversation
     promt_for_analyse_conversation TEXT,
-    -- AI Keys
+    -- Aspects
     aspects TEXT,
+    -- AI Keys
+    heygen_key TEXT,
     openai_key TEXT,
     mistral_key TEXT,
     llama_key TEXT,

@@ -25,12 +25,24 @@ const NewScenario = () => {
   const { loadSettings } = useAuth();
   const [settings, setSettings] = useState<any>(null);
   const [aspectOptions, setAspectOptions] = useState<any>([]);
+  const [interactiveAvatarOptions, setInteractiveAvatarOptions] = useState<any>(
+    [],
+  );
   useEffect(() => {
     const loadSettingsFn = async () => {
-      const data = await loadSettings();
-      setSettings(data);
+      const settings = await loadSettings();
+      setSettings(settings);
       setAspectOptions(
-        data.aspects.split(",").map((item: string) => {
+        settings.aspects.split(",").map((item: string) => {
+          const [value, label] = item.trim().split(":");
+          return {
+            value: value?.trim() || "",
+            label: label?.trim() || value?.trim() || "",
+          };
+        }),
+      );
+      setInteractiveAvatarOptions(
+        settings.interactive_avatar.split(",").map((item: string) => {
           const [value, label] = item.trim().split(":");
           return {
             value: value?.trim() || "",
@@ -54,6 +66,8 @@ const NewScenario = () => {
     imagePrompt: "",
     generatedImageUrl: "",
     show_image_prompt: false,
+    interactiveAvatar: "",
+    avatarLanguage: "es",
   });
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
@@ -69,14 +83,10 @@ const NewScenario = () => {
       label: `${user.name} (${user.email})`,
     }));
 
-  // const aspectOptions = [];
-  // const aspectOptions = settings.aspects.split(",").map((item: string) => {
-  //   const [value, label] = item.trim().split(":");
-  //   return {
-  //     value: value?.trim() || "",
-  //     label: label?.trim() || value?.trim() || "",
-  //   };
-  // });
+  const languageOptions = [
+    { value: "es", label: t("scenarios.spanish") },
+    { value: "en", label: t("scenarios.english") },
+  ];
 
   useEffect(() => {
     getUsers();
@@ -145,6 +155,20 @@ const NewScenario = () => {
     }
   };
 
+  const handleInteractiveAvatarChange = (selectedOption: SingleValue<any>) => {
+    setFormData((prev) => ({
+      ...prev,
+      interactiveAvatar: selectedOption ? selectedOption.value : "",
+    }));
+  };
+
+  const handleAvatarLanguageChange = (selectedOption: SingleValue<any>) => {
+    setFormData((prev) => ({
+      ...prev,
+      avatarLanguage: selectedOption ? selectedOption.value : "",
+    }));
+  };
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!formData.user) {
@@ -166,7 +190,8 @@ const NewScenario = () => {
         "show_image_prompt",
         formData.show_image_prompt.toString(),
       );
-
+      formDataToSend.append("interactive_avatar", formData.interactiveAvatar);
+      formDataToSend.append("avatar_language", formData.avatarLanguage);
       // Append each file
       formData.files.forEach((file, index) => {
         formDataToSend.append("files", file);
@@ -353,6 +378,40 @@ const NewScenario = () => {
                         </div>
                       </div>
                     )}
+                  </div>
+                </div>
+                <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
+                  <div className="w-full xl:w-1/2">
+                    <label className="mb-2.5 block text-black dark:text-white">
+                      {t("scenarios.interactiveAvatar")}
+                    </label>
+                    <Select
+                      options={interactiveAvatarOptions}
+                      value={interactiveAvatarOptions.find(
+                        (option: any) =>
+                          option.value === formData.interactiveAvatar,
+                      )}
+                      onChange={handleInteractiveAvatarChange}
+                      className="react-select-container"
+                      classNamePrefix="react-select"
+                      placeholder={t("scenarios.selectInteractiveAvatar")}
+                    />
+                  </div>
+                  <div className="w-full xl:w-1/2">
+                    <label className="mb-2.5 block text-black dark:text-white">
+                      {t("scenarios.avatarLanguage")}
+                    </label>
+                    <Select
+                      options={languageOptions}
+                      value={languageOptions.find(
+                        (option: any) =>
+                          option.value === formData.avatarLanguage,
+                      )}
+                      onChange={handleAvatarLanguageChange}
+                      className="react-select-container"
+                      classNamePrefix="react-select"
+                      placeholder={t("scenarios.selectAvatarLanguage")}
+                    />
                   </div>
                 </div>
                 <div className="mb-4.5">

@@ -7,10 +7,8 @@ import StreamingAvatar, {
   VoiceEmotion,
   type StartAvatarResponse,
 } from "@heygen/streaming-avatar";
-import { getAccessToken } from "../../api/get-access-token";
-import { AVATARS, STT_LANGUAGE_LIST } from "../../constants/avatars";
+// import { AVATARS } from "../../constants/avatars";
 import { setupChromaKey } from "./chromaKey";
-import { useParams } from "react-router-dom";
 import { useScenarios } from "../../context/ScenarioContext";
 import ScenarioDetail from "../../pages/Scenarios/ScenarioDetail";
 import { useAuth } from "../../context/AuthContext";
@@ -22,8 +20,8 @@ interface InteractiveAvatarProps {
 const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   const [isLoadingSession, setIsLoadingSession] = useState(false);
   const [stream, setStream] = useState<MediaStream>();
-  const [avatarId, setAvatarId] = useState<string>(AVATARS[0].avatar_id);
-  const [language, setLanguage] = useState<string>("en");
+  // const [avatarId, setAvatarId] = useState<string>(AVATARS[0].avatar_id);
+  // const [language, setLanguage] = useState<string>("en");
   const [data, setData] = useState<StartAvatarResponse>();
   const [text, setText] = useState<string>("");
   const [isUserTalking, setIsUserTalking] = useState(false);
@@ -39,8 +37,9 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const avatar = useRef<StreamingAvatar | null>(null);
   const [scenario, setScenario] = useState<ScenarioDetail | null>(null);
-
   const { getScenario } = useScenarios();
+  const { loadSettings } = useAuth();
+  const [settings, setSettings] = useState<any>(null);
   useEffect(() => {
     const loadScenario = async () => {
       try {
@@ -53,19 +52,49 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
     loadScenario();
   }, [scenarioId, getScenario]);
 
-  const { loadSettings } = useAuth();
   useEffect(() => {
     const loadSettingsFn = async () => {
       const settings = await loadSettings();
+      setSettings(settings);
     };
     loadSettingsFn();
   }, [loadSettings]);
+  // console.log(settings?.promt_for_virtual_avatar);
+
+  const knowledgeBase = settings?.promt_for_virtual_avatar.replace(
+    "CONTEXT_FOR_PERSONA",
+    scenario?.context || "",
+  );
+
+  async function getAccessToken() {
+    try {
+      if (!settings?.heygen_key) {
+        throw new Error("API key is missing from environment variables");
+      }
+
+      const res = await fetch(
+        `https://api.heygen.com/v1/streaming.create_token`,
+        {
+          method: "POST",
+          headers: {
+            "x-api-key": settings?.heygen_key,
+          },
+        },
+      );
+
+      const data = await res.json();
+      return data.data.token;
+    } catch (error) {
+      console.error("Error retrieving access token:", error);
+      throw new Error("Failed to retrieve access token");
+    }
+  }
 
   async function startSession() {
     setIsLoadingSession(true);
     try {
       const token = await getAccessToken();
-
+      console.log("token", token);
       avatar.current = new StreamingAvatar({
         token,
         basePath:
@@ -97,7 +126,8 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
       // Start the avatar session
       const res = await avatar.current.createStartAvatar({
         quality: AvatarQuality.High,
-        avatarName: "Alessandra_Black_Suit_public",
+        avatarName: scenario?.interactive_avatar || "",
+        knowledgeBase: knowledgeBase,
         voice: {
           rate: 1.2,
           emotion: VoiceEmotion.FRIENDLY,
@@ -108,7 +138,7 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
             use_speaker_boost: true,
           },
         },
-        language: "es",
+        language: scenario?.avatar_language || "es",
         disableIdleTimeout: true,
       });
 

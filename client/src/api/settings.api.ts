@@ -5,6 +5,7 @@ interface Settings {
   promt_for_virtual_avatar?: string;
   promt_for_analyse_conversation?: string;
   aspects?: { value: string; label: string }[];
+  heygen_key?: string;
   openai_key?: string;
   mistral_key?: string;
   llama_key?: string;

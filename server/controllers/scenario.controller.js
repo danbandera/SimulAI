@@ -352,6 +352,8 @@ export const createScenario = async (req, res) => {
           assignedIAModel,
           generated_image_url: generatedImageS3Url,
           show_image_prompt: show_image_prompt,
+          interactive_avatar: req.body.interactive_avatar,
+          avatar_language: req.body.avatar_language,
         };
 
         // Only add pdf_contents if we have any
@@ -574,6 +576,8 @@ ${newPdfContents}`
           generated_image_url:
             generatedImageS3Url || existingScenario?.generated_image_url,
           show_image_prompt: show_image_prompt === "true",
+          interactive_avatar: req.body.interactive_avatar,
+          avatar_language: req.body.avatar_language,
         };
 
         const { data: scenario, error: scenarioError } = await connectSqlDB

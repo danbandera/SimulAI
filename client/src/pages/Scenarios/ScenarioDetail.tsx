@@ -30,6 +30,8 @@ interface ScenarioDetail {
   files?: string[];
   generated_image_url?: string;
   show_image_prompt?: boolean;
+  interactive_avatar?: string;
+  avatar_language?: string;
 }
 
 const ScenarioDetail = () => {

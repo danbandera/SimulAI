@@ -91,6 +91,7 @@
     "collapse": "Collapse",
     "expand": "Expand",
     "enterScenarioContext": "Enter scenario context",
+    "showImagePrompt": "Show Image Prompt",
     "imagePrompt": "Image Prompt",
     "generateImage": "Generate Image",
     "generatingImage": "Generating...",
@@ -98,7 +99,9 @@
     "imagePromptPlaceholder": "Enter a description for the image you want to generate",
     "imageGenerationError": "Error generating image",
     "imageGenerationSuccess": "Image generated successfully",
-    "clearImage": "Clear Image"
+    "clearImage": "Clear Image",
+    "assignedIA": "Assigned IA",
+    "assignedIAModel": "Assigned IA Model"
   },
   "console": {
     "startConversation": "Start Conversation",
@@ -129,6 +132,12 @@
   "settingsAdmin": {
     "title": "Settings",
     "AIKeys": "AI Keys",
+    "PromtForVirtualAvatar": "Promt for Virtual Avatar",
+    "PromtForVirtualAvatarDescription": "Enter the prompt for the virtual avatar",
+    "PromtForAnalyseConversation": "Promt for Analyse Conversation",
+    "PromtForAnalyseConversationDescription": "Enter the prompt for the analyse conversation",
+    "Aspects": "Aspects",
+    "AspectsDescription": "Enter the aspects to evaluate with the following format (value:label): aspect1:Aspect 1,aspect2:Aspect 2,...",
     "openAIKey": "OpenAI API Key",
     "mistralKey": "Mistral API Key",
     "llamaKey": "Llama API Key",

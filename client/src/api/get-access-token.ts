@@ -1,8 +1,7 @@
 const HEYGEN_API_KEY = import.meta.env.VITE_HEYGEN_API_KEY;
-console.log(HEYGEN_API_KEY);
 const BASE_API_URL =
   import.meta.env.VITE_NEXT_PUBLIC_BASE_API_URL || "https://api.heygen.com";
-console.log(BASE_API_URL);
+
 export async function getAccessToken() {
   try {
     if (!HEYGEN_API_KEY) {

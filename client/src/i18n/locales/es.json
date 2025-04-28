@@ -90,6 +90,7 @@
     "noConversationsFound": "No hay conversaciones encontradas para este escenario",
     "collapse": "Colapsar",
     "expand": "Expandir",
+    "showImagePrompt": "Mostrar Prompt de Imagen",
     "imagePrompt": "Prompt de Imagen",
     "generateImage": "Generar Imagen",
     "generatingImage": "Generando...",
@@ -97,7 +98,9 @@
     "imagePromptPlaceholder": "Ingresa una descripción para la imagen que deseas generar",
     "imageGenerationError": "Error al generar la imagen",
     "imageGenerationSuccess": "Imagen generada exitosamente",
-    "clearImage": "Borrar Imagen"
+    "clearImage": "Borrar Imagen",
+    "assignedIA": "IA Asignada",
+    "assignedIAModel": "Modelo de IA Asignado"
   },
   "console": {
     "startConversation": "Iniciar Conversación",
@@ -128,6 +131,12 @@
   "settingsAdmin": {
     "title": "Configuración",
     "AIKeys": "Claves de IA",
+    "PromtForVirtualAvatar": "Prompt para Avatar Virtual",
+    "PromtForVirtualAvatarDescription": "Ingresa el prompt para el avatar virtual",
+    "PromtForAnalyseConversation": "Prompt para Análisis de Conversación",
+    "PromtForAnalyseConversationDescription": "Ingresa el prompt para el análisis de conversación",
+    "Aspects": "Aspectos",
+    "AspectsDescription": "Ingresa los aspectos a evaluar con el siguiente formato (valor:etiqueta): aspecto1:Aspecto 1,aspecto2:Aspecto 2,...",
     "openAIKey": "Clave de OpenAI",
     "mistralKey": "Clave de Mistral",
     "llamaKey": "Clave de Llama",

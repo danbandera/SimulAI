@@ -57,7 +57,6 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   useEffect(() => {
     const loadSettingsFn = async () => {
       const settings = await loadSettings();
-      console.log(settings);
     };
     loadSettingsFn();
   }, [loadSettings]);

@@ -52,6 +52,12 @@ export const getSettings = async (req, res) => {
 
 export const updateSettings = async (req, res) => {
   const {
+    // Virtual Avatar
+    promt_for_virtual_avatar,
+    // Analyse Conversation
+    promt_for_analyse_conversation,
+    // Aspects
+    aspects,
     // AI Keys
     openai_key,
     mistral_key,
@@ -79,6 +85,9 @@ export const updateSettings = async (req, res) => {
       .single();
 
     const settingsData = {
+      promt_for_virtual_avatar,
+      promt_for_analyse_conversation,
+      aspects,
       openai_key,
       mistral_key,
       llama_key,
@@ -94,7 +103,6 @@ export const updateSettings = async (req, res) => {
       aws_bucket,
       aws_bucket_url,
     };
-
     // Encrypt settings before saving
     const encryptedSettings = encryptSettings(settingsData);
 

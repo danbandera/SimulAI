@@ -23,6 +23,9 @@ const SettingsAdmin = () => {
     aws_region: "",
     aws_bucket: "",
     aws_bucket_url: "",
+    promt_for_virtual_avatar: "",
+    promt_for_analyse_conversation: "",
+    aspects: "",
   });
   useEffect(() => {
     loadSettingsFn();
@@ -47,6 +50,9 @@ const SettingsAdmin = () => {
           aws_region: "",
           aws_bucket: "",
           aws_bucket_url: "",
+          promt_for_virtual_avatar: "",
+          promt_for_analyse_conversation: "",
+          aspects: "",
         },
       );
     } catch (error) {
@@ -64,12 +70,27 @@ const SettingsAdmin = () => {
   };
 
   const handleSubmit = async (section: string) => {
-    console.log("handleSubmit", section);
     setLoading(true);
     try {
       let dataToUpdate = {};
 
       switch (section) {
+        case "virtual_avatar":
+          dataToUpdate = {
+            promt_for_virtual_avatar: settings.promt_for_virtual_avatar,
+          };
+          break;
+        case "analyse_conversation":
+          dataToUpdate = {
+            promt_for_analyse_conversation:
+              settings.promt_for_analyse_conversation,
+          };
+          break;
+        case "aspects":
+          dataToUpdate = {
+            aspects: settings.aspects,
+          };
+          break;
         case "ai":
           dataToUpdate = {
             openai_key: settings.openai_key,
@@ -107,13 +128,189 @@ const SettingsAdmin = () => {
       setLoading(false);
     }
   };
-
   return (
     <>
       <div className="mx-auto max-w-270">
         <Breadcrumb pageName={t("settingsAdmin.title")} />
 
         <div className="grid grid-cols-5 gap-8">
+          <div className="col-span-5">
+            <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+              <div className="border-b border-stroke py-4 px-7 dark:border-strokedark">
+                <h3 className="font-medium text-black dark:text-white">
+                  {t("settingsAdmin.PromtForVirtualAvatar")}
+                </h3>
+              </div>
+              <div className="p-7">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSubmit("virtual_avatar");
+                  }}
+                >
+                  <div className="mb-5.5">
+                    <label
+                      className="mb-3 block text-sm font-medium text-black dark:text-white"
+                      htmlFor="promt_for_virtual_avatar"
+                    >
+                      {t("settingsAdmin.PromtForVirtualAvatarDescription")}
+                    </label>
+                    <textarea
+                      className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+                      name="promt_for_virtual_avatar"
+                      id="promt_for_virtual_avatar"
+                      value={settings.promt_for_virtual_avatar}
+                      onChange={(e) =>
+                        setSettings((prev) => ({
+                          ...prev,
+                          promt_for_virtual_avatar: e.target.value,
+                        }))
+                      }
+                      rows={5}
+                    />
+                  </div>
+                  <div className="flex justify-end gap-4.5">
+                    <button
+                      className="flex justify-center rounded border border-stroke py-2 px-6 font-medium text-black hover:shadow-1 dark:border-strokedark dark:text-white"
+                      type="button"
+                      onClick={loadSettings}
+                    >
+                      {t("settingsAdmin.cancelKeys")}
+                    </button>
+                    <button
+                      className="flex justify-center rounded bg-primary py-2 px-6 font-medium text-gray hover:bg-opacity-90"
+                      type="submit"
+                      disabled={loading}
+                    >
+                      {t("settingsAdmin.saveKeys")}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-5 gap-8 mt-8">
+          <div className="col-span-5">
+            <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+              <div className="border-b border-stroke py-4 px-7 dark:border-strokedark">
+                <h3 className="font-medium text-black dark:text-white">
+                  {t("settingsAdmin.PromtForAnalyseConversation")}
+                </h3>
+              </div>
+              <div className="p-7">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSubmit("analyse_conversation");
+                  }}
+                >
+                  <div className="mb-5.5">
+                    <label
+                      className="mb-3 block text-sm font-medium text-black dark:text-white"
+                      htmlFor="promt_for_analyse_conversation"
+                    >
+                      {t(
+                        "settingsAdmin.PromtForAnalyseConversationDescription",
+                      )}
+                    </label>
+                    <textarea
+                      className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+                      name="promt_for_analyse_conversation"
+                      id="promt_for_analyse_conversation"
+                      value={settings.promt_for_analyse_conversation}
+                      onChange={(e) =>
+                        setSettings((prev) => ({
+                          ...prev,
+                          promt_for_analyse_conversation: e.target.value,
+                        }))
+                      }
+                      rows={5}
+                    />
+                  </div>
+                  <div className="flex justify-end gap-4.5">
+                    <button
+                      className="flex justify-center rounded border border-stroke py-2 px-6 font-medium text-black hover:shadow-1 dark:border-strokedark dark:text-white"
+                      type="button"
+                      onClick={loadSettings}
+                    >
+                      {t("settingsAdmin.cancelKeys")}
+                    </button>
+                    <button
+                      className="flex justify-center rounded bg-primary py-2 px-6 font-medium text-gray hover:bg-opacity-90"
+                      type="submit"
+                      disabled={loading}
+                    >
+                      {t("settingsAdmin.saveKeys")}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-5 gap-8 mt-8">
+          <div className="col-span-5">
+            <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+              <div className="border-b border-stroke py-4 px-7 dark:border-strokedark">
+                <h3 className="font-medium text-black dark:text-white">
+                  {t("settingsAdmin.Aspects")}
+                </h3>
+              </div>
+              <div className="p-7">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSubmit("aspects");
+                  }}
+                >
+                  <div className="mb-5.5">
+                    <label
+                      className="mb-3 block text-sm font-medium text-black dark:text-white"
+                      htmlFor="aspects"
+                    >
+                      {t("settingsAdmin.AspectsDescription")}
+                    </label>
+                    <textarea
+                      className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+                      name="aspects"
+                      id="aspects"
+                      value={settings.aspects}
+                      onChange={(e) =>
+                        setSettings((prev) => ({
+                          ...prev,
+                          aspects: e.target.value,
+                        }))
+                      }
+                      rows={5}
+                      placeholder={t("settingsAdmin.AspectsDescription")}
+                    />
+                  </div>
+                  <div className="flex justify-end gap-4.5">
+                    <button
+                      className="flex justify-center rounded border border-stroke py-2 px-6 font-medium text-black hover:shadow-1 dark:border-strokedark dark:text-white"
+                      type="button"
+                      onClick={loadSettings}
+                    >
+                      {t("settingsAdmin.cancelKeys")}
+                    </button>
+                    <button
+                      className="flex justify-center rounded bg-primary py-2 px-6 font-medium text-gray hover:bg-opacity-90"
+                      type="submit"
+                      disabled={loading}
+                    >
+                      {t("settingsAdmin.saveKeys")}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-5 gap-8 mt-8">
           <div className="col-span-5">
             <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
               <div className="border-b border-stroke py-4 px-7 dark:border-strokedark">

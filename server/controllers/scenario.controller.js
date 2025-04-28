@@ -538,7 +538,7 @@ ${newPdfContents}`
 
         // Handle generated image URL if present
         let generatedImageS3Url = null;
-        if (generatedImageUrl) {
+        if (generatedImageUrl && !existingScenario?.generated_image_url) {
           try {
             // Download the image from OpenAI URL
             const imageFetchResponse = await fetch(generatedImageUrl);

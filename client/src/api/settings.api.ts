@@ -2,6 +2,9 @@ import axios from "../config/axios";
 import { encrypt, decrypt } from "../utils/encryption";
 
 interface Settings {
+  promt_for_virtual_avatar?: string;
+  promt_for_analyse_conversation?: string;
+  aspects?: { value: string; label: string }[];
   openai_key?: string;
   mistral_key?: string;
   llama_key?: string;

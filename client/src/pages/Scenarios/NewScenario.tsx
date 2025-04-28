@@ -9,7 +9,7 @@ import CreatableSelect from "react-select/creatable";
 import { FiTrash, FiUpload } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
 import { sendEmail } from "../../api/email.api";
-import { Switch } from "@headlessui/react";
+import { useAuth } from "../../context/AuthContext";
 interface UserOption {
   value: number;
   label: string;
@@ -22,7 +22,25 @@ const NewScenario = () => {
   const { createScenario, generateImage } = useScenarios();
   const { users, getUsers } = useUsers();
   const { currentUser } = useUsers();
-
+  const { loadSettings } = useAuth();
+  const [settings, setSettings] = useState<any>(null);
+  const [aspectOptions, setAspectOptions] = useState<any>([]);
+  useEffect(() => {
+    const loadSettingsFn = async () => {
+      const data = await loadSettings();
+      setSettings(data);
+      setAspectOptions(
+        data.aspects.split(",").map((item: string) => {
+          const [value, label] = item.trim().split(":");
+          return {
+            value: value?.trim() || "",
+            label: label?.trim() || value?.trim() || "",
+          };
+        }),
+      );
+    };
+    loadSettingsFn();
+  }, []);
   // Get duplicate data from location state if it exists
   const duplicateData = location.state?.duplicateData;
 
@@ -51,11 +69,14 @@ const NewScenario = () => {
       label: `${user.name} (${user.email})`,
     }));
 
-  const aspectOptions = [
-    { value: "aspect1", label: "Aspect 1" },
-    { value: "aspect2", label: "Aspect 2" },
-    { value: "aspect3", label: "Aspect 3" },
-  ];
+  // const aspectOptions = [];
+  // const aspectOptions = settings.aspects.split(",").map((item: string) => {
+  //   const [value, label] = item.trim().split(":");
+  //   return {
+  //     value: value?.trim() || "",
+  //     label: label?.trim() || value?.trim() || "",
+  //   };
+  // });
 
   useEffect(() => {
     getUsers();

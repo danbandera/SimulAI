@@ -8,6 +8,7 @@ import Select, { SingleValue } from "react-select";
 import CreatableSelect from "react-select/creatable";
 import { FiUpload, FiTrash } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
+import { useAuth } from "../../context/AuthContext";
 
 interface UserOption {
   value: number;
@@ -54,6 +55,27 @@ const EditScenario = () => {
   const { users, getUsers } = useUsers();
   const { currentUser } = useUsers();
   const { id } = useParams();
+  const { loadSettings } = useAuth();
+  const [settings, setSettings] = useState<any>(null);
+  const [aspectOptions, setAspectOptions] = useState<any>([]);
+  useEffect(() => {
+    const loadSettingsFn = async () => {
+      const data = await loadSettings();
+      setSettings(data);
+      setAspectOptions(
+        data.aspects.split(",").map((item: string) => {
+          const [value, label] = item.trim().split(":");
+          return {
+            value: value?.trim() || "",
+            label: label?.trim() || value?.trim() || "",
+          };
+        }),
+      );
+    };
+    loadSettingsFn();
+  }, []);
+
+  console.log(aspectOptions);
 
   const [formData, setFormData] = useState<FormData>({
     title: "",
@@ -71,12 +93,6 @@ const EditScenario = () => {
   });
 
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
-
-  const aspectOptions = [
-    { value: "aspect1", label: "Aspect 1" },
-    { value: "aspect2", label: "Aspect 2" },
-    { value: "aspect3", label: "Aspect 3" },
-  ];
 
   useEffect(() => {
     getUsers();

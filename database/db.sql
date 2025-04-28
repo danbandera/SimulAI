@@ -43,7 +43,12 @@ CREATE TABLE password_resets (
 -- Create settings table
 CREATE TABLE IF NOT EXISTS settings (
     id SERIAL PRIMARY KEY,
+    -- Virtual Avatar
+    promt_for_virtual_avatar TEXT,
+    -- Analyse Conversation
+    promt_for_analyse_conversation TEXT,
     -- AI Keys
+    aspects TEXT,
     openai_key TEXT,
     mistral_key TEXT,
     llama_key TEXT,

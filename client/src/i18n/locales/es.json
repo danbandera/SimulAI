@@ -106,7 +106,10 @@
     "avatarLanguage": "Idioma del Avatar",
     "selectAvatarLanguage": "Seleccionar Idioma del Avatar",
     "english": "Inglés",
-    "spanish": "Español"
+    "spanish": "Español",
+    "startSession": "Iniciar Conversación",
+    "endSession": "Finalizar Conversación",
+    "loading": "Cargando..."
   },
   "console": {
     "startConversation": "Iniciar Conversación",

@@ -107,7 +107,10 @@
     "avatarLanguage": "Avatar Language",
     "selectAvatarLanguage": "Select Avatar Language",
     "english": "English",
-    "spanish": "Spanish"
+    "spanish": "Spanish",
+    "startSession": "Start Conversation",
+    "endSession": "End Conversation",
+    "loading": "Starting..."
   },
   "console": {
     "startConversation": "Start Conversation",

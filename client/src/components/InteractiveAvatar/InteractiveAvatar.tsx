@@ -13,7 +13,7 @@ import { useScenarios } from "../../context/ScenarioContext";
 import ScenarioDetail from "../../pages/Scenarios/ScenarioDetail";
 import { useAuth } from "../../context/AuthContext";
 import * as faceapi from "face-api.js";
-
+import { useTranslation } from "react-i18next";
 interface InteractiveAvatarProps {
   scenarioId: number;
   scenarioTitle: string;
@@ -27,6 +27,7 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   const [text, setText] = useState<string>("");
   const [isUserTalking, setIsUserTalking] = useState(false);
   const [chatMode, setChatMode] = useState("voice_mode");
+  const { t } = useTranslation();
   const [stopChromaKeyProcessing, setStopChromaKeyProcessing] = useState<
     (() => void) | null
   >(null);
@@ -338,7 +339,9 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
             disabled={isLoadingSession}
             className="px-6 py-3 bg-primary text-white rounded-md hover:bg-opacity-90 disabled:opacity-50"
           >
-            {isLoadingSession ? "Starting..." : "Start Session"}
+            {isLoadingSession
+              ? t("scenarios.startSession")
+              : t("scenarios.startSession")}
           </button>
         ) : (
           <div className="relative w-full h-full" ref={containerRef}>
@@ -377,7 +380,7 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
               onClick={endSession}
               className="px-6 py-2 bg-danger text-white rounded-md hover:bg-opacity-90 absolute bottom-4 left-4"
             >
-              End Session
+              {t("scenarios.endSession")}
             </button>
             <button
               onClick={toggleFullscreen}

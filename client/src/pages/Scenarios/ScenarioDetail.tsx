@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useScenarios } from "../../context/ScenarioContext";
 import { useUsers } from "../../context/UserContext";
@@ -7,6 +7,7 @@ import { ConsolePage } from "./ConsolePage";
 import InteractiveAvatar from "../../components/InteractiveAvatar/InteractiveAvatar";
 import Swal from "sweetalert2";
 import { useTranslation } from "react-i18next";
+import * as faceapi from "face-api.js";
 
 // Define a local interface that matches what we get from the API
 interface ScenarioDetail {
@@ -33,6 +34,101 @@ interface ScenarioDetail {
   interactive_avatar?: string;
   avatar_language?: string;
 }
+// Face Detection component modify later
+const FaceDetection = () => {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  useEffect(() => {
+    const loadModels = async () => {
+      try {
+        const MODEL_URL =
+          "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights";
+        await Promise.all([
+          faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+          faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
+          faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+        ]);
+        startVideo();
+      } catch (error) {
+        console.error("Error loading models:", error);
+      }
+    };
+
+    const startVideo = () => {
+      navigator.mediaDevices
+        .getUserMedia({ video: true, audio: false })
+        .then((stream) => {
+          if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+          }
+        })
+        .catch((err) => {
+          console.error("Error accessing camera:", err);
+        });
+    };
+
+    loadModels();
+
+    return () => {
+      if (videoRef.current && videoRef.current.srcObject) {
+        const stream = videoRef.current.srcObject as MediaStream;
+        stream.getTracks().forEach((track) => track.stop());
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+
+    video.addEventListener("play", () => {
+      const displaySize = { width: video.width, height: video.height };
+      faceapi.matchDimensions(canvas, displaySize);
+
+      const interval = setInterval(async () => {
+        const detections = await faceapi
+          .detectSingleFace(video)
+          .withFaceExpressions();
+
+        if (detections) {
+          const resizedDetections = faceapi.resizeResults(
+            detections,
+            displaySize,
+          );
+          const ctx = canvas.getContext("2d");
+          if (ctx) {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            faceapi.draw.drawFaceExpressions(canvas, resizedDetections);
+          }
+        }
+      }, 100);
+
+      return () => clearInterval(interval);
+    });
+  }, []);
+
+  return (
+    <div className="relative">
+      <video
+        ref={videoRef}
+        autoPlay
+        muted
+        width="320"
+        height="240"
+        className="rounded-lg"
+      />
+      <canvas
+        ref={canvasRef}
+        className="absolute top-0 left-0"
+        width="320"
+        height="240"
+      />
+    </div>
+  );
+};
 
 const ScenarioDetail = () => {
   const { id } = useParams();
@@ -255,11 +351,14 @@ const ScenarioDetail = () => {
               {t("scenarios.interactiveAvatar")}
             </h3>
           </div>
-          <div className="p-6.5">
+          <div className="p-6.5 relative">
             <InteractiveAvatar
               scenarioId={parseInt(id || "0")}
               scenarioTitle={scenario.title}
             />
+            <div className="absolute bottom-0 right-0">
+              <FaceDetection />
+            </div>
           </div>
         </div>
       </div>

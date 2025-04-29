@@ -15,12 +15,12 @@ interface ConversationMessage {
 }
 
 interface Conversation {
-  _id: string;
+  id: number;
   scenarioId: number;
   userId: number;
   conversation: ConversationMessage[];
-  createdAt: string;
-  updatedAt: string;
+  created_at: string;
+  updated_at: string;
 }
 
 const ScenarioConversations = () => {
@@ -38,15 +38,16 @@ const ScenarioConversations = () => {
       if (id) {
         try {
           const apiData = await getConversations(Number(id));
-          console.log("Number(id)", Number(id));
-          // Transform API response to match our interface
+          console.log("Loaded conversations:", apiData);
+
+          // Transform API response to match our interface if needed
           const transformedData = apiData.map((conv: any) => ({
-            _id: conv._id,
-            scenarioId: conv.scenarioId,
-            userId: conv.userId,
+            id: conv.id,
+            scenarioId: conv.scenario_id,
+            userId: conv.user_id,
             conversation: conv.conversation,
-            createdAt: conv.createdAt,
-            updatedAt: conv.updatedAt || conv.createdAt,
+            created_at: conv.created_at,
+            updated_at: conv.updated_at || conv.created_at,
           }));
           setConversations(transformedData);
         } catch (error) {
@@ -59,8 +60,9 @@ const ScenarioConversations = () => {
 
     loadConversations();
   }, [id, getConversations]);
+  console.log("Conversations:", conversations);
 
-  const toggleExpand = (convId: string) => {
+  const toggleExpand = (convId: number) => {
     setExpandedConversations((prev) => ({
       ...prev,
       [convId]: !prev[convId],
@@ -70,7 +72,7 @@ const ScenarioConversations = () => {
   const exportAsPDF = (conv: Conversation, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent expanding the conversation when clicking export
     const doc = new jsPDF();
-    const timestamp = new Date(conv.createdAt).toLocaleString();
+    const timestamp = new Date(conv.created_at).toLocaleString();
 
     doc.setFontSize(16);
     doc.text(`Conversation Export - ${timestamp}`, 20, 20);
@@ -94,7 +96,7 @@ const ScenarioConversations = () => {
 
   const exportAsTXT = (conv: Conversation, e: React.MouseEvent) => {
     e.stopPropagation(); // Prevent expanding the conversation when clicking export
-    const timestamp = new Date(conv.createdAt).toLocaleString();
+    const timestamp = new Date(conv.created_at).toLocaleString();
     let content = `Conversation Export - ${timestamp}\n\n`;
 
     conv.conversation.forEach((msg) => {
@@ -117,16 +119,16 @@ const ScenarioConversations = () => {
       <div className="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-7.5">
         <div className="flex flex-col gap-5.5">
           {conversations.map((conv) => {
-            const isExpanded = expandedConversations[conv._id] || false;
+            const isExpanded = expandedConversations[conv.id] || false;
             return (
               <div
-                key={conv._id}
+                key={conv.id}
                 className="border border-stroke p-4 rounded-sm dark:border-strokedark cursor-pointer transition-all"
-                onClick={() => toggleExpand(conv._id)}
+                onClick={() => toggleExpand(conv.id)}
               >
                 <div className="flex justify-between items-center mb-2">
                   <span className="text-sm text-gray-500">
-                    {new Date(conv.createdAt).toLocaleString()}
+                    {new Date(conv.created_at).toLocaleString()}
                   </span>
                   <div className="flex gap-2">
                     <button

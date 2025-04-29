@@ -87,4 +87,20 @@ $$ language 'plpgsql';
 CREATE TRIGGER update_settings_updated_at
     BEFORE UPDATE ON settings
     FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Create conversations table
+CREATE TABLE conversations (
+  id SERIAL PRIMARY KEY,
+  scenario_id INTEGER REFERENCES scenarios(id) ON DELETE CASCADE,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  conversation JSONB NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create trigger for updated_at on conversations
+CREATE TRIGGER update_conversations_updated_at
+    BEFORE UPDATE ON conversations
+    FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column(); 

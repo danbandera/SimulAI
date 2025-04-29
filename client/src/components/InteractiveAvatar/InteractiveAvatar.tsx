@@ -14,6 +14,13 @@ import ScenarioDetail from "../../pages/Scenarios/ScenarioDetail";
 import { useAuth } from "../../context/AuthContext";
 import * as faceapi from "face-api.js";
 import { useTranslation } from "react-i18next";
+
+interface Message {
+  type: "user" | "avatar";
+  text: string;
+  timestamp: Date;
+}
+
 interface InteractiveAvatarProps {
   scenarioId: number;
   scenarioTitle: string;
@@ -27,11 +34,15 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   const [text, setText] = useState<string>("");
   const [isUserTalking, setIsUserTalking] = useState(false);
   const [chatMode, setChatMode] = useState("voice_mode");
+  const [conversationHistory, setConversationHistory] = useState<Message[]>([]);
+  const [isSavingConversation, setIsSavingConversation] = useState(false);
   const { t } = useTranslation();
   const [stopChromaKeyProcessing, setStopChromaKeyProcessing] = useState<
     (() => void) | null
   >(null);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { user } = useAuth();
+  const { saveConversation } = useScenarios();
 
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
@@ -203,6 +214,8 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
 
   async function startSession() {
     setIsLoadingSession(true);
+    setConversationHistory([]);
+
     try {
       const token = await getAccessToken();
       console.log("token", token);
@@ -232,6 +245,75 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
       });
       avatar.current.on(StreamingEvents.USER_STOP, () => {
         setIsUserTalking(false);
+      });
+
+      // Add message collection event listeners
+      avatar.current.on(StreamingEvents.AVATAR_TALKING_MESSAGE, (event) => {
+        console.log("Avatar talking:", event);
+        if (event && event.detail) {
+          const messageText = event.detail.text || event.detail.message || "";
+          if (messageText) {
+            setConversationHistory((prev) => {
+              // Check if this is a new message or continuation of the last avatar message
+              const lastMessage =
+                prev.length > 0 ? prev[prev.length - 1] : null;
+              if (lastMessage && lastMessage.type === "avatar") {
+                // Update the last message with combined text
+                const updatedMessages = [...prev];
+                updatedMessages[prev.length - 1] = {
+                  ...lastMessage,
+                  text: lastMessage.text + messageText,
+                };
+                return updatedMessages;
+              } else {
+                // Add as a new message
+                return [
+                  ...prev,
+                  { type: "avatar", text: messageText, timestamp: new Date() },
+                ];
+              }
+            });
+          }
+        }
+      });
+
+      avatar.current.on(StreamingEvents.AVATAR_END_MESSAGE, (event) => {
+        console.log("Avatar end message:", event);
+        // End of message - no additional processing needed
+      });
+
+      avatar.current.on(StreamingEvents.USER_TALKING_MESSAGE, (event) => {
+        console.log("User talking:", event);
+        if (event && event.detail) {
+          const messageText = event.detail.text || event.detail.message || "";
+          if (messageText) {
+            setConversationHistory((prev) => {
+              // Check if this is a new message or continuation of the last user message
+              const lastMessage =
+                prev.length > 0 ? prev[prev.length - 1] : null;
+              if (lastMessage && lastMessage.type === "user") {
+                // Update the last message with combined text
+                const updatedMessages = [...prev];
+                updatedMessages[prev.length - 1] = {
+                  ...lastMessage,
+                  text: lastMessage.text + messageText,
+                };
+                return updatedMessages;
+              } else {
+                // Add as a new message
+                return [
+                  ...prev,
+                  { type: "user", text: messageText, timestamp: new Date() },
+                ];
+              }
+            });
+          }
+        }
+      });
+
+      avatar.current.on(StreamingEvents.USER_END_MESSAGE, (event) => {
+        console.log("User end message:", event);
+        // End of message - no additional processing needed
       });
 
       // Start the avatar session
@@ -266,6 +348,33 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   }
 
   async function endSession() {
+    setIsSavingConversation(true);
+
+    // Save conversation history to database if there are messages
+    if (conversationHistory.length > 0 && user?.id) {
+      try {
+        console.log("Conversation history to save:", conversationHistory);
+
+        // Format the conversation history for the API
+        const formattedConversation = conversationHistory.map((msg) => ({
+          role: msg.type === "user" ? "user" : "assistant",
+          message: msg.text,
+        }));
+
+        console.log("Formatted conversation:", formattedConversation);
+
+        // Save to database
+        await saveConversation(
+          props.scenarioId,
+          formattedConversation,
+          user.id,
+        );
+        console.log("Conversation saved successfully");
+      } catch (error) {
+        console.error("Error saving conversation:", error);
+      }
+    }
+
     // Stop chroma key processing if active
     if (stopChromaKeyProcessing) {
       stopChromaKeyProcessing();
@@ -274,6 +383,11 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
 
     await avatar.current?.stopAvatar();
     setStream(undefined);
+    setIsSavingConversation(false);
+
+    // Show conversation history
+    // setShowConversation(true);
+    console.log("Conversation History:", conversationHistory);
   }
 
   async function handleSpeak() {
@@ -345,9 +459,9 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
           </button>
         ) : (
           <div className="relative w-full h-full" ref={containerRef}>
-            <div className="absolute bottom-0 right-0 z-9">
+            {/* <div className="absolute bottom-0 right-0 z-9">
               <FaceDetection />
-            </div>
+            </div> */}
             <video
               ref={mediaStream}
               autoPlay
@@ -378,9 +492,12 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
             )}
             <button
               onClick={endSession}
-              className="px-6 py-2 bg-danger text-white rounded-md hover:bg-opacity-90 absolute bottom-4 left-4"
+              disabled={isSavingConversation}
+              className="px-6 py-2 bg-danger text-white rounded-md hover:bg-opacity-90 absolute bottom-4 left-4 disabled:opacity-50"
             >
-              {t("scenarios.endSession")}
+              {isSavingConversation
+                ? t("scenarios.savingConversation")
+                : t("scenarios.endSession")}
             </button>
             <button
               onClick={toggleFullscreen}
@@ -405,33 +522,6 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
           </div>
         )}
       </div>
-
-      {stream && (
-        <div className="absolute bottom-4 left-4 right-4 flex gap-4 items-center">
-          {/* <input
-            type="text"
-            value={text}
-            onChange={(e) => setText(e.target.value)}
-            placeholder="Type your message..."
-            className="flex-1 px-4 py-2 rounded-md bg-white dark:bg-boxdark border border-stroke"
-          />
-          <button
-            onClick={handleSpeak}
-            className="px-6 py-2 bg-primary text-white rounded-md hover:bg-opacity-90"
-          >
-            Speak
-          </button> */}
-          {/* <button
-            onClick={endSession}
-            className="px-6 py-2 bg-danger text-white rounded-md hover:bg-opacity-90 absolute bottom-2 left-2"
-          >
-            End Session
-          </button> */}
-        </div>
-      )}
-      {/* <div className="absolute bottom-0 right-0">
-        <FaceDetection />
-      </div> */}
     </div>
   );
 };

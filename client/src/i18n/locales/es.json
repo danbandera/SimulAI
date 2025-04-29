@@ -109,6 +109,7 @@
     "spanish": "Español",
     "startSession": "Iniciar Conversación",
     "endSession": "Finalizar Conversación",
+    "savingConversation": "Guardando Conversación...",
     "loading": "Cargando..."
   },
   "console": {

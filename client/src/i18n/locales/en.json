@@ -110,6 +110,7 @@
     "spanish": "Spanish",
     "startSession": "Start Conversation",
     "endSession": "End Conversation",
+    "savingConversation": "Saving Conversation...",
     "loading": "Starting..."
   },
   "console": {

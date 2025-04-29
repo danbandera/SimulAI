@@ -669,17 +669,55 @@ export const deleteScenario = async (req, res) => {
   }
 };
 
+// Save Conversation in sql database
 export const saveConversation = async (req, res) => {
   try {
-    const { scenarioId, conversation, userId } = req.body;
+    console.log("Request body:", JSON.stringify(req.body, null, 2));
+    console.log("Request params:", req.params);
 
-    const conversationToSave = await Conversation.create({
+    // Extract data from the request
+    const { conversation } = req.body;
+    const userId = req.body.userId || req.body.user_id;
+    const scenarioId = req.params.id;
+
+    // Validate required fields with detailed error messages
+    if (!scenarioId) {
+      return res.status(400).json({ message: "Missing scenarioId parameter" });
+    }
+
+    if (!userId) {
+      return res.status(400).json({ message: "Missing userId parameter" });
+    }
+
+    if (!conversation || !Array.isArray(conversation)) {
+      return res
+        .status(400)
+        .json({ message: "Missing or invalid conversation data" });
+    }
+
+    console.log("Saving conversation:", {
       scenarioId,
-      conversation,
       userId,
+      conversationLength: conversation.length,
+      conversationSample: conversation.slice(0, 1),
     });
 
-    res.status(201).json(conversationToSave);
+    // Insert the conversation data into the database
+    const { data, error } = await connectSqlDB
+      .from("conversations")
+      .insert({
+        scenario_id: Number(scenarioId),
+        conversation,
+        user_id: Number(userId),
+      })
+      .select();
+
+    if (error) {
+      console.error("Database error:", error);
+      throw new Error(error.message);
+    }
+
+    res.status(201).json({ message: "Conversation saved successfully", data });
   } catch (error) {
     console.error("Save Conversation Error:", error);
     res.status(500).json({ message: error.message });
@@ -690,12 +728,17 @@ export const getConversations = async (req, res) => {
   try {
     const { scenarioId } = req.params;
 
-    const conversations = await Conversation.find({
-      scenarioId: Number(scenarioId),
-    });
+    const { data, error } = await connectSqlDB
+      .from("conversations")
+      .select("*")
+      .eq("scenario_id", Number(scenarioId));
+
+    if (error) {
+      throw new Error(error.message);
+    }
 
     // Return empty array if no conversations found instead of 404
-    res.json(conversations || []);
+    res.json(data || []);
   } catch (error) {
     console.error("Get Conversations Error:", error);
     res.status(500).json({ message: error.message });
@@ -704,9 +747,19 @@ export const getConversations = async (req, res) => {
 
 export const getConversation = async (req, res) => {
   try {
-    const { scenarioId, conversationId } = req.params;
-    const conversation = await Conversation.findById(conversationId);
-    res.json(conversation);
+    const { conversationId } = req.params;
+
+    const { data, error } = await connectSqlDB
+      .from("conversations")
+      .select("*")
+      .eq("id", Number(conversationId))
+      .single();
+
+    if (error) {
+      return res.status(404).json({ message: "Conversation not found" });
+    }
+
+    res.json(data);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -714,13 +767,19 @@ export const getConversation = async (req, res) => {
 
 export const getAllConversations = async (req, res) => {
   try {
-    const conversations = await Conversation.find();
+    const { data, error } = await connectSqlDB
+      .from("conversations")
+      .select("*");
 
-    if (!conversations || conversations.length === 0) {
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data || data.length === 0) {
       return res.status(404).json({ message: "No conversations found" });
     }
 
-    res.json(conversations);
+    res.json(data);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }

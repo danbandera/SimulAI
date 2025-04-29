@@ -115,17 +115,32 @@ export const saveConversationRequest = async (
     throw new Error("Missing required parameters");
   }
 
-  const conversationData: Conversation = {
-    scenarioId: Number(scenarioId),
+  console.log("Sending conversation request with:", {
+    scenarioId,
+    userId,
+    conversationLength: conversation.length,
+    conversationSample: conversation.slice(0, 1),
+  });
+
+  // Ensure the body matches exactly what the server expects
+  const conversationData = {
     userId: Number(userId),
     conversation: conversation,
   };
 
-  const response = await axios.post(
-    `/scenarios/${scenarioId}/conversations`,
-    conversationData,
-  );
-  return response.data;
+  try {
+    const response = await axios.post(
+      `/scenarios/${scenarioId}/conversations`,
+      conversationData,
+    );
+    return response.data;
+  } catch (error: any) {
+    console.error("Error in saveConversationRequest:", error);
+    if (error.response) {
+      console.error("Server response:", error.response.data);
+    }
+    throw error;
+  }
 };
 
 export const getConversationsRequest = async (scenarioId: number) => {

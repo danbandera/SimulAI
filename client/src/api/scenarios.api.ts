@@ -8,6 +8,7 @@ export interface Conversation {
     message: string;
     audioUrl?: string;
   }>;
+  facialExpressions?: any[];
 }
 
 export interface User {
@@ -110,6 +111,7 @@ export const saveConversationRequest = async (
   scenarioId: number | string,
   conversation: Array<{ role: string; message: string; audioUrl?: string }>,
   userId: number | undefined,
+  facialExpressions?: any[],
 ) => {
   if (!scenarioId || !userId) {
     throw new Error("Missing required parameters");
@@ -120,12 +122,14 @@ export const saveConversationRequest = async (
     userId,
     conversationLength: conversation.length,
     conversationSample: conversation.slice(0, 1),
+    facialExpressionsCount: facialExpressions?.length || 0,
   });
 
   // Ensure the body matches exactly what the server expects
   const conversationData = {
     userId: Number(userId),
     conversation: conversation,
+    facialExpressions: facialExpressions || [],
   };
 
   try {

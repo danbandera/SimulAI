@@ -95,6 +95,7 @@ CREATE TABLE conversations (
   scenario_id INTEGER REFERENCES scenarios(id) ON DELETE CASCADE,
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   conversation JSONB NOT NULL,
+  facial_expressions JSONB DEFAULT '[]'::jsonb,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );

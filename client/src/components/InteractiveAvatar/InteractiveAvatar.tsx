@@ -43,6 +43,7 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { saveConversation } = useScenarios();
+  const [facialExpressions, setFacialExpressions] = useState<any[]>([]);
 
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
@@ -59,7 +60,7 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   // Face Detection component modify later
   const FaceDetection = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
-    const canvasRef = useRef<HTMLCanvasElement>(null);
+    // const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
       const loadModels = async () => {
@@ -67,9 +68,9 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
           const MODEL_URL =
             "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights";
           await Promise.all([
-            faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
+            // faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
             faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
-            faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
+            // faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
           ]);
           startVideo();
         } catch (error) {
@@ -101,14 +102,14 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
     }, []);
 
     useEffect(() => {
-      if (!videoRef.current || !canvasRef.current) return;
+      if (!videoRef.current) return;
 
       const video = videoRef.current;
-      const canvas = canvasRef.current;
+      // const canvas = canvasRef.current;
 
       video.addEventListener("play", () => {
-        const displaySize = { width: video.width, height: video.height };
-        faceapi.matchDimensions(canvas, displaySize);
+        //const displaySize = { width: video.width, height: video.height };
+        // faceapi.matchDimensions(canvas, displaySize);
 
         const interval = setInterval(async () => {
           const detections = await faceapi
@@ -116,17 +117,26 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
             .withFaceExpressions();
 
           if (detections) {
-            const resizedDetections = faceapi.resizeResults(
-              detections,
-              displaySize,
-            );
-            const ctx = canvas.getContext("2d");
-            if (ctx) {
-              ctx.clearRect(0, 0, canvas.width, canvas.height);
-              faceapi.draw.drawFaceExpressions(canvas, resizedDetections);
-            }
+            // console.log("detections", detections.expressions);
+            // Store facial expressions with timestamp
+            setFacialExpressions((prev) => [
+              ...prev,
+              {
+                timestamp: new Date().toISOString(),
+                expressions: detections.expressions,
+              },
+            ]);
+            //   const resizedDetections = faceapi.resizeResults(
+            //     detections,
+            //     displaySize,
+            //   );
+            //   const ctx = canvas.getContext("2d");
+            //   if (ctx) {
+            //     ctx.clearRect(0, 0, canvas.width, canvas.height);
+            //     faceapi.draw.drawFaceExpressions(canvas, resizedDetections);
+            //   }
           }
-        }, 100);
+        }, 1000);
 
         return () => clearInterval(interval);
       });
@@ -142,12 +152,12 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
           height="240"
           className="rounded-lg"
         />
-        <canvas
+        {/* <canvas
           ref={canvasRef}
           className="absolute top-0 left-0"
           width="320"
           height="240"
-        />
+        /> */}
       </div>
     );
   };
@@ -215,6 +225,7 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   async function startSession() {
     setIsLoadingSession(true);
     setConversationHistory([]);
+    setFacialExpressions([]);
 
     try {
       const token = await getAccessToken();
@@ -354,6 +365,7 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
     if (conversationHistory.length > 0 && user?.id) {
       try {
         console.log("Conversation history to save:", conversationHistory);
+        console.log("Facial expressions to save:", facialExpressions);
 
         // Format the conversation history for the API
         const formattedConversation = conversationHistory.map((msg) => ({
@@ -363,11 +375,12 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
 
         console.log("Formatted conversation:", formattedConversation);
 
-        // Save to database
+        // Save to database with expressions data
         await saveConversation(
           props.scenarioId,
           formattedConversation,
           user.id,
+          facialExpressions,
         );
         console.log("Conversation saved successfully");
       } catch (error) {
@@ -459,9 +472,9 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
           </button>
         ) : (
           <div className="relative w-full h-full" ref={containerRef}>
-            {/* <div className="absolute bottom-0 right-0 z-9">
+            <div className="absolute bottom-0 right-0 z-9">
               <FaceDetection />
-            </div> */}
+            </div>
             <video
               ref={mediaStream}
               autoPlay
@@ -522,6 +535,9 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
           </div>
         )}
       </div>
+      {/* <div className="absolute bottom-0 right-0 z-9">
+        <FaceDetection />
+      </div> */}
     </div>
   );
 };

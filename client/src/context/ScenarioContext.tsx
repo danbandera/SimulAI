@@ -45,6 +45,7 @@ interface ScenarioContextValue {
     scenarioId: number,
     conversation: Array<{ role: string; message: string; audioUrl?: string }>,
     userId: number,
+    facialExpressions?: any[],
   ) => Promise<void>;
   getConversations: (scenarioId: number) => Promise<Conversation[]>;
   generateImage: (prompt: string) => Promise<string>;
@@ -130,9 +131,15 @@ export const ScenarioProvider = ({ children }: ScenarioProviderProps) => {
     scenarioId: number,
     conversation: Array<{ role: string; message: string; audioUrl?: string }>,
     userId: number,
+    facialExpressions?: any[],
   ) => {
     try {
-      await saveConversationRequest(scenarioId, conversation, userId);
+      await saveConversationRequest(
+        scenarioId,
+        conversation,
+        userId,
+        facialExpressions,
+      );
       toast.success("Conversation saved successfully");
     } catch (error) {
       console.error("Error saving conversation:", error);

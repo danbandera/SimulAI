@@ -676,7 +676,7 @@ export const saveConversation = async (req, res) => {
     console.log("Request params:", req.params);
 
     // Extract data from the request
-    const { conversation } = req.body;
+    const { conversation, facialExpressions } = req.body;
     const userId = req.body.userId || req.body.user_id;
     const scenarioId = req.params.id;
 
@@ -700,6 +700,7 @@ export const saveConversation = async (req, res) => {
       userId,
       conversationLength: conversation.length,
       conversationSample: conversation.slice(0, 1),
+      facialExpressionsCount: facialExpressions?.length || 0,
     });
 
     // Insert the conversation data into the database
@@ -709,6 +710,7 @@ export const saveConversation = async (req, res) => {
         scenario_id: Number(scenarioId),
         conversation,
         user_id: Number(userId),
+        facial_expressions: facialExpressions || [],
       })
       .select();
 

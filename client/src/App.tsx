@@ -32,6 +32,7 @@ import EditScenario from "./pages/Scenarios/EditScenario";
 import RecoverPassword from "./pages/RecoverPassword/RecoverPassword";
 import ResetPassword from "./pages/ResetPassword/ResetPassword";
 import SettingsAdmin from "./pages/SettingsAdmin";
+import ScenarioReport from "./pages/Scenarios/ScenarioReport";
 
 function App() {
   return (
@@ -125,8 +126,17 @@ function App() {
                   path="/scenarios/:id/conversations"
                   element={
                     <>
-                      <PageTitle title="Conversations History | Admin Dashboard" />
+                      <PageTitle title="Scenario Conversations | Admin Dashboard" />
                       <ScenarioConversations />
+                    </>
+                  }
+                />
+                <Route
+                  path="/scenarios/:id/report"
+                  element={
+                    <>
+                      <PageTitle title="Scenario Report | Admin Dashboard" />
+                      <ScenarioReport />
                     </>
                   }
                 />

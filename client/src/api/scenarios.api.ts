@@ -173,3 +173,110 @@ export const generateImageRequest = async (prompt: string) => {
     throw error;
   }
 };
+
+export const getOpenAIAssistantsRequest = async () => {
+  try {
+    const response = await axios.get("/api/openai/assistants");
+    return response.data.assistants;
+  } catch (error) {
+    console.error("Error fetching OpenAI assistants:", error);
+    throw error;
+  }
+};
+
+export const generateReportWithAssistantRequest = async (
+  assistantId: string,
+  messages: Array<{ role: string; content: string }>,
+  systemPrompt: string,
+) => {
+  try {
+    const response = await axios.post("/api/openai/generate-report", {
+      assistantId,
+      messages,
+      systemPrompt,
+    });
+    return response.data.report;
+  } catch (error) {
+    console.error("Error generating report with assistant:", error);
+    throw error;
+  }
+};
+
+// Report management API functions
+export const saveReportRequest = async (
+  scenarioId: number | string,
+  title: string,
+  content: string,
+  conversationsIds: number[],
+  userId: number,
+) => {
+  try {
+    const response = await axios.post(`/scenarios/${scenarioId}/reports`, {
+      title,
+      content,
+      conversations_ids: conversationsIds,
+      user_id: userId,
+    });
+    return response.data;
+  } catch (error) {
+    console.error("Error saving report:", error);
+    throw error;
+  }
+};
+
+export const getReportsRequest = async (scenarioId: number | string) => {
+  try {
+    const response = await axios.get(`/scenarios/${scenarioId}/reports`);
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching reports:", error);
+    throw error;
+  }
+};
+
+export const getReportByIdRequest = async (
+  scenarioId: number | string,
+  reportId: number | string,
+) => {
+  try {
+    const response = await axios.get(
+      `/scenarios/${scenarioId}/reports/${reportId}`,
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error fetching report:", error);
+    throw error;
+  }
+};
+
+export const exportReportToPdfRequest = async (
+  scenarioId: number | string,
+  reportId: number | string,
+) => {
+  try {
+    window.open(
+      `${axios.defaults.baseURL}/scenarios/${scenarioId}/reports/${reportId}/export/pdf`,
+      "_blank",
+    );
+    return true;
+  } catch (error) {
+    console.error("Error exporting report to PDF:", error);
+    throw error;
+  }
+};
+
+export const exportReportToWordRequest = async (
+  scenarioId: number | string,
+  reportId: number | string,
+) => {
+  try {
+    window.open(
+      `${axios.defaults.baseURL}/scenarios/${scenarioId}/reports/${reportId}/export/word`,
+      "_blank",
+    );
+    return true;
+  } catch (error) {
+    console.error("Error exporting report to Word:", error);
+    throw error;
+  }
+};

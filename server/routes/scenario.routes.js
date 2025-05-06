@@ -12,6 +12,13 @@ import {
   getAllConversations,
   processAudio,
   generateImage,
+  getOpenAIAssistants,
+  generateReportWithAssistant,
+  saveReport,
+  getReports,
+  getReportById,
+  exportReportToPdf,
+  exportReportToWord,
 } from "../controllers/scenario.controller.js";
 import multer from "multer";
 import { authRequired } from "../middlewares/validateToken.js";
@@ -29,6 +36,17 @@ const upload = multer({
 });
 
 const router = Router();
+
+// OpenAI assistant routes
+router.get("/api/openai/assistants", getOpenAIAssistants);
+router.post("/api/openai/generate-report", generateReportWithAssistant);
+
+// Report management routes
+router.post("/scenarios/:id/reports", saveReport);
+router.get("/scenarios/:id/reports", getReports);
+router.get("/scenarios/:id/reports/:reportId", getReportById);
+router.get("/scenarios/:id/reports/:reportId/export/pdf", exportReportToPdf);
+router.get("/scenarios/:id/reports/:reportId/export/word", exportReportToWord);
 
 router.post("/scenarios/:id/conversations", saveConversation);
 router.get("/scenarios/conversations", getAllConversations);

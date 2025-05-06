@@ -11,6 +11,8 @@ import { decryptValue } from "../libs/encryption.js";
 import MistralClient from "../clients/mistral.client.js";
 import LlamaClient from "../clients/llama.client.js";
 import OpenAIClient from "../clients/openai.client.js";
+import PDFDocument from "pdfkit";
+import { Document, Packer, Paragraph, TextRun, HeadingLevel } from "docx";
 
 // Set FFmpeg path based on OS
 const ffmpegPath =
@@ -1013,5 +1015,547 @@ export const generateImage = async (req, res) => {
       error: error.message,
       details: error.response?.data || "No additional details",
     });
+  }
+};
+
+// OpenAI assistants endpoint
+export const getOpenAIAssistants = async (req, res) => {
+  try {
+    // Get OpenAI API key from settings
+    const { data: settings, error: settingsError } = await connectSqlDB
+      .from("settings")
+      .select("openai_key")
+      .single();
+
+    if (settingsError) {
+      console.error("Error fetching API keys:", settingsError);
+      return res.status(500).json({
+        error: "Failed to fetch API keys",
+        details: settingsError.message,
+      });
+    }
+
+    if (!settings || !settings.openai_key) {
+      console.error("No OpenAI API key found");
+      return res.status(500).json({ error: "No OpenAI API key found" });
+    }
+
+    const apiKey = decryptValue(settings.openai_key);
+
+    // Initialize OpenAI client
+    const openai = new OpenAI({
+      apiKey: apiKey,
+    });
+
+    // Fetch assistants
+    const assistants = await openai.beta.assistants.list({
+      limit: 10,
+    });
+
+    // Return the assistants
+    res.json({ assistants: assistants.data });
+  } catch (error) {
+    console.error("Error fetching OpenAI assistants:", error);
+    res.status(500).json({
+      error: "Error fetching OpenAI assistants",
+      details: error.message,
+    });
+  }
+};
+
+// Generate report with assistant
+export const generateReportWithAssistant = async (req, res) => {
+  try {
+    const { assistantId, messages, systemPrompt } = req.body;
+
+    if (!assistantId || !messages || !systemPrompt) {
+      return res.status(400).json({
+        error: "Missing required parameters",
+        details: "assistantId, messages, and systemPrompt are required",
+      });
+    }
+
+    // Get OpenAI API key from settings
+    const { data: settings, error: settingsError } = await connectSqlDB
+      .from("settings")
+      .select("openai_key")
+      .single();
+
+    if (settingsError) {
+      console.error("Error fetching API key:", settingsError);
+      return res.status(500).json({
+        error: "Failed to fetch API key",
+        details: settingsError.message,
+      });
+    }
+
+    if (!settings || !settings.openai_key) {
+      console.error("No OpenAI API key found");
+      return res.status(500).json({ error: "No OpenAI API key found" });
+    }
+
+    const apiKey = decryptValue(settings.openai_key);
+
+    // Initialize OpenAI client
+    const openai = new OpenAI({
+      apiKey: apiKey,
+    });
+
+    // Method 1: Use assistants API with threads
+    try {
+      // Create a thread
+      const thread = await openai.beta.threads.create();
+
+      // Add messages to the thread
+      await openai.beta.threads.messages.create(thread.id, {
+        role: "user",
+        content: systemPrompt,
+      });
+
+      // Add conversation messages
+      for (const message of messages) {
+        await openai.beta.threads.messages.create(thread.id, {
+          role: message.role,
+          content: message.content,
+        });
+      }
+
+      // Run the assistant
+      const run = await openai.beta.threads.runs.create(thread.id, {
+        assistant_id: assistantId,
+      });
+
+      // Wait for completion (this is a simple polling approach)
+      let runStatus = await openai.beta.threads.runs.retrieve(
+        thread.id,
+        run.id
+      );
+
+      // Poll for completion - in production, you'd use a webhook
+      while (
+        runStatus.status !== "completed" &&
+        runStatus.status !== "failed"
+      ) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+        runStatus = await openai.beta.threads.runs.retrieve(thread.id, run.id);
+      }
+
+      if (runStatus.status === "failed") {
+        throw new Error(
+          `Assistant run failed: ${
+            runStatus.last_error?.message || "Unknown error"
+          }`
+        );
+      }
+
+      // Get the messages from the thread
+      const messages = await openai.beta.threads.messages.list(thread.id);
+
+      // Extract the latest assistant response
+      const assistantMessages = messages.data
+        .filter((msg) => msg.role === "assistant")
+        .sort((a, b) => new Date(b.created_at) - new Date(a.created_at));
+
+      if (assistantMessages.length > 0) {
+        const responseContent = assistantMessages[0].content[0].text.value;
+        return res.json({ report: responseContent });
+      } else {
+        return res.status(404).json({ error: "No assistant response found" });
+      }
+    } catch (assistantError) {
+      console.error("Error using Assistants API:", assistantError);
+
+      // Method 2: Fallback to regular ChatCompletion API
+      try {
+        console.log("Falling back to Chat Completion API");
+
+        const systemMessage = { role: "system", content: systemPrompt };
+        const allMessages = [systemMessage, ...messages];
+
+        const completion = await openai.chat.completions.create({
+          model: "gpt-4o",
+          messages: allMessages,
+          temperature: 0.7,
+          max_tokens: 1500,
+        });
+
+        return res.json({ report: completion.choices[0].message.content });
+      } catch (chatError) {
+        console.error("Error with Chat Completion fallback:", chatError);
+        throw chatError; // Re-throw to be caught by outer catch block
+      }
+    }
+  } catch (error) {
+    console.error("Error generating report:", error);
+    res.status(500).json({
+      error: "Error generating report",
+      details: error.message,
+    });
+  }
+};
+
+// Save report to database
+export const saveReport = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { title, content, conversations_ids, user_id } = req.body;
+
+    if (!id || !title || !content || !user_id) {
+      return res.status(400).json({
+        message: "Missing required parameters",
+        details: "Scenario ID, title, content, and user ID are required",
+      });
+    }
+
+    // Validate scenario exists
+    const { data: scenario, error: scenarioError } = await connectSqlDB
+      .from("scenarios")
+      .select("id")
+      .eq("id", id)
+      .single();
+
+    if (scenarioError || !scenario) {
+      return res.status(404).json({ message: "Scenario not found" });
+    }
+
+    // Save report to database
+    const { data: report, error } = await connectSqlDB
+      .from("reports")
+      .insert({
+        scenario_id: Number(id),
+        user_id: Number(user_id),
+        title,
+        content,
+        conversations_ids: conversations_ids || [],
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error saving report:", error);
+      return res.status(500).json({
+        message: "Failed to save report",
+        details: error.message,
+      });
+    }
+
+    res.status(201).json({
+      message: "Report saved successfully",
+      report,
+    });
+  } catch (error) {
+    console.error("Error in saveReport:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get all reports for a scenario
+export const getReports = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const { data, error } = await connectSqlDB
+      .from("reports")
+      .select(
+        `
+        *,
+        user:user_id (
+          id,
+          name,
+          email
+        )
+      `
+      )
+      .eq("scenario_id", Number(id))
+      .order("created_at", { ascending: false });
+
+    if (error) {
+      console.error("Error fetching reports:", error);
+      return res.status(500).json({
+        message: "Failed to fetch reports",
+        details: error.message,
+      });
+    }
+
+    res.json(data || []);
+  } catch (error) {
+    console.error("Error in getReports:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Get a specific report by ID
+export const getReportById = async (req, res) => {
+  try {
+    const { id, reportId } = req.params;
+
+    const { data, error } = await connectSqlDB
+      .from("reports")
+      .select(
+        `
+        *,
+        user:user_id (
+          id,
+          name,
+          email
+        )
+      `
+      )
+      .eq("id", Number(reportId))
+      .eq("scenario_id", Number(id))
+      .single();
+
+    if (error) {
+      console.error("Error fetching report:", error);
+      return res.status(404).json({ message: "Report not found" });
+    }
+
+    res.json(data);
+  } catch (error) {
+    console.error("Error in getReportById:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Export report to PDF
+export const exportReportToPdf = async (req, res) => {
+  try {
+    const { id, reportId } = req.params;
+
+    // Get report data
+    const { data: report, error } = await connectSqlDB
+      .from("reports")
+      .select(
+        `
+        *,
+        user:user_id (
+          id,
+          name,
+          email
+        )
+      `
+      )
+      .eq("id", Number(reportId))
+      .eq("scenario_id", Number(id))
+      .single();
+
+    if (error || !report) {
+      console.error("Error fetching report:", error);
+      return res.status(404).json({ message: "Report not found" });
+    }
+
+    // Get scenario data for header
+    const { data: scenario } = await connectSqlDB
+      .from("scenarios")
+      .select("title")
+      .eq("id", Number(id))
+      .single();
+
+    // Create PDF document
+    const doc = new PDFDocument({ margin: 50 });
+
+    // Set response headers
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=report-${reportId}.pdf`
+    );
+
+    // Pipe PDF document to response
+    doc.pipe(res);
+
+    // Add content to PDF
+    doc.fontSize(20).text(`${report.title}`, { align: "center" });
+    doc.moveDown();
+    doc
+      .fontSize(12)
+      .text(`Scenario: ${scenario?.title || "Unknown"}`, { align: "left" });
+    doc
+      .fontSize(12)
+      .text(`Generated: ${new Date(report.created_at).toLocaleString()}`, {
+        align: "left",
+      });
+    doc
+      .fontSize(12)
+      .text(`By: ${report.user?.name || "Unknown"}`, { align: "left" });
+    doc.moveDown();
+
+    // Add a horizontal line
+    doc
+      .moveTo(50, doc.y)
+      .lineTo(doc.page.width - 50, doc.y)
+      .stroke();
+    doc.moveDown();
+
+    // Add report content - handle Markdown-like formatting
+    const lines = report.content.split("\n");
+    lines.forEach((line) => {
+      if (line.startsWith("# ")) {
+        doc.fontSize(18).text(line.replace("# ", ""), { align: "left" });
+      } else if (line.startsWith("## ")) {
+        doc.fontSize(16).text(line.replace("## ", ""), { align: "left" });
+      } else if (line.startsWith("### ")) {
+        doc.fontSize(14).text(line.replace("### ", ""), { align: "left" });
+      } else if (line.match(/^[A-Za-z\s]+: \d+$/)) {
+        // Format aspect scores
+        doc.fontSize(12).text(line, { continued: false });
+      } else if (line.trim() === "") {
+        doc.moveDown();
+      } else {
+        doc.fontSize(12).text(line);
+      }
+    });
+
+    // Finalize PDF
+    doc.end();
+  } catch (error) {
+    console.error("Error in exportReportToPdf:", error);
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// Export report to Word document
+export const exportReportToWord = async (req, res) => {
+  try {
+    const { id, reportId } = req.params;
+
+    // Get report data
+    const { data: report, error } = await connectSqlDB
+      .from("reports")
+      .select(
+        `
+        *,
+        user:user_id (
+          id,
+          name,
+          email
+        )
+      `
+      )
+      .eq("id", Number(reportId))
+      .eq("scenario_id", Number(id))
+      .single();
+
+    if (error || !report) {
+      console.error("Error fetching report:", error);
+      return res.status(404).json({ message: "Report not found" });
+    }
+
+    // Get scenario data for header
+    const { data: scenario } = await connectSqlDB
+      .from("scenarios")
+      .select("title")
+      .eq("id", Number(id))
+      .single();
+
+    // Create Word document
+    const doc = new Document({
+      sections: [
+        {
+          properties: {},
+          children: [],
+        },
+      ],
+    });
+
+    // Add title
+    doc.addSection({
+      children: [
+        new Paragraph({
+          text: report.title,
+          heading: HeadingLevel.TITLE,
+          alignment: "center",
+        }),
+        new Paragraph({
+          text: `Scenario: ${scenario?.title || "Unknown"}`,
+          alignment: "left",
+        }),
+        new Paragraph({
+          text: `Generated: ${new Date(report.created_at).toLocaleString()}`,
+          alignment: "left",
+        }),
+        new Paragraph({
+          text: `By: ${report.user?.name || "Unknown"}`,
+          alignment: "left",
+        }),
+        new Paragraph({
+          text: "",
+          alignment: "left",
+        }),
+      ],
+    });
+
+    // Process content with Markdown-like formatting
+    const lines = report.content.split("\n");
+    const paragraphs = [];
+
+    lines.forEach((line) => {
+      if (line.startsWith("# ")) {
+        paragraphs.push(
+          new Paragraph({
+            text: line.replace("# ", ""),
+            heading: HeadingLevel.HEADING_1,
+          })
+        );
+      } else if (line.startsWith("## ")) {
+        paragraphs.push(
+          new Paragraph({
+            text: line.replace("## ", ""),
+            heading: HeadingLevel.HEADING_2,
+          })
+        );
+      } else if (line.startsWith("### ")) {
+        paragraphs.push(
+          new Paragraph({
+            text: line.replace("### ", ""),
+            heading: HeadingLevel.HEADING_3,
+          })
+        );
+      } else if (line.match(/^[A-Za-z\s]+: \d+$/)) {
+        // Format aspect scores
+        const [aspect, score] = line.split(":").map((s) => s.trim());
+        paragraphs.push(
+          new Paragraph({
+            children: [
+              new TextRun({
+                text: `${aspect}: `,
+                bold: true,
+              }),
+              new TextRun({
+                text: score,
+              }),
+            ],
+          })
+        );
+      } else if (line.trim() === "") {
+        paragraphs.push(new Paragraph({}));
+      } else {
+        paragraphs.push(new Paragraph({ text: line }));
+      }
+    });
+
+    // Add content paragraphs to document
+    doc.addSection({
+      children: paragraphs,
+    });
+
+    // Generate Word document buffer
+    const buffer = await Packer.toBuffer(doc);
+
+    // Set response headers
+    res.setHeader(
+      "Content-Type",
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    );
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=report-${reportId}.docx`
+    );
+
+    // Send document
+    res.send(buffer);
+  } catch (error) {
+    console.error("Error in exportReportToWord:", error);
+    res.status(500).json({ message: error.message });
   }
 };

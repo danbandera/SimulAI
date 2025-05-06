@@ -104,4 +104,22 @@ CREATE TABLE conversations (
 CREATE TRIGGER update_conversations_updated_at
     BEFORE UPDATE ON conversations
     FOR EACH ROW
+    EXECUTE FUNCTION update_updated_at_column();
+
+-- Create reports table
+CREATE TABLE reports (
+  id SERIAL PRIMARY KEY,
+  scenario_id INTEGER REFERENCES scenarios(id) ON DELETE CASCADE,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  title VARCHAR(255) NOT NULL,
+  content TEXT NOT NULL,
+  conversations_ids INTEGER[] DEFAULT '{}',
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create trigger for updated_at on reports
+CREATE TRIGGER update_reports_updated_at
+    BEFORE UPDATE ON reports
+    FOR EACH ROW
     EXECUTE FUNCTION update_updated_at_column(); 

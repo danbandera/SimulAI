@@ -25,6 +25,7 @@ const NewScenario = () => {
   const { loadSettings } = useAuth();
   const [settings, setSettings] = useState<any>(null);
   const [aspectOptions, setAspectOptions] = useState<any>([]);
+  const [categoryOptions, setCategoryOptions] = useState<any>([]);
   const [interactiveAvatarOptions, setInteractiveAvatarOptions] = useState<any>(
     [],
   );
@@ -34,10 +35,10 @@ const NewScenario = () => {
       setSettings(settings);
       setAspectOptions(
         settings.aspects.split(",").map((item: string) => {
-          const [value, label] = item.trim().split(":");
+          const value = item.trim();
           return {
-            value: value?.trim() || "",
-            label: label?.trim() || value?.trim() || "",
+            value: value,
+            label: value.charAt(0).toUpperCase() + value.slice(1),
           };
         }),
       );
@@ -184,7 +185,13 @@ const NewScenario = () => {
       formDataToSend.append("status", formData.status);
       formDataToSend.append("user_id_assigned", String(formData.user));
       formDataToSend.append("created_by", String(currentUser?.id));
-      formDataToSend.append("aspects", JSON.stringify(formData.aspects));
+
+      // Save aspects as comma-separated string
+      const aspectsString = formData.aspects
+        .map((aspect) => aspect.label)
+        .join(",");
+      formDataToSend.append("aspects", aspectsString);
+
       formDataToSend.append("generatedImageUrl", formData.generatedImageUrl);
       formDataToSend.append(
         "show_image_prompt",
@@ -329,6 +336,20 @@ const NewScenario = () => {
                     />
                   </div>
                 </div>
+                {/* <div className="mb-4.5">
+                  <label className="mb-2.5 block text-black dark:text-white">
+                    {t("scenarios.categories")}
+                  </label>
+                  <Select
+                    isMulti={true}
+                    options={categoryOptions}
+                    value={formData.categories}
+                    onChange={handleCategoriesChange}
+                    className="react-select-container"
+                    classNamePrefix="react-select"
+                    placeholder={t("scenarios.selectCategories")}
+                  />
+                </div>  */}
                 <div className="mb-4.5">
                   <label className="mb-2.5 block text-black dark:text-white">
                     {t("scenarios.attachFiles")}

@@ -27,6 +27,7 @@ const SettingsAdmin = () => {
     promt_for_virtual_avatar: "",
     promt_for_analyse_conversation: "",
     aspects: "",
+    scenario_categories: "",
     interactive_avatar: "",
   });
   useEffect(() => {
@@ -56,6 +57,7 @@ const SettingsAdmin = () => {
           promt_for_virtual_avatar: "",
           promt_for_analyse_conversation: "",
           aspects: "",
+          scenario_categories: "",
           interactive_avatar: "",
         },
       );
@@ -65,7 +67,9 @@ const SettingsAdmin = () => {
     }
   };
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
     setSettings((prev) => ({
       ...prev,
@@ -93,6 +97,11 @@ const SettingsAdmin = () => {
         case "aspects":
           dataToUpdate = {
             aspects: settings.aspects,
+          };
+          break;
+        case "scenario_categories":
+          dataToUpdate = {
+            scenario_categories: settings.scenario_categories,
           };
           break;
         case "interactive_avatar":
@@ -170,12 +179,7 @@ const SettingsAdmin = () => {
                       name="promt_for_virtual_avatar"
                       id="promt_for_virtual_avatar"
                       value={settings.promt_for_virtual_avatar || ""}
-                      onChange={(e) =>
-                        setSettings((prev) => ({
-                          ...prev,
-                          promt_for_virtual_avatar: e.target.value,
-                        }))
-                      }
+                      onChange={handleChange}
                       rows={5}
                     />
                   </div>
@@ -230,12 +234,7 @@ const SettingsAdmin = () => {
                       name="promt_for_analyse_conversation"
                       id="promt_for_analyse_conversation"
                       value={settings.promt_for_analyse_conversation || ""}
-                      onChange={(e) =>
-                        setSettings((prev) => ({
-                          ...prev,
-                          promt_for_analyse_conversation: e.target.value,
-                        }))
-                      }
+                      onChange={handleChange}
                       rows={5}
                     />
                   </div>
@@ -288,14 +287,65 @@ const SettingsAdmin = () => {
                       name="aspects"
                       id="aspects"
                       value={settings.aspects || ""}
-                      onChange={(e) =>
-                        setSettings((prev) => ({
-                          ...prev,
-                          aspects: e.target.value,
-                        }))
-                      }
+                      onChange={handleChange}
                       rows={5}
                       placeholder={t("settingsAdmin.AspectsDescription")}
+                    />
+                  </div>
+                  <div className="flex justify-end gap-4.5">
+                    <button
+                      className="flex justify-center rounded border border-stroke py-2 px-6 font-medium text-black hover:shadow-1 dark:border-strokedark dark:text-white"
+                      type="button"
+                      onClick={loadSettings}
+                    >
+                      {t("settingsAdmin.cancelKeys")}
+                    </button>
+                    <button
+                      className="flex justify-center rounded bg-primary py-2 px-6 font-medium text-gray hover:bg-opacity-90"
+                      type="submit"
+                      disabled={loading}
+                    >
+                      {t("settingsAdmin.saveKeys")}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-5 gap-8 mt-8">
+          <div className="col-span-5">
+            <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+              <div className="border-b border-stroke py-4 px-7 dark:border-strokedark">
+                <h3 className="font-medium text-black dark:text-white">
+                  {t("settingsAdmin.scenarioCategories")}
+                </h3>
+              </div>
+              <div className="p-7">
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSubmit("scenario_categories");
+                  }}
+                >
+                  <div className="mb-5.5">
+                    <label
+                      className="mb-3 block text-sm font-medium text-black dark:text-white"
+                      htmlFor="scenario_categories"
+                    >
+                      {t("settingsAdmin.scenarioCategoriesDescription")}
+                    </label>
+                    <textarea
+                      className="w-full rounded border border-stroke bg-gray py-3 px-4.5 text-black focus:border-primary focus-visible:outline-none dark:border-strokedark dark:bg-meta-4 dark:text-white dark:focus:border-primary"
+                      name="scenario_categories"
+                      id="scenario_categories"
+                      value={settings.scenario_categories || ""}
+                      onChange={handleChange}
+                      rows={5}
+                      placeholder={t(
+                        "settingsAdmin.scenarioCategoriesDescription",
+                      )}
                     />
                   </div>
                   <div className="flex justify-end gap-4.5">
@@ -347,12 +397,7 @@ const SettingsAdmin = () => {
                       name="interactive_avatar"
                       id="interactive_avatar"
                       value={settings.interactive_avatar || ""}
-                      onChange={(e) =>
-                        setSettings((prev) => ({
-                          ...prev,
-                          interactive_avatar: e.target.value,
-                        }))
-                      }
+                      onChange={handleChange}
                       rows={5}
                       placeholder={t(
                         "settingsAdmin.interactiveAvatarDescription",
@@ -438,7 +483,7 @@ const SettingsAdmin = () => {
                       </div>
                     </div>
                   </div>
-                  <div className="mb-5.5">
+                  {/* <div className="mb-5.5">
                     <div className="w-full">
                       <label
                         className="mb-3 block text-sm font-medium text-black dark:text-white"
@@ -479,7 +524,7 @@ const SettingsAdmin = () => {
                         />
                       </div>
                     </div>
-                  </div>
+                  </div> */}
                   <div className="flex justify-end gap-4.5">
                     <button
                       className="flex justify-center rounded border border-stroke py-2 px-6 font-medium text-black hover:shadow-1 dark:border-strokedark dark:text-white"

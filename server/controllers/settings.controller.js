@@ -3,14 +3,25 @@ import { encryptValue, decryptValue } from "../libs/encryption.js";
 
 const encryptSettings = (settings) => {
   const encrypted = {};
-  Object.keys(settings).forEach((key) => {
-    if (settings[key] && typeof settings[key] === "string") {
-      encrypted[key] = encryptValue(settings[key]);
-    } else {
-      encrypted[key] = settings[key];
-    }
-  });
-  return encrypted;
+  try {
+    Object.keys(settings).forEach((key) => {
+      if (settings[key] && typeof settings[key] === "string") {
+        try {
+          encrypted[key] = encryptValue(settings[key]);
+        } catch (encryptError) {
+          console.error(`Error encrypting value for key ${key}:`, encryptError);
+          // If encryption fails, still include the original value
+          encrypted[key] = settings[key];
+        }
+      } else {
+        encrypted[key] = settings[key];
+      }
+    });
+    return encrypted;
+  } catch (error) {
+    console.error("Error in encryptSettings:", error);
+    return settings; // Return original settings if encryption fails
+  }
 };
 
 const decryptSettings = (settings) => {
@@ -51,6 +62,8 @@ export const getSettings = async (req, res) => {
 };
 
 export const updateSettings = async (req, res) => {
+  console.log("Request body:", req.body);
+
   const {
     // Virtual Avatar
     promt_for_virtual_avatar,
@@ -58,6 +71,8 @@ export const updateSettings = async (req, res) => {
     promt_for_analyse_conversation,
     // Aspects
     aspects,
+    // Scenario Categories
+    scenario_categories,
     // Interactive Avatar
     interactive_avatar,
     // AI Keys
@@ -91,6 +106,7 @@ export const updateSettings = async (req, res) => {
       promt_for_virtual_avatar,
       promt_for_analyse_conversation,
       aspects,
+      scenario_categories,
       interactive_avatar,
       heygen_key,
       openai_key,
@@ -108,38 +124,60 @@ export const updateSettings = async (req, res) => {
       aws_bucket,
       aws_bucket_url,
     };
+
+    console.log("Settings data to save:", settingsData);
+
     // Encrypt settings before saving
-    const encryptedSettings = encryptSettings(settingsData);
+    let encryptedSettings;
+    try {
+      encryptedSettings = encryptSettings(settingsData);
+      console.log("Settings encrypted successfully");
+    } catch (encryptError) {
+      console.error("Error encrypting settings:", encryptError);
+      return res.status(500).json({ error: "Error encrypting settings" });
+    }
 
     let result;
-    if (existingSettings) {
-      // Update existing settings
-      const { data, error } = await connectSqlDB
-        .from("settings")
-        .update(encryptedSettings)
-        .eq("id", existingSettings.id)
-        .select()
-        .single();
+    try {
+      if (existingSettings) {
+        // Update existing settings
+        const { data, error } = await connectSqlDB
+          .from("settings")
+          .update(encryptedSettings)
+          .eq("id", existingSettings.id)
+          .select()
+          .single();
 
-      result = { data, error };
-    } else {
-      // Create new settings
-      const { data, error } = await connectSqlDB
-        .from("settings")
-        .insert(encryptedSettings)
-        .select()
-        .single();
+        result = { data, error };
+      } else {
+        // Create new settings
+        const { data, error } = await connectSqlDB
+          .from("settings")
+          .insert(encryptedSettings)
+          .select()
+          .single();
 
-      result = { data, error };
+        result = { data, error };
+      }
+    } catch (dbError) {
+      console.error("Database operation error:", dbError);
+      return res.status(500).json({ error: "Database operation failed" });
     }
 
     if (result.error) {
+      console.error("Database result error:", result.error);
       return res.status(500).json({ error: "Error updating settings" });
     }
 
     // Decrypt settings before sending response
-    const decryptedSettings = decryptSettings(result.data);
-    res.json(decryptedSettings);
+    try {
+      const decryptedSettings = decryptSettings(result.data);
+      res.json(decryptedSettings);
+    } catch (decryptError) {
+      console.error("Error decrypting settings for response:", decryptError);
+      // Return encrypted data if decryption fails
+      res.json(result.data);
+    }
   } catch (error) {
     console.error("Update settings error:", error);
     res.status(500).json({ error: "Internal server error" });

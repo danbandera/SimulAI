@@ -62,6 +62,7 @@ const EditScenario = () => {
   const { loadSettings } = useAuth();
   const [settings, setSettings] = useState<any>(null);
   const [aspectOptions, setAspectOptions] = useState<any>([]);
+  const [categoryOptions, setCategoryOptions] = useState<any>([]);
   const [interactiveAvatarOptions, setInteractiveAvatarOptions] = useState<any>(
     [],
   );
@@ -71,10 +72,10 @@ const EditScenario = () => {
       setSettings(settings);
       setAspectOptions(
         settings.aspects.split(",").map((item: string) => {
-          const [value, label] = item.trim().split(":");
+          const value = item.trim();
           return {
-            value: value?.trim() || "",
-            label: label?.trim() || value?.trim() || "",
+            value: value,
+            label: value.charAt(0).toUpperCase() + value.slice(1),
           };
         }),
       );
@@ -122,6 +123,7 @@ const EditScenario = () => {
   useEffect(() => {
     const loadScenario = async () => {
       const scenario = await getScenario(Number(id));
+
       setFormData({
         title: scenario.title,
         context: scenario.context,
@@ -132,9 +134,9 @@ const EditScenario = () => {
               label: scenario.user_id_assigned.toString(),
             }
           : null,
-        aspects: scenario.aspects || [],
-        files: scenario.files || [],
-        existingFiles: scenario.files || [],
+        aspects: scenario.aspects || "",
+        files: [],
+        existingFiles: Array.isArray(scenario.files) ? scenario.files : [],
         assignedIA: scenario.assignedIA || "openai",
         assignedIAModel: scenario.assignedIAModel,
         imagePrompt: "",
@@ -255,7 +257,13 @@ const EditScenario = () => {
       formDataToSend.append("status", formData.status);
       formDataToSend.append("user_id_assigned", String(formData.user.value));
       formDataToSend.append("created_by", String(currentUser?.id));
-      formDataToSend.append("aspects", JSON.stringify(formData.aspects));
+
+      // Save aspects as comma-separated string
+      const aspectsString = formData.aspects
+        .map((aspect) => aspect.label)
+        .join(",");
+      formDataToSend.append("aspects", aspectsString);
+
       formDataToSend.append("assigned_ia", formData.assignedIA);
       formDataToSend.append("generatedImageUrl", formData.generatedImageUrl);
       formDataToSend.append(
@@ -264,15 +272,19 @@ const EditScenario = () => {
       );
       formDataToSend.append("interactive_avatar", formData.interactiveAvatar);
       formDataToSend.append("avatar_language", formData.avatarLanguage);
-      // Append files
+
+      // Append new files
       formData.files.forEach((file) => {
         formDataToSend.append("files", file);
       });
 
       // Append existing files
-      formData.existingFiles.forEach((file) => {
-        formDataToSend.append("existing_files", file);
-      });
+      if (formData.existingFiles.length > 0) {
+        formDataToSend.append(
+          "existingFiles",
+          JSON.stringify(formData.existingFiles),
+        );
+      }
 
       await updateScenario(Number(id), formDataToSend);
       toast.success("Scenario updated successfully");
@@ -334,7 +346,7 @@ const EditScenario = () => {
                     </select>
                   </div>
                 </div>
-                {currentUser?.role === "admin" && (
+                {/* {currentUser?.role === "admin" && (
                   <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
                     <div className="w-full xl:w-1/2">
                       <label className="mb-2.5 block text-black dark:text-white">
@@ -419,7 +431,7 @@ const EditScenario = () => {
                       </select>
                     </div>
                   </div>
-                )}
+                )} */}
                 <div className="mb-4.5">
                   <label className="mb-2.5 block text-black dark:text-white">
                     {t("scenarios.context")}
@@ -433,20 +445,36 @@ const EditScenario = () => {
                     rows={4}
                   />
                 </div>
-                <div className="mb-4.5">
-                  <label className="mb-2.5 block text-black dark:text-white">
-                    {t("scenarios.aspects")}{" "}
-                    <span className="text-meta-1">*</span>
-                  </label>
-                  <CreatableSelect
-                    isMulti={true}
-                    options={aspectOptions}
-                    value={formData.aspects}
-                    onChange={handleAspectsChange}
-                    className="react-select-container"
-                    classNamePrefix="react-select"
-                    placeholder={t("scenarios.selectAspects")}
-                  />
+                <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
+                  <div className="w-full xl:w-1/2">
+                    <label className="mb-2.5 block text-black dark:text-white">
+                      {t("scenarios.aspects")}{" "}
+                      <span className="text-meta-1">*</span>
+                    </label>
+                    <CreatableSelect
+                      isMulti={true}
+                      options={aspectOptions}
+                      value={formData.aspects}
+                      onChange={handleAspectsChange}
+                      className="react-select-container"
+                      classNamePrefix="react-select"
+                      placeholder={t("scenarios.selectAspects")}
+                    />
+                  </div>
+                  {/*  <div className="w-full xl:w-1/2">
+                    <label className="mb-2.5 block text-black dark:text-white">
+                      {t("scenarios.categories")}
+                    </label>
+                    <Select
+                      isMulti={true}
+                      options={categoryOptions}
+                      value={formData.categories}
+                      onChange={handleCategoriesChange}
+                      className="react-select-container"
+                      classNamePrefix="react-select"
+                      placeholder={t("scenarios.selectCategories")}
+                    />
+                  </div>  */}
                 </div>
                 <div className="mb-4.5">
                   <label className="mb-2.5 block text-black dark:text-white">
@@ -471,29 +499,55 @@ const EditScenario = () => {
                         </span>
                       </label>
                     </div>
-                    {formData.files.length > 0 && (
+
+                    {/* Display existing files */}
+                    {formData.existingFiles.length > 0 && (
                       <div className="flex flex-col gap-2.5">
                         <label className="text-sm text-black dark:text-white">
-                          {t("scenarios.attachedFiles")}
+                          {t("scenarios.existingFiles")}
                         </label>
                         <div className="flex flex-wrap gap-3">
-                          {formData.files.map((file, index) => (
+                          {formData.existingFiles.map((file, index) => (
                             <div
-                              key={index}
+                              key={`existing-${index}`}
                               className="flex items-center gap-2 rounded-md bg-gray-2 px-3 py-1 dark:bg-meta-4"
                             >
                               <span className="text-sm text-black dark:text-white">
                                 <a
-                                  href={
-                                    typeof file === "string"
-                                      ? file
-                                      : URL.createObjectURL(file)
-                                  }
+                                  href={file}
                                   target="_blank"
                                   rel="noopener noreferrer"
                                 >
-                                  File {index + 1} {file.name}
+                                  {file.split("/").pop() || `File ${index + 1}`}
                                 </a>
+                              </span>
+                              <button
+                                type="button"
+                                onClick={() => handleRemoveExistingFile(index)}
+                                className="text-danger hover:text-meta-1"
+                              >
+                                ×
+                              </button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Display newly added files */}
+                    {formData.files.length > 0 && (
+                      <div className="flex flex-col gap-2.5">
+                        <label className="text-sm text-black dark:text-white">
+                          {t("scenarios.newFiles")}
+                        </label>
+                        <div className="flex flex-wrap gap-3">
+                          {formData.files.map((file, index) => (
+                            <div
+                              key={`new-${index}`}
+                              className="flex items-center gap-2 rounded-md bg-gray-2 px-3 py-1 dark:bg-meta-4"
+                            >
+                              <span className="text-sm text-black dark:text-white">
+                                {file.name}
                               </span>
                               <button
                                 type="button"

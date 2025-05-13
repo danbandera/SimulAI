@@ -19,7 +19,7 @@ interface Scenario {
   created_by: User;
   created_at: string;
   updated_at?: string;
-  aspects?: { value: string; label: string }[];
+  aspects?: string;
   files?: string[];
   generated_image_url?: string;
 }

@@ -4,7 +4,8 @@ import { encrypt, decrypt } from "../utils/encryption";
 interface Settings {
   promt_for_virtual_avatar?: string;
   promt_for_analyse_conversation?: string;
-  aspects?: { value: string; label: string }[];
+  aspects?: string;
+  scenario_categories?: string;
   heygen_key?: string;
   openai_key?: string;
   mistral_key?: string;
@@ -59,8 +60,10 @@ export const updateSettings = async (settings: Settings) => {
   try {
     const encryptedSettings = encryptSettings(settings);
     const response = await axios.put("/settings", encryptedSettings);
-    return decryptSettings(response.data);
+    const decryptedResponse = decryptSettings(response.data);
+    return decryptedResponse;
   } catch (error) {
+    console.error("Error in updateSettings API:", error);
     throw error;
   }
 };

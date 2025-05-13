@@ -51,11 +51,13 @@ CREATE TABLE IF NOT EXISTS settings (
     promt_for_analyse_conversation TEXT,
     -- Aspects
     aspects TEXT,
+    -- Scenario Categories
+    scenario_categories TEXT,
     -- AI Keys
     heygen_key TEXT,
     openai_key TEXT,
-    mistral_key TEXT,
-    llama_key TEXT,
+    -- mistral_key TEXT,
+    -- llama_key TEXT,
     -- Mail Settings
     mail_username TEXT,
     mail_password TEXT,
@@ -74,21 +76,6 @@ CREATE TABLE IF NOT EXISTS settings (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Create function to update timestamp
-CREATE OR REPLACE FUNCTION update_updated_at_column()
-RETURNS TRIGGER AS $$
-BEGIN
-    NEW.updated_at = CURRENT_TIMESTAMP;
-    RETURN NEW;
-END;
-$$ language 'plpgsql';
-
--- Create trigger to update timestamp
-CREATE TRIGGER update_settings_updated_at
-    BEFORE UPDATE ON settings
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
-
 -- Create conversations table
 CREATE TABLE conversations (
   id SERIAL PRIMARY KEY,
@@ -99,12 +86,6 @@ CREATE TABLE conversations (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-
--- Create trigger for updated_at on conversations
-CREATE TRIGGER update_conversations_updated_at
-    BEFORE UPDATE ON conversations
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column();
 
 -- Create reports table
 CREATE TABLE reports (
@@ -117,9 +98,3 @@ CREATE TABLE reports (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
-
--- Create trigger for updated_at on reports
-CREATE TRIGGER update_reports_updated_at
-    BEFORE UPDATE ON reports
-    FOR EACH ROW
-    EXECUTE FUNCTION update_updated_at_column(); 

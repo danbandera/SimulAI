@@ -23,7 +23,7 @@ interface Scenario {
   parent_scenario?: number;
   user_id_assigned?: number;
   created_by?: number;
-  aspects?: { value: string; label: string }[];
+  aspects?: string;
   files?: File[];
   assignedIA?: string;
   assignedIAModel?: string;

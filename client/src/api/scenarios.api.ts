@@ -30,7 +30,7 @@ export interface Scenario {
   created_by?: number;
   assigned_user?: User;
   created_by_user?: User;
-  aspects?: { value: string; label: string }[];
+  aspects?: string;
   files?: string[];
   assignedIA?: string;
   assignedIAModel?: string;

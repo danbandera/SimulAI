@@ -26,7 +26,8 @@ interface Scenario {
   context: string;
   status: string;
   user_id_assigned: number | null;
-  aspects: { value: string; label: string }[];
+  aspects: string;
+  categories: string;
   files: string[];
   assignedIA: string;
   assignedIAModel?: string;
@@ -40,7 +41,8 @@ interface FormData {
   context: string;
   status: string;
   user: UserOption | null;
-  aspects: { value: string; label: string }[];
+  aspects: string;
+  categories: string;
   files: File[];
   existingFiles: string[];
   assignedIA: string;
@@ -79,6 +81,15 @@ const EditScenario = () => {
           };
         }),
       );
+      setCategoryOptions(
+        settings.scenario_categories.split(",").map((item: string) => {
+          const value = item.trim();
+          return {
+            value: value,
+            label: value.charAt(0).toUpperCase() + value.slice(1),
+          };
+        }),
+      );
       setInteractiveAvatarOptions(
         settings.interactive_avatar.split(",").map((item: string) => {
           const [value, label] = item.trim().split(":");
@@ -102,7 +113,8 @@ const EditScenario = () => {
     context: "",
     status: "draft",
     user: null,
-    aspects: [],
+    aspects: "",
+    categories: "",
     files: [],
     existingFiles: [],
     assignedIA: "openai",
@@ -135,6 +147,7 @@ const EditScenario = () => {
             }
           : null,
         aspects: scenario.aspects || "",
+        categories: scenario.categories || "",
         files: [],
         existingFiles: Array.isArray(scenario.files) ? scenario.files : [],
         assignedIA: scenario.assignedIA || "openai",
@@ -173,7 +186,16 @@ const EditScenario = () => {
   ) => {
     setFormData((prev) => ({
       ...prev,
-      aspects: [...newValue],
+      aspects: newValue.map((item) => item.value).join(","),
+    }));
+  };
+
+  const handleCategoriesChange = (
+    newValue: readonly { value: string; label: string }[],
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      categories: newValue.map((item) => item.value).join(","),
     }));
   };
 
@@ -259,10 +281,11 @@ const EditScenario = () => {
       formDataToSend.append("created_by", String(currentUser?.id));
 
       // Save aspects as comma-separated string
-      const aspectsString = formData.aspects
-        .map((aspect) => aspect.label)
-        .join(",");
-      formDataToSend.append("aspects", aspectsString);
+      // const aspectsString = formData.aspects
+      //   .map((aspect) => aspect.label)
+      //   .join(",");
+      formDataToSend.append("aspects", formData.aspects);
+      formDataToSend.append("categories", formData.categories);
 
       formDataToSend.append("assigned_ia", formData.assignedIA);
       formDataToSend.append("generatedImageUrl", formData.generatedImageUrl);
@@ -294,6 +317,7 @@ const EditScenario = () => {
       toast.error("Error updating scenario");
     }
   };
+  // console.log("scenario.categories:", scenario.categories);
 
   return (
     <>
@@ -454,27 +478,46 @@ const EditScenario = () => {
                     <CreatableSelect
                       isMulti={true}
                       options={aspectOptions}
-                      value={formData.aspects}
+                      value={
+                        formData.aspects
+                          ? formData.aspects.split(",").map((value) => ({
+                              value: value.trim(),
+                              label:
+                                value.trim().charAt(0).toUpperCase() +
+                                value.trim().slice(1),
+                            }))
+                          : []
+                      }
                       onChange={handleAspectsChange}
                       className="react-select-container"
                       classNamePrefix="react-select"
                       placeholder={t("scenarios.selectAspects")}
                     />
                   </div>
-                  {/*  <div className="w-full xl:w-1/2">
+                  <div className="w-full xl:w-1/2">
                     <label className="mb-2.5 block text-black dark:text-white">
-                      {t("scenarios.categories")}
+                      {t("scenarios.categories")}{" "}
+                      <span className="text-meta-1">*</span>
                     </label>
-                    <Select
+                    <CreatableSelect
                       isMulti={true}
                       options={categoryOptions}
-                      value={formData.categories}
+                      value={
+                        formData.categories
+                          ? formData.categories.split(",").map((value) => ({
+                              value: value.trim(),
+                              label:
+                                value.trim().charAt(0).toUpperCase() +
+                                value.trim().slice(1),
+                            }))
+                          : []
+                      }
                       onChange={handleCategoriesChange}
                       className="react-select-container"
                       classNamePrefix="react-select"
-                      placeholder={t("scenarios.selectCategories")}
+                      placeholder={t("scenarios.selectAspects")}
                     />
-                  </div>  */}
+                  </div>
                 </div>
                 <div className="mb-4.5">
                   <label className="mb-2.5 block text-black dark:text-white">

@@ -10,6 +10,7 @@ import { FiTrash, FiUpload } from "react-icons/fi";
 import { useTranslation } from "react-i18next";
 import { sendEmail } from "../../api/email.api";
 import { useAuth } from "../../context/AuthContext";
+import { log } from "console";
 interface UserOption {
   value: number;
   label: string;
@@ -42,6 +43,15 @@ const NewScenario = () => {
           };
         }),
       );
+      setCategoryOptions(
+        settings.scenario_categories.split(",").map((item: string) => {
+          const value = item.trim();
+          return {
+            value: value,
+            label: value.charAt(0).toUpperCase() + value.slice(1),
+          };
+        }),
+      );
       setInteractiveAvatarOptions(
         settings.interactive_avatar.split(",").map((item: string) => {
           const [value, label] = item.trim().split(":");
@@ -62,7 +72,8 @@ const NewScenario = () => {
     context: duplicateData?.context || "",
     status: duplicateData?.status || "draft",
     user: null as number | null,
-    aspects: [] as { value: string; label: string }[],
+    aspects: "",
+    categories: "",
     files: [] as File[],
     imagePrompt: "",
     generatedImageUrl: "",
@@ -132,7 +143,16 @@ const NewScenario = () => {
   ) => {
     setFormData((prev) => ({
       ...prev,
-      aspects: [...newValue],
+      aspects: newValue.map((item) => item.value).join(","),
+    }));
+  };
+
+  const handleCategoriesChange = (
+    newValue: readonly { value: string; label: string }[],
+  ) => {
+    setFormData((prev) => ({
+      ...prev,
+      categories: newValue.map((item) => item.value).join(","),
     }));
   };
 
@@ -187,10 +207,11 @@ const NewScenario = () => {
       formDataToSend.append("created_by", String(currentUser?.id));
 
       // Save aspects as comma-separated string
-      const aspectsString = formData.aspects
-        .map((aspect) => aspect.label)
-        .join(",");
-      formDataToSend.append("aspects", aspectsString);
+      // const aspectsString = formData.aspects
+      //   .map((aspect) => aspect.label)
+      //   .join(",");
+      formDataToSend.append("aspects", formData.aspects);
+      formDataToSend.append("categories", formData.categories);
 
       formDataToSend.append("generatedImageUrl", formData.generatedImageUrl);
       formDataToSend.append(
@@ -203,6 +224,7 @@ const NewScenario = () => {
       formData.files.forEach((file, index) => {
         formDataToSend.append("files", file);
       });
+      console.log("FormData to send:", formDataToSend);
 
       // Get the selected user's details
       const selectedUser = users.find((user) => user.id === formData.user);
@@ -328,7 +350,16 @@ const NewScenario = () => {
                     <CreatableSelect
                       isMulti={true}
                       options={aspectOptions}
-                      value={formData.aspects}
+                      value={
+                        formData.aspects
+                          ? formData.aspects.split(",").map((value) => ({
+                              value: value.trim(),
+                              label:
+                                value.trim().charAt(0).toUpperCase() +
+                                value.trim().slice(1),
+                            }))
+                          : []
+                      }
                       onChange={handleAspectsChange}
                       className="react-select-container"
                       classNamePrefix="react-select"
@@ -336,20 +367,29 @@ const NewScenario = () => {
                     />
                   </div>
                 </div>
-                {/* <div className="mb-4.5">
+                <div className="mb-4.5">
                   <label className="mb-2.5 block text-black dark:text-white">
                     {t("scenarios.categories")}
                   </label>
                   <Select
                     isMulti={true}
                     options={categoryOptions}
-                    value={formData.categories}
+                    value={
+                      formData.categories
+                        ? formData.categories.split(",").map((value) => ({
+                            value: value.trim(),
+                            label:
+                              value.trim().charAt(0).toUpperCase() +
+                              value.trim().slice(1),
+                          }))
+                        : []
+                    }
                     onChange={handleCategoriesChange}
                     className="react-select-container"
                     classNamePrefix="react-select"
                     placeholder={t("scenarios.selectCategories")}
                   />
-                </div>  */}
+                </div>
                 <div className="mb-4.5">
                   <label className="mb-2.5 block text-black dark:text-white">
                     {t("scenarios.attachFiles")}

@@ -31,6 +31,7 @@ export interface Scenario {
   assigned_user?: User;
   created_by_user?: User;
   aspects?: string;
+  categories?: string;
   files?: string[];
   assignedIA?: string;
   assignedIAModel?: string;

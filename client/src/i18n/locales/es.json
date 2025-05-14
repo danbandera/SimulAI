@@ -131,7 +131,8 @@
     "savedAt": "Guardado el",
     "savedBy": "Guardado por",
     "savingReport": "Guardando reporte...",
-    "reportCopied": "Reporte copiado al portapapeles"
+    "reportCopied": "Reporte copiado al portapapeles",
+    "categories": "Categorías"
   },
   "console": {
     "startConversation": "Iniciar Conversación",
@@ -167,7 +168,10 @@
     "PromtForAnalyseConversation": "Prompt para Análisis de Conversación",
     "PromtForAnalyseConversationDescription": "Ingresa el prompt para el análisis de conversación",
     "Aspects": "Aspectos",
-    "AspectsDescription": "Ingresa los aspectos a evaluar con el siguiente formato (valor:etiqueta): aspecto1:Aspecto 1,aspecto2:Aspecto 2,...",
+    "AspectsDescription": "Ingresa los aspectos a evaluar con el siguiente formato (valor, valor, valor): aspecto 1,aspecto 2,...",
+    "scenarioCategories": "Categorías de Escenarios",
+    "scenarioCategoriesDescription": "Ingresa las categorías para los escenarios con el siguiente formato (valor, valor, valor): categoría 1,categoría 2,...",
+    "interactiveAvatar": "Avatar Interactivo",
     "heyGenKey": "Clave de HeyGen",
     "openAIKey": "Clave de OpenAI",
     "mistralKey": "Clave de Mistral",

@@ -134,7 +134,8 @@
     "savedAt": "Saved at",
     "savedBy": "Saved by",
     "savingReport": "Saving report...",
-    "reportCopied": "Report copied to clipboard"
+    "reportCopied": "Report copied to clipboard",
+    "categories": "Categories"
   },
   "console": {
     "startConversation": "Start Conversation",
@@ -170,7 +171,9 @@
     "PromtForAnalyseConversation": "Promt for Analyse Conversation",
     "PromtForAnalyseConversationDescription": "Enter the prompt for the analyse conversation",
     "Aspects": "Aspects",
-    "AspectsDescription": "Enter the aspects to evaluate with the following format (value:label): aspect1:Aspect 1,aspect2:Aspect 2,...",
+    "AspectsDescription": "Enter the aspects to evaluate with the following format (value, value, value): aspect 1,aspect 2,...",
+    "scenarioCategories": "Scenario Categories",
+    "scenarioCategoriesDescription": "Enter the categories for the scenarios with the following format (value, value, value): category 1,category 2,...",
     "interactiveAvatar": "Interactive Avatar",
     "interactiveAvatarDescription": "Enter the ids of the avatars to use in the interactive avatar following format (value:label): avatar1:Avatar 1,avatar2:Avatar 2,...",
     "heyGenKey": "HeyGen API Key",

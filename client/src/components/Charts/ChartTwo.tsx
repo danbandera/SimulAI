@@ -6,24 +6,25 @@ import { useScenarios } from "../../context/ScenarioContext";
 interface ChartTwoState {
   series: {
     name: string;
-    data: number[];
+    data: string[];
   }[];
 }
 
 interface ChartTwoProps {
   scenario: {
     id?: number;
-    aspects?: { value: string; label: string }[];
+    aspects?: string;
   };
 }
 
 const ChartTwo: React.FC<ChartTwoProps> = ({ scenario }) => {
   const { getConversations } = useScenarios();
+  console.log("Scenario aspects:", scenario.aspects);
   const [state, setState] = useState<ChartTwoState>({
     series: [
       {
         name: "Calificación",
-        data: scenario.aspects ? scenario.aspects.map(() => 0) : [0],
+        data: [],
       },
     ],
   });
@@ -33,7 +34,6 @@ const ChartTwo: React.FC<ChartTwoProps> = ({ scenario }) => {
     const fetchConversations = async () => {
       if (scenario && scenario.id) {
         try {
-          console.log("Scenario aspects:", scenario.aspects);
           const conversations = await getConversations(scenario.id);
           console.log(
             `Conversations for scenario ${scenario.id}:`,
@@ -171,7 +171,7 @@ const ChartTwo: React.FC<ChartTwoProps> = ({ scenario }) => {
     },
     xaxis: {
       type: "category",
-      categories: scenario.aspects?.map((aspect) => aspect.label) || [],
+      categories: "aoeu",
       axisBorder: {
         show: false,
       },

@@ -24,6 +24,7 @@ interface Scenario {
   user_id_assigned?: number;
   created_by?: number;
   aspects?: string;
+  categories?: string;
   files?: File[];
   assignedIA?: string;
   assignedIAModel?: string;

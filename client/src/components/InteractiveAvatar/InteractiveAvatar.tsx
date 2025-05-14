@@ -397,10 +397,6 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
     await avatar.current?.stopAvatar();
     setStream(undefined);
     setIsSavingConversation(false);
-
-    // Show conversation history
-    // setShowConversation(true);
-    console.log("Conversation History:", conversationHistory);
   }
 
   async function handleSpeak() {

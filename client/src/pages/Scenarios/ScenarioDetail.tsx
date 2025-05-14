@@ -26,7 +26,8 @@ interface ScenarioDetail {
   };
   created_at: string;
   updated_at?: string;
-  aspects?: { value: string; label: string }[];
+  aspects?: string;
+  categories?: string;
   files?: string[];
   generated_image_url?: string;
   show_image_prompt?: boolean;
@@ -42,8 +43,7 @@ const ScenarioDetail = () => {
   const { currentUser } = useUsers();
   const [scenario, setScenario] = useState<ScenarioDetail | null>(null);
   // get the aspects from the scenario as string
-  const aspects =
-    scenario?.aspects?.map((aspect) => aspect.label).join(", ") || "";
+  const aspects = scenario?.aspects || "";
   const context = scenario?.context || "";
   useEffect(() => {
     const loadScenario = async () => {
@@ -187,23 +187,44 @@ const ScenarioDetail = () => {
                       {scenario.context}
                     </p>
                   </div>
-                  {scenario.aspects && scenario.aspects.length > 0 && (
-                    <div>
-                      <h4 className="font-medium text-black dark:text-white mb-2">
-                        {t("scenarios.aspects")}
-                      </h4>
-                      <div className="flex flex-wrap gap-2">
-                        {scenario.aspects.map((aspect, index) => (
-                          <span
-                            key={index}
-                            className="rounded-full bg-primary bg-opacity-10 px-3 py-1 text-sm text-primary"
-                          >
-                            {aspect.label}
-                          </span>
-                        ))}
+                  <div className="grid grid-cols-2 gap-4">
+                    {scenario.aspects && scenario.aspects.length > 0 && (
+                      <div>
+                        <h4 className="font-medium text-black dark:text-white mb-2">
+                          {t("scenarios.aspects")}
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {scenario.aspects.split(",").map((aspect, index) => (
+                            <span
+                              key={index}
+                              className="rounded-full bg-primary bg-opacity-10 px-3 py-1 text-sm text-primary"
+                            >
+                              {aspect.trim()}
+                            </span>
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  )}
+                    )}
+                    {scenario.categories && scenario.categories.length > 0 && (
+                      <div>
+                        <h4 className="font-medium text-black dark:text-white mb-2">
+                          {t("scenarios.categories")}
+                        </h4>
+                        <div className="flex flex-wrap gap-2">
+                          {scenario.categories
+                            .split(",")
+                            .map((category, index) => (
+                              <span
+                                key={index}
+                                className="rounded-full bg-orange-500 bg-opacity-10 px-3 py-1 text-sm text-orange-500"
+                              >
+                                {category}
+                              </span>
+                            ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
                   {scenario.files && scenario.files.length > 0 && (
                     <div>
                       <h4 className="font-medium text-black dark:text-white mb-2">

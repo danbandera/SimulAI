@@ -15,7 +15,7 @@ interface ChartOneState {
 interface ChartOneProps {
   scenario: {
     id?: number;
-    aspects?: { value: string; label: string }[];
+    aspects?: string;
   };
 }
 
@@ -25,7 +25,7 @@ const ChartOne: React.FC<ChartOneProps> = ({ scenario }) => {
     series: [
       {
         name: "Calificación",
-        data: scenario.aspects ? scenario.aspects.map(() => 0) : [0],
+        data: [],
       },
     ],
   });

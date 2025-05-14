@@ -261,6 +261,7 @@ export const createScenario = async (req, res) => {
           parent_scenario,
           status,
           aspects,
+          categories,
           assignedIA,
           assignedIAModel,
           generatedImageUrl,
@@ -332,14 +333,6 @@ export const createScenario = async (req, res) => {
           }
         }
 
-        // Parse aspects from JSON string
-        let parsedAspects = [];
-        try {
-          parsedAspects = aspects ? JSON.parse(aspects) : [];
-        } catch (error) {
-          console.error("Error parsing aspects:", error);
-        }
-
         // Create scenario with PDF contents
         const scenarioData = {
           title,
@@ -348,7 +341,8 @@ export const createScenario = async (req, res) => {
           user_id_assigned,
           created_by,
           parent_scenario: parent_scenario || null,
-          aspects: parsedAspects,
+          aspects: aspects,
+          categories: categories,
           files: fileUrls,
           assignedIA,
           assignedIAModel,
@@ -448,6 +442,7 @@ export const updateScenario = async (req, res) => {
           context,
           status,
           aspects,
+          categories,
           existingFiles,
           assignedIA,
           assignedIAModel,
@@ -497,10 +492,8 @@ export const updateScenario = async (req, res) => {
 
         // Parse existing files from request body
         let parsedExistingFiles = [];
-        let parsedAspects = [];
         try {
           parsedExistingFiles = existingFiles ? JSON.parse(existingFiles) : [];
-          parsedAspects = aspects ? JSON.parse(aspects) : [];
         } catch (error) {
           console.error("Error parsing JSON data:", error);
           return res.status(400).json({
@@ -569,7 +562,9 @@ ${newPdfContents}`
           title,
           context,
           status,
-          aspects: parsedAspects,
+          aspects: aspects,
+          // categories: categories.split(",").map((item) => item.trim()),
+          categories: categories,
           files: allFiles,
           assignedIA,
           assignedIAModel,
@@ -820,9 +815,7 @@ export const processAudio = async (req, res) => {
     const systemContext = `You are an AI interviewer conducting an evaluation. Here is your context:
     - Scenario Title: ${scenario.title}
     - Description: ${scenario.context}
-    - Aspects to evaluate: ${scenario.aspects
-      .map((aspect) => aspect.label)
-      .join(", ")}.
+    - Aspects to evaluate: ${scenario.aspects}.
     ${
       scenario.aspects
         ? `- Aspects to evaluate: ${scenario.aspects

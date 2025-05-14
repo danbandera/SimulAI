@@ -8,7 +8,11 @@ import MapOne from "../../components/Maps/MapOne";
 import { useUsers } from "../../context/UserContext";
 import { useScenarios } from "../../context/ScenarioContext";
 import { Link } from "react-router-dom";
-import { getReportsRequest } from "../../api/scenarios.api";
+import {
+  getReportsRequest,
+  exportReportToPdfRequest,
+  exportReportToWordRequest,
+} from "../../api/scenarios.api";
 import { useTranslation } from "react-i18next";
 // import TableUsers from "../../components/Tables/TableUsers";
 
@@ -138,6 +142,14 @@ const ECommerce: React.FC = () => {
       );
     });
 
+  const exportToPdf = (scenarioId: number, reportId: number) => {
+    exportReportToPdfRequest(scenarioId, reportId);
+  };
+
+  const exportToWord = (scenarioId: number, reportId: number) => {
+    exportReportToWordRequest(scenarioId, reportId);
+  };
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center h-60">Loading...</div>
@@ -177,12 +189,24 @@ const ECommerce: React.FC = () => {
                             Creado:{" "}
                             {new Date(report.created_at).toLocaleDateString()}
                           </span>
-                          <Link
-                            to={`/scenarios/${scenario.id}/report?reportId=${report.id}`}
-                            className="text-primary hover:underline"
-                          >
-                            Ver detalles
-                          </Link>
+                          <div className="flex space-x-2">
+                            <button
+                              onClick={() =>
+                                exportToPdf(scenario.id || 0, report.id)
+                              }
+                              className="px-2 py-1 text-xs text-white bg-red-500 rounded hover:bg-opacity-90"
+                            >
+                              PDF
+                            </button>
+                            <button
+                              onClick={() =>
+                                exportToWord(scenario.id || 0, report.id)
+                              }
+                              className="px-2 py-1 text-xs text-white bg-blue-700 rounded hover:bg-opacity-90"
+                            >
+                              Word
+                            </button>
+                          </div>
                         </div>
                       </div>
                     ))}

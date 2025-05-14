@@ -14,6 +14,8 @@ const NewUser: React.FC = () => {
   const { currentUser } = useUsers();
   const [formData, setFormData] = useState({
     name: "",
+    lastname: "",
+    department: "",
     email: "",
     role: "",
   });
@@ -46,7 +48,7 @@ const NewUser: React.FC = () => {
         subject: "Welcome to SimulAI - Your Account Details",
         message: `
           <div style="font-family: Arial, sans-serif;">
-            <h2>Welcome ${formData.name}!</h2>
+            <h2>Welcome ${formData.name} ${formData.lastname}!</h2>
             <p>Your account has been created successfully.</p>
             <p><strong>Your login credentials:</strong></p>
             <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
@@ -95,6 +97,36 @@ const NewUser: React.FC = () => {
                       placeholder="Enter user name"
                       className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
                       required
+                    />
+                  </div>
+
+                  <div className="w-full xl:w-1/2">
+                    <label className="mb-2.5 block text-black dark:text-white">
+                      {t("users.lastname")}
+                    </label>
+                    <input
+                      type="text"
+                      name="lastname"
+                      value={formData.lastname}
+                      onChange={handleChange}
+                      placeholder="Enter user last name"
+                      className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
+                  <div className="w-full xl:w-1/2">
+                    <label className="mb-2.5 block text-black dark:text-white">
+                      {t("users.department")}
+                    </label>
+                    <input
+                      type="text"
+                      name="department"
+                      value={formData.department}
+                      onChange={handleChange}
+                      placeholder="Enter user department"
+                      className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
                     />
                   </div>
 

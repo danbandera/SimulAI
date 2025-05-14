@@ -41,8 +41,11 @@
     "editUser": "Editar Usuario",
     "deleteUser": "Eliminar Usuario",
     "createUser": "Crear Usuario",
+    "updateUser": "Actualizar Usuario",
     "newUser": "Nuevo Usuario",
     "name": "Nombre",
+    "lastname": "Apellido",
+    "department": "Departamento",
     "email": "Correo Electrónico",
     "role": "Rol",
     "edit": "Editar",
@@ -50,7 +53,9 @@
     "selectRole": "Seleccionar Rol",
     "admin": "Administrador",
     "company": "Empresa",
-    "user": "Usuario"
+    "user": "Usuario",
+    "passsword": "Contraseña",
+    "passwordEdit": "Contraseña (dejar vacío para mantener la actual)"
   },
   "scenarios": {
     "title": "Escenarios",

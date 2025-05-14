@@ -34,8 +34,9 @@ export const getUser = async (req, res) => {
 
 export const createUser = async (req, res) => {
   try {
-    const { name, role, email, password, created_by } = req.body;
-
+    const { name, lastname, department, role, email, password, created_by } =
+      req.body;
+    console.log("Create User:", req.body);
     // Check for existing user with better error handling
     const { data: existingUser, error: searchError } = await connectSqlDB
       .from("users")
@@ -61,6 +62,8 @@ export const createUser = async (req, res) => {
       .from("users")
       .insert({
         name,
+        lastname,
+        department,
         role,
         email,
         password: hashedPassword,
@@ -104,10 +107,11 @@ export const createUser = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, role, email, password } = req.body;
-
+    const { name, lastname, department, role, email, password } = req.body;
     const updateData = {
       name,
+      lastname,
+      department,
       role,
       email,
       profile_image: "",

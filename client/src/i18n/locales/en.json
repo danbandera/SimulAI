@@ -41,8 +41,11 @@
     "editUser": "Edit User",
     "deleteUser": "Delete User",
     "createUser": "Create User",
+    "updateUser": "Update User",
     "newUser": "New User",
     "name": "Name",
+    "lastname": "Last Name",
+    "department": "Department",
     "email": "Email",
     "role": "Role",
     "edit": "Edit",
@@ -50,7 +53,9 @@
     "selectRole": "Select Role",
     "admin": "Admin",
     "company": "Company",
-    "user": "User"
+    "user": "User",
+    "passsword": "Password",
+    "passwordEdit": "Password (leave empty to keep current)"
   },
   "scenarios": {
     "title": "Scenarios",

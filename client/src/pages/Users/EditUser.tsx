@@ -4,15 +4,20 @@ import { useUsers } from "../../context/UserContext";
 import Breadcrumb from "../../components/Breadcrumbs/Breadcrumb";
 import SelectRole from "../../components/Forms/SelectGroup/SelectRole";
 import { toast } from "react-hot-toast";
+import { useTranslation } from "react-i18next";
 
 const EditUser: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { t } = useTranslation();
   const { updateUser, getUser } = useUsers();
   const [formData, setFormData] = useState({
     name: "",
+    lastname: "",
+    department: "",
     email: "",
     role: "",
+    created_by: 0,
     password: "",
   });
 
@@ -20,10 +25,15 @@ const EditUser: React.FC = () => {
     const loadUser = async () => {
       try {
         const userData = await getUser(Number(id));
+
+        console.log("Loaded user:", userData);
         setFormData({
           name: userData.name,
+          lastname: userData.lastname,
+          department: userData.department || "",
           email: userData.email,
           role: userData.role,
+          created_by: userData.created_by,
           password: "", // Don't load the password
         });
       } catch (error) {
@@ -34,7 +44,7 @@ const EditUser: React.FC = () => {
     };
 
     loadUser();
-  }, [id]);
+  }, [id, getUser]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -59,14 +69,14 @@ const EditUser: React.FC = () => {
 
   return (
     <>
-      <Breadcrumb pageName="Edit User" />
+      <Breadcrumb pageName={t("users.editUser")} />
 
       <div className="grid grid-cols-1 gap-12">
         <div className="flex flex-col gap-12">
           <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
             <div className="border-b border-stroke py-4 px-6.5 dark:border-strokedark">
               <h3 className="font-medium text-black dark:text-white">
-                Edit User
+                {t("users.editUser")}
               </h3>
             </div>
             <form onSubmit={handleSubmit}>
@@ -74,14 +84,14 @@ const EditUser: React.FC = () => {
                 <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
                   <div className="w-full xl:w-1/2">
                     <label className="mb-2.5 block text-black dark:text-white">
-                      Name
+                      {t("users.name")}
                     </label>
                     <input
                       type="text"
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
-                      placeholder="Enter name"
+                      placeholder="Enter user name"
                       className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
                       required
                     />
@@ -89,7 +99,37 @@ const EditUser: React.FC = () => {
 
                   <div className="w-full xl:w-1/2">
                     <label className="mb-2.5 block text-black dark:text-white">
-                      Email
+                      {t("users.lastname")}
+                    </label>
+                    <input
+                      type="text"
+                      name="lastname"
+                      value={formData.lastname}
+                      onChange={handleChange}
+                      placeholder="Enter user last name"
+                      className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
+                      required
+                    />
+                  </div>
+                </div>
+                <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
+                  <div className="w-full xl:w-1/2">
+                    <label className="mb-2.5 block text-black dark:text-white">
+                      {t("users.department")}
+                    </label>
+                    <input
+                      type="text"
+                      name="department"
+                      value={formData.department}
+                      onChange={handleChange}
+                      placeholder="Enter user department"
+                      className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
+                    />
+                  </div>
+
+                  <div className="w-full xl:w-1/2">
+                    <label className="mb-2.5 block text-black dark:text-white">
+                      {t("users.email")}
                     </label>
                     <input
                       type="email"
@@ -108,7 +148,7 @@ const EditUser: React.FC = () => {
                   </div>
                   <div className="w-full xl:w-1/2">
                     <label className="mb-2.5 block text-black dark:text-white">
-                      Password (leave empty to keep current)
+                      {t("users.passwordEdit")}
                     </label>
                     <input
                       type="password"
@@ -124,7 +164,7 @@ const EditUser: React.FC = () => {
                   type="submit"
                   className="flex w-full justify-center rounded bg-primary p-3 font-medium text-gray hover:bg-opacity-90"
                 >
-                  Update User
+                  {t("users.updateUser")}
                 </button>
               </div>
             </form>

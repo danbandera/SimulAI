@@ -3,6 +3,8 @@ import axios from "../config/axios";
 export interface User {
   id?: number;
   name: string;
+  lastname: string;
+  department?: string;
   email: string;
   role: string;
   password: string;

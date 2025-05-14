@@ -103,7 +103,7 @@ const TableUsers = ({ users }: { users: any }) => {
           >
             <div className="flex items-center gap-3 p-2.5 xl:p-5">
               <p className="hidden text-black dark:text-white sm:block">
-                {user.name}
+                {user.name} {user.lastname}
               </p>
             </div>
 

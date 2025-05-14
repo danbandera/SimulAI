@@ -5,13 +5,15 @@ CREATE DATABASE IF NOT EXISTS users;
 CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
+  lastname VARCHAR(255) NOT NULL,
+  department VARCHAR(255) DEFAULT NULL,
   role VARCHAR(255) NOT NULL,
   email VARCHAR(255) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
   profile_image TEXT,
   created_by INTEGER REFERENCES users(id) ON DELETE CASCADE,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
+);  
 
 -- Crear la tabla scenarios
 CREATE TABLE scenarios (
@@ -22,7 +24,8 @@ CREATE TABLE scenarios (
   user_id_created INTEGER REFERENCES users(id) ON DELETE CASCADE,
   status VARCHAR(50) DEFAULT 'draft',
   parent_scenario INTEGER,
-  aspects JSONB DEFAULT '[]'::jsonb,
+  aspects TEXT,
+  categories TEXT,
   files TEXT[] DEFAULT '{}',
   assignedIA VARCHAR(255),
   assignedIAModel VARCHAR(255),
@@ -53,6 +56,8 @@ CREATE TABLE IF NOT EXISTS settings (
     aspects TEXT,
     -- Scenario Categories
     scenario_categories TEXT,
+    -- Interactive Avatar
+    interactive_avatar TEXT,
     -- AI Keys
     heygen_key TEXT,
     openai_key TEXT,

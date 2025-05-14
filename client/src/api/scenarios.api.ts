@@ -36,6 +36,7 @@ export interface Scenario {
   assignedIA?: string;
   assignedIAModel?: string;
   generated_image_url?: string;
+  timeLimit?: number; // Time limit in minutes
 }
 
 export const getScenariosRequest = async () => {
@@ -113,6 +114,7 @@ export const saveConversationRequest = async (
   conversation: Array<{ role: string; message: string; audioUrl?: string }>,
   userId: number | undefined,
   facialExpressions?: any[],
+  elapsedTime?: number,
 ) => {
   if (!scenarioId || !userId) {
     throw new Error("Missing required parameters");
@@ -124,6 +126,7 @@ export const saveConversationRequest = async (
     conversationLength: conversation.length,
     conversationSample: conversation.slice(0, 1),
     facialExpressionsCount: facialExpressions?.length || 0,
+    elapsedTime: elapsedTime || 0,
   });
 
   // Ensure the body matches exactly what the server expects
@@ -131,6 +134,7 @@ export const saveConversationRequest = async (
     userId: Number(userId),
     conversation: conversation,
     facialExpressions: facialExpressions || [],
+    elapsedTime: elapsedTime || 0, // Add elapsed time to request body
   };
 
   try {
@@ -297,4 +301,9 @@ export const updateReportShowToUserRequest = async (
     console.error("Error updating report show to user flag:", error);
     throw error;
   }
+};
+
+export const getScenarioElapsedTimeRequest = async (id: number) => {
+  const response = await axios.get(`/scenarios/${id}/elapsed-time`);
+  return response.data;
 };

@@ -14,6 +14,7 @@ import ScenarioDetail from "../../pages/Scenarios/ScenarioDetail";
 import { useAuth } from "../../context/AuthContext";
 import * as faceapi from "face-api.js";
 import { useTranslation } from "react-i18next";
+import { toast } from "react-hot-toast";
 
 interface Message {
   type: "user" | "avatar";
@@ -21,9 +22,17 @@ interface Message {
   timestamp: Date;
 }
 
+interface User {
+  id: number;
+  name: string;
+  email: string;
+  role: string;
+}
+
 interface InteractiveAvatarProps {
   scenarioId: number;
   scenarioTitle: string;
+  currentUser?: User | null; // Use proper User type with null option
 }
 const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   const [isLoadingSession, setIsLoadingSession] = useState(false);
@@ -40,10 +49,22 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   const [stopChromaKeyProcessing, setStopChromaKeyProcessing] = useState<
     (() => void) | null
   >(null);
+
+  // Timer related states
+  const [timeRemaining, setTimeRemaining] = useState<number | null>(null); // in seconds
+  const [isTimerRunning, setIsTimerRunning] = useState(false);
+  const [isConversationActive, setIsConversationActive] = useState(false);
+  const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const startTimeRef = useRef<number | null>(null);
+  const elapsedTimeRef = useRef<number>(0);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { saveConversation } = useScenarios();
   const [facialExpressions, setFacialExpressions] = useState<any[]>([]);
+
+  // Use the passed currentUser if available, otherwise fall back to user from useAuth
+  const activeUser = props.currentUser || user;
 
   const toggleFullscreen = () => {
     if (!containerRef.current) return;
@@ -169,20 +190,57 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const avatar = useRef<StreamingAvatar | null>(null);
   const [scenario, setScenario] = useState<ScenarioDetail | null>(null);
-  const { getScenario } = useScenarios();
+  const { getScenario, getScenarioElapsedTime } = useScenarios();
   const { loadSettings } = useAuth();
   const [settings, setSettings] = useState<any>(null);
+  const [isTimeOver, setIsTimeOver] = useState(false);
+  const [hasCheckedTimeStatus, setHasCheckedTimeStatus] = useState(false);
+
   useEffect(() => {
     const loadScenario = async () => {
       try {
         const data = await getScenario(scenarioId);
         setScenario(data as unknown as ScenarioDetail);
+
+        // Initialize timer with the scenario time limit (converting from minutes to seconds)
+        if ("timeLimit" in data && data.timeLimit) {
+          setTimeRemaining((data.timeLimit as number) * 60);
+        }
       } catch (error) {
         console.error("Error loading scenario:", error);
       }
     };
     loadScenario();
   }, [scenarioId, getScenario]);
+
+  // Check if time is over when component loads
+  useEffect(() => {
+    const checkTimeStatus = async () => {
+      try {
+        const timeData = await getScenarioElapsedTime(scenarioId);
+        if (timeData.remaining_time <= 0) {
+          setIsTimeOver(true);
+          toast.error(
+            t(
+              "scenarios.timeExpired",
+              "Your allotted time for this scenario has expired.",
+            ),
+          );
+        } else {
+          // Store the remaining time
+          setTimeRemaining(timeData.remaining_time);
+          // Store the elapsed time
+          elapsedTimeRef.current = timeData.total_elapsed_time;
+        }
+        setHasCheckedTimeStatus(true);
+      } catch (error) {
+        console.error("Error checking time status:", error);
+        setHasCheckedTimeStatus(true); // Still mark as checked even on error
+      }
+    };
+
+    checkTimeStatus();
+  }, [scenarioId, getScenarioElapsedTime, t]);
 
   useEffect(() => {
     const loadSettingsFn = async () => {
@@ -222,12 +280,106 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
     }
   }
 
+  // Timer logic
+  const startTimer = () => {
+    if (timeRemaining === null || timeRemaining <= 0 || isTimerRunning) return;
+
+    setIsTimerRunning(true);
+    setIsConversationActive(true);
+    startTimeRef.current = Date.now();
+
+    timerIntervalRef.current = setInterval(() => {
+      if (startTimeRef.current === null) return;
+
+      const elapsed = (Date.now() - startTimeRef.current) / 1000;
+      const newTimeRemaining = Math.max(0, timeRemaining - elapsed);
+
+      setTimeRemaining(newTimeRemaining);
+
+      if (newTimeRemaining <= 0) {
+        setIsTimeOver(true);
+        stopTimer();
+        toast.error(
+          t(
+            "scenarios.timeUp",
+            "Time's up! Your conversation will be automatically saved.",
+          ),
+        );
+        endSession();
+      }
+    }, 1000);
+  };
+
+  const stopTimer = () => {
+    if (timerIntervalRef.current) {
+      clearInterval(timerIntervalRef.current);
+      timerIntervalRef.current = null;
+    }
+
+    if (startTimeRef.current !== null) {
+      const elapsed = (Date.now() - startTimeRef.current) / 1000;
+      elapsedTimeRef.current += elapsed;
+      startTimeRef.current = null;
+    }
+
+    setIsTimerRunning(false);
+  };
+
+  const formatTime = (seconds: number): string => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+    return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  };
+
   async function startSession() {
+    // Don't allow starting if time is over
+    if (isTimeOver) {
+      toast.error(
+        t(
+          "scenarios.noTimeRemaining",
+          "No time remaining for this scenario. The time limit has been reached.",
+        ),
+      );
+      return;
+    }
+
+    // Don't allow starting if we haven't checked time status yet
+    if (!hasCheckedTimeStatus) {
+      toast.error(
+        t(
+          "scenarios.checkingTimeStatus",
+          "Please wait while we check your remaining time...",
+        ),
+      );
+      return;
+    }
+
     setIsLoadingSession(true);
     setConversationHistory([]);
     setFacialExpressions([]);
 
     try {
+      // Double-check remaining time before starting to be safe
+      const timeData = await getScenarioElapsedTime(scenarioId);
+      if (timeData.remaining_time <= 0) {
+        setIsTimeOver(true);
+        toast.error(
+          t(
+            "scenarios.noTimeRemaining",
+            "No time remaining for this scenario. The time limit has been reached.",
+          ),
+        );
+        setIsLoadingSession(false);
+        return;
+      }
+
+      // Initialize timer with the remaining time from the API
+      setTimeRemaining(timeData.remaining_time);
+      // Reset elapsed time to what's already been used
+      elapsedTimeRef.current = timeData.total_elapsed_time;
+
+      // We'll start the timer only after the avatar is loaded
+      // Start loading the avatar
       const token = await getAccessToken();
       console.log("token", token);
       avatar.current = new StreamingAvatar({
@@ -250,6 +402,9 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
       avatar.current.on(StreamingEvents.STREAM_READY, (event) => {
         console.log("Stream ready:", event.detail);
         setStream(event.detail);
+
+        // Start the timer only after the avatar is fully loaded and stream is ready
+        startTimer();
       });
       avatar.current.on(StreamingEvents.USER_START, () => {
         setIsUserTalking(true);
@@ -359,28 +514,39 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   }
 
   async function endSession() {
+    // Stop the timer when conversation ends
+    stopTimer();
+    setIsConversationActive(false);
+
+    // Save elapsed time to localStorage
+    localStorage.setItem(
+      `scenario_${scenarioId}_elapsed_time`,
+      elapsedTimeRef.current.toString(),
+    );
+
     setIsSavingConversation(true);
 
     // Save conversation history to database if there are messages
-    if (conversationHistory.length > 0 && user?.id) {
+    if (conversationHistory.length > 0 && activeUser?.id) {
       try {
         console.log("Conversation history to save:", conversationHistory);
         console.log("Facial expressions to save:", facialExpressions);
 
-        // Format the conversation history for the API
-        const formattedConversation = conversationHistory.map((msg) => ({
-          role: msg.type === "user" ? "user" : "assistant",
-          message: msg.text,
+        // Convert the conversation history to the format expected by the API
+        const conversationForApi = conversationHistory.map((message) => ({
+          role: message.type === "user" ? "user" : "assistant",
+          message: message.text,
         }));
 
-        console.log("Formatted conversation:", formattedConversation);
+        console.log("Formatted conversation:", conversationForApi);
 
-        // Save to database with expressions data
+        // Save the conversation to the database
         await saveConversation(
-          props.scenarioId,
-          formattedConversation,
-          user.id,
+          scenarioId,
+          conversationForApi,
+          activeUser?.id,
           facialExpressions,
+          elapsedTimeRef.current, // Pass the elapsed time
         );
         console.log("Conversation saved successfully");
       } catch (error) {
@@ -453,87 +619,236 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
     };
   }, []);
 
+  // Set up window close prevention
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (isConversationActive) {
+        // Save current elapsed time to localStorage for recovery
+        if (startTimeRef.current !== null) {
+          const currentElapsedTime =
+            elapsedTimeRef.current + (Date.now() - startTimeRef.current) / 1000;
+          localStorage.setItem(
+            `scenario_${scenarioId}_elapsed_time`,
+            currentElapsedTime.toString(),
+          );
+        }
+
+        // Standard way to show a confirmation dialog
+        e.preventDefault();
+        e.returnValue = t(
+          "scenarios.closeWarning",
+          "Your conversation is still active. Are you sure you want to leave? Your time will be saved.",
+        );
+        return e.returnValue;
+      }
+    };
+
+    window.addEventListener("beforeunload", handleBeforeUnload);
+
+    // Check if there's saved elapsed time from a previous session
+    const savedElapsedTime = localStorage.getItem(
+      `scenario_${scenarioId}_elapsed_time`,
+    );
+    if (savedElapsedTime) {
+      elapsedTimeRef.current = parseFloat(savedElapsedTime);
+      // Update the timeRemaining based on the elapsed time
+      if (timeRemaining !== null) {
+        const newTimeRemaining = Math.max(
+          0,
+          ((scenario?.timeLimit as number) || 0) * 60 - elapsedTimeRef.current,
+        );
+        setTimeRemaining(newTimeRemaining);
+
+        if (newTimeRemaining <= 0) {
+          toast.error(
+            t(
+              "scenarios.timeExpired",
+              "Your allotted time for this scenario has expired.",
+            ),
+          );
+        }
+      }
+    }
+
+    return () => {
+      window.removeEventListener("beforeunload", handleBeforeUnload);
+    };
+  }, [isConversationActive, scenarioId, scenario, timeRemaining, t]);
+
+  // Add a function to reset the timer
+  const resetTimer = async () => {
+    try {
+      // Clear the timer from localStorage
+      localStorage.removeItem(`scenario_${scenarioId}_elapsed_time`);
+
+      // Reset the elapsed time
+      elapsedTimeRef.current = 0;
+
+      // Get the original time limit from the scenario
+      if (scenario?.timeLimit) {
+        setTimeRemaining((scenario.timeLimit as number) * 60);
+      }
+
+      // Reset the time over state
+      setIsTimeOver(false);
+
+      toast.success(
+        t("scenarios.timerReset", "Timer has been reset successfully."),
+      );
+
+      // Recheck time status
+      const timeData = await getScenarioElapsedTime(scenarioId);
+      if (timeData.remaining_time <= 0) {
+        // If the API still says we're out of time (which shouldn't happen after reset),
+        // we'll need server-side reset as well
+        toast.error(
+          t(
+            "scenarios.errorResettingTimer",
+            "There was an issue resetting the timer. Please contact support.",
+          ),
+        );
+      }
+    } catch (error) {
+      console.error("Error resetting timer:", error);
+      toast.error(
+        t(
+          "scenarios.errorResettingTimer",
+          "There was an error resetting the timer.",
+        ),
+      );
+    }
+  };
+
+  console.log(activeUser);
+
   return (
-    <div className="w-full h-[500px] bg-gray-100 dark:bg-boxdark-2 rounded-lg overflow-hidden relative">
-      <div className="w-full h-full flex justify-center items-center">
-        {!stream ? (
-          <button
-            onClick={startSession}
-            disabled={isLoadingSession}
-            className="px-6 py-3 bg-primary text-white rounded-md hover:bg-opacity-90 disabled:opacity-50"
+    <div className="relative flex flex-col items-end" ref={containerRef}>
+      {/* Timer display with reset button */}
+      <div className="flex flex-row items-end gap-4 mb-4">
+        {timeRemaining !== null && (
+          <div
+            className={`px-4 py-2 rounded-lg ${
+              isTimeOver
+                ? "bg-red-600 animate-pulse"
+                : timeRemaining > 300
+                  ? "bg-green-500"
+                  : timeRemaining > 60
+                    ? "bg-yellow-500"
+                    : "bg-red-500 animate-pulse"
+            } text-white font-bold`}
           >
-            {isLoadingSession
-              ? t("scenarios.startSession")
-              : t("scenarios.startSession")}
-          </button>
-        ) : (
-          <div className="relative w-full h-full" ref={containerRef}>
-            <div className="absolute bottom-0 right-0 z-9">
-              <FaceDetection />
-            </div>
-            <video
-              ref={mediaStream}
-              autoPlay
-              playsInline
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "contain",
-              }}
+            {isTimeOver
+              ? t("scenarios.timeExpired", "Time Expired")
+              : `${t("scenarios.timeRemaining", "Time Remaining")}: ${formatTime(timeRemaining)}`}
+          </div>
+        )}
+
+        {/* Only show reset button for admins or instructors */}
+        {activeUser?.role === "admin" && (
+          <button
+            onClick={resetTimer}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-1"
+          >
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              className="h-4 w-4"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
             >
-              <track kind="captions" />
-            </video>
-            {scenario?.generated_image_url && scenario?.show_image_prompt && (
-              <canvas
-                ref={canvasRef}
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+              />
+            </svg>
+            {t("scenarios.resetTimer", "Reset Timer")}
+          </button>
+        )}
+      </div>
+      <div className="w-full h-[500px] bg-gray-100 dark:bg-boxdark-2 rounded-lg overflow-hidden relative">
+        <div className="w-full h-full flex justify-center items-center">
+          {!stream ? (
+            <button
+              onClick={startSession}
+              disabled={isLoadingSession || isTimeOver || !hasCheckedTimeStatus}
+              className="px-6 py-3 bg-primary text-white rounded-md hover:bg-opacity-90 disabled:opacity-50"
+            >
+              {isLoadingSession
+                ? t("scenarios.startingSession", "Starting session...")
+                : isTimeOver
+                  ? t("scenarios.timeExpired", "Time expired")
+                  : !hasCheckedTimeStatus
+                    ? t("scenarios.checkingTime", "Checking time...")
+                    : t("scenarios.startSession", "Start session")}
+            </button>
+          ) : (
+            <div className="relative w-full h-full" ref={containerRef}>
+              <div className="absolute bottom-0 right-0 z-9">
+                <FaceDetection />
+              </div>
+              <video
+                ref={mediaStream}
+                autoPlay
+                playsInline
                 style={{
                   width: "100%",
                   height: "100%",
                   objectFit: "contain",
-                  position: "absolute",
-                  top: 0,
-                  left: 0,
-                  backgroundImage: `url(${scenario.generated_image_url})`,
-                  backgroundSize: "cover",
-                  backgroundPosition: "center",
                 }}
-              />
-            )}
-            <button
-              onClick={endSession}
-              disabled={isSavingConversation}
-              className="px-6 py-2 bg-danger text-white rounded-md hover:bg-opacity-90 absolute bottom-4 left-4 disabled:opacity-50"
-            >
-              {isSavingConversation
-                ? t("scenarios.savingConversation")
-                : t("scenarios.endSession")}
-            </button>
-            <button
-              onClick={toggleFullscreen}
-              className="absolute bottom-2 right-2 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 z-10"
-              title="Toggle Fullscreen"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
               >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+                <track kind="captions" />
+              </video>
+              {scenario?.generated_image_url && scenario?.show_image_prompt && (
+                <canvas
+                  ref={canvasRef}
+                  style={{
+                    width: "100%",
+                    height: "100%",
+                    objectFit: "contain",
+                    position: "absolute",
+                    top: 0,
+                    left: 0,
+                    backgroundImage: `url(${scenario.generated_image_url})`,
+                    backgroundSize: "cover",
+                    backgroundPosition: "center",
+                  }}
                 />
-              </svg>
-            </button>
-          </div>
-        )}
+              )}
+              <button
+                onClick={endSession}
+                disabled={isSavingConversation}
+                className="px-6 py-2 bg-danger text-white rounded-md hover:bg-opacity-90 absolute bottom-4 left-4 disabled:opacity-50"
+              >
+                {isSavingConversation
+                  ? t("scenarios.savingConversation")
+                  : t("scenarios.endSession")}
+              </button>
+              <button
+                onClick={toggleFullscreen}
+                className="absolute bottom-2 right-2 p-2 bg-black bg-opacity-50 text-white rounded-full hover:bg-opacity-70 z-10"
+                title="Toggle Fullscreen"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-5 w-5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"
+                  />
+                </svg>
+              </button>
+            </div>
+          )}
+        </div>
       </div>
-      {/* <div className="absolute bottom-0 right-0 z-9">
-        <FaceDetection />
-      </div> */}
     </div>
   );
 };

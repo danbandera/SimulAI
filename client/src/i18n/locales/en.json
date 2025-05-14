@@ -144,7 +144,17 @@
     "showToUser": "Visible to user",
     "savedReports": "Saved Reports",
     "reportsAvailable": "reports available",
-    "noReportsAvailable": "No reports available"
+    "noReportsAvailable": "No reports available",
+    "timeLimit": "Time Limit",
+    "minutes": "minutes",
+    "timeUsage": "Time Usage",
+    "usedTime": "Used",
+    "remainingTime": "Remaining",
+    "resetTimer": "Reset Timer",
+    "timeExpired": "Your allotted time for this scenario has expired.",
+    "timeRemaining": "Time Remaining",
+    "noTimeRemaining": "No time remaining for this scenario. The time limit has been reached.",
+    "checkingTimeStatus": "Please wait while we check your remaining time..."
   },
   "console": {
     "startConversation": "Start Conversation",

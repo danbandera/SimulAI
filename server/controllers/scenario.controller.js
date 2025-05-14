@@ -184,6 +184,16 @@ export const getScenarios = async (req, res) => {
           email
         )
       `);
+
+    // Rename time_limit to timeLimit for all scenarios for client-side consistency
+    if (result.data && Array.isArray(result.data)) {
+      result.data.forEach((scenario) => {
+        if (scenario.time_limit !== undefined) {
+          scenario.timeLimit = scenario.time_limit;
+        }
+      });
+    }
+
     res.json(result.data);
   } catch (error) {
     console.error("Database Error:", error);
@@ -217,6 +227,12 @@ export const getScenarioById = async (req, res) => {
     if (!result.data) {
       return res.status(404).json({ message: "Scenario not found" });
     }
+
+    // Rename time_limit to timeLimit for client-side consistency
+    if (result.data.time_limit !== undefined) {
+      result.data.timeLimit = result.data.time_limit;
+    }
+
     res.json(result.data);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -350,6 +366,7 @@ export const createScenario = async (req, res) => {
           show_image_prompt: show_image_prompt,
           interactive_avatar: req.body.interactive_avatar,
           avatar_language: req.body.avatar_language,
+          time_limit: req.body.timeLimit ? parseInt(req.body.timeLimit) : 30,
         };
 
         // Only add pdf_contents if we have any
@@ -575,6 +592,9 @@ ${newPdfContents}`
           show_image_prompt: show_image_prompt === "true",
           interactive_avatar: req.body.interactive_avatar,
           avatar_language: req.body.avatar_language,
+          time_limit: req.body.timeLimit
+            ? parseInt(req.body.timeLimit)
+            : existingScenario?.time_limit || 30,
         };
 
         const { data: scenario, error: scenarioError } = await connectSqlDB
@@ -673,7 +693,7 @@ export const saveConversation = async (req, res) => {
     console.log("Request params:", req.params);
 
     // Extract data from the request
-    const { conversation, facialExpressions } = req.body;
+    const { conversation, facialExpressions, elapsedTime } = req.body;
     const userId = req.body.userId || req.body.user_id;
     const scenarioId = req.params.id;
 
@@ -698,6 +718,7 @@ export const saveConversation = async (req, res) => {
       conversationLength: conversation.length,
       conversationSample: conversation.slice(0, 1),
       facialExpressionsCount: facialExpressions?.length || 0,
+      elapsedTime: elapsedTime || 0,
     });
 
     // Insert the conversation data into the database
@@ -708,6 +729,7 @@ export const saveConversation = async (req, res) => {
         conversation,
         user_id: Number(userId),
         facial_expressions: facialExpressions || [],
+        elapsed_time: elapsedTime || 0,
       })
       .select();
 

@@ -33,18 +33,42 @@ interface ScenarioDetail {
   show_image_prompt?: boolean;
   interactive_avatar?: string;
   avatar_language?: string;
+  timeLimit?: number;
+}
+
+interface TimeInfo {
+  time_limit: number;
+  total_elapsed_time: number;
+  remaining_time: number;
+  conversations_count: number;
 }
 
 const ScenarioDetail = () => {
   const { id } = useParams();
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { getScenario, deleteScenario } = useScenarios();
+  const { getScenario, deleteScenario, getScenarioElapsedTime } =
+    useScenarios();
   const { currentUser } = useUsers();
   const [scenario, setScenario] = useState<ScenarioDetail | null>(null);
+  const [timeInfo, setTimeInfo] = useState<TimeInfo | null>(null);
   // get the aspects from the scenario as string
   const aspects = scenario?.aspects || "";
   const context = scenario?.context || "";
+
+  // Format time helper function
+  const formatTime = (seconds: number): string => {
+    const hours = Math.floor(seconds / 3600);
+    const minutes = Math.floor((seconds % 3600) / 60);
+    const remainingSeconds = Math.floor(seconds % 60);
+
+    if (hours > 0) {
+      return `${hours}h ${minutes}m ${remainingSeconds}s`;
+    } else {
+      return `${minutes}m ${remainingSeconds}s`;
+    }
+  };
+
   useEffect(() => {
     const loadScenario = async () => {
       if (id) {
@@ -53,6 +77,14 @@ const ScenarioDetail = () => {
           if (data) {
             // Cast the data to our local interface
             setScenario(data as unknown as ScenarioDetail);
+
+            // Load elapsed time information
+            try {
+              const timeData = await getScenarioElapsedTime(parseInt(id));
+              setTimeInfo(timeData);
+            } catch (timeError) {
+              console.error("Error loading time information:", timeError);
+            }
           }
         } catch (error) {
           console.error("Error loading scenario:", error);
@@ -60,7 +92,7 @@ const ScenarioDetail = () => {
       }
     };
     loadScenario();
-  }, [id, getScenario]);
+  }, [id, getScenario, getScenarioElapsedTime]);
 
   const handleEdit = () => {
     navigate(`/scenarios/edit/${id}`);
@@ -179,6 +211,61 @@ const ScenarioDetail = () => {
                       </span>
                     </div>
                   </div>
+                  {scenario.timeLimit && (
+                    <div>
+                      <h4 className="font-medium text-black dark:text-white mb-2">
+                        {t("scenarios.timeLimit", "Time Limit")}
+                      </h4>
+                      <span className="text-sm text-black dark:text-white">
+                        {scenario.timeLimit} {t("scenarios.minutes", "minutes")}
+                      </span>
+                    </div>
+                  )}
+
+                  {timeInfo && (
+                    <div>
+                      <h4 className="font-medium text-black dark:text-white mb-2">
+                        {t("scenarios.timeUsage", "Time Usage")}
+                      </h4>
+                      <div className="flex flex-col gap-1">
+                        <div className="text-sm text-black dark:text-white">
+                          <span className="font-semibold">
+                            {t("scenarios.usedTime", "Used")}:
+                          </span>{" "}
+                          {formatTime(timeInfo.total_elapsed_time)}(
+                          {Math.round(
+                            (timeInfo.total_elapsed_time /
+                              (timeInfo.time_limit * 60)) *
+                              100,
+                          )}
+                          %)
+                        </div>
+                        <div className="text-sm text-black dark:text-white">
+                          <span className="font-semibold">
+                            {t("scenarios.remainingTime", "Remaining")}:
+                          </span>{" "}
+                          {formatTime(timeInfo.remaining_time)}
+                        </div>
+                        {/* Progress bar */}
+                        <div className="w-full bg-gray-200 rounded-full h-2.5 mt-2">
+                          <div
+                            className={`h-2.5 rounded-full ${
+                              timeInfo.remaining_time >
+                              timeInfo.time_limit * 60 * 0.5
+                                ? "bg-green-600"
+                                : timeInfo.remaining_time >
+                                    timeInfo.time_limit * 60 * 0.2
+                                  ? "bg-yellow-500"
+                                  : "bg-red-600"
+                            }`}
+                            style={{
+                              width: `${Math.min(100, (timeInfo.total_elapsed_time / (timeInfo.time_limit * 60)) * 100)}%`,
+                            }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                   <div>
                     <h4 className="font-medium text-black dark:text-white mb-2">
                       {t("scenarios.context")}
@@ -286,6 +373,7 @@ const ScenarioDetail = () => {
             <InteractiveAvatar
               scenarioId={parseInt(id || "0")}
               scenarioTitle={scenario.title}
+              currentUser={currentUser}
             />
           </div>
         </div>

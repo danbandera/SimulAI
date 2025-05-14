@@ -33,6 +33,7 @@ CREATE TABLE scenarios (
   show_image_prompt BOOLEAN DEFAULT false,
   interactive_avatar VARCHAR(255),
   avatar_language VARCHAR(255),
+  time_limit INTEGER DEFAULT 30,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP
 );
@@ -88,6 +89,7 @@ CREATE TABLE conversations (
   user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
   conversation JSONB NOT NULL,
   facial_expressions JSONB DEFAULT '[]'::jsonb,
+  elapsed_time FLOAT DEFAULT 0,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
@@ -104,3 +106,5 @@ CREATE TABLE reports (
   created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX IF NOT EXISTS idx_conversations_scenario_elapsed_time ON conversations(scenario_id, elapsed_time);

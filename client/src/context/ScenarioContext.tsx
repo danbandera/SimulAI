@@ -10,6 +10,7 @@ import {
   saveConversationRequest,
   getConversationsRequest,
   generateImageRequest,
+  getScenarioElapsedTimeRequest,
 } from "../api/scenarios.api";
 
 interface Scenario {
@@ -45,11 +46,18 @@ interface ScenarioContextValue {
   saveConversation: (
     scenarioId: number,
     conversation: Array<{ role: string; message: string; audioUrl?: string }>,
-    userId: number,
+    userId: number | undefined,
     facialExpressions?: any[],
-  ) => Promise<void>;
+    elapsedTime?: number,
+  ) => Promise<any>;
   getConversations: (scenarioId: number) => Promise<Conversation[]>;
   generateImage: (prompt: string) => Promise<string>;
+  getScenarioElapsedTime: (scenarioId: number) => Promise<{
+    time_limit: number;
+    total_elapsed_time: number;
+    remaining_time: number;
+    conversations_count: number;
+  }>;
 }
 
 interface ScenarioProviderProps {
@@ -131,20 +139,20 @@ export const ScenarioProvider = ({ children }: ScenarioProviderProps) => {
   const saveConversation = async (
     scenarioId: number,
     conversation: Array<{ role: string; message: string; audioUrl?: string }>,
-    userId: number,
+    userId: number | undefined,
     facialExpressions?: any[],
-  ) => {
+    elapsedTime?: number,
+  ): Promise<any> => {
     try {
-      await saveConversationRequest(
+      return await saveConversationRequest(
         scenarioId,
         conversation,
         userId,
         facialExpressions,
+        elapsedTime,
       );
-      toast.success("Conversation saved successfully");
     } catch (error) {
       console.error("Error saving conversation:", error);
-      toast.error("Error saving conversation");
       throw error;
     }
   };
@@ -172,6 +180,17 @@ export const ScenarioProvider = ({ children }: ScenarioProviderProps) => {
     }
   };
 
+  const getScenarioElapsedTime = async (scenarioId: number) => {
+    try {
+      const response = await getScenarioElapsedTimeRequest(scenarioId);
+      return response;
+    } catch (error) {
+      console.error("Error getting scenario elapsed time:", error);
+      toast.error("Error getting scenario elapsed time");
+      throw error;
+    }
+  };
+
   return (
     <ScenarioContext.Provider
       value={{
@@ -184,6 +203,7 @@ export const ScenarioProvider = ({ children }: ScenarioProviderProps) => {
         saveConversation,
         getConversations,
         generateImage,
+        getScenarioElapsedTime,
       }}
     >
       {children}

@@ -374,4 +374,63 @@ router.post(
 // router.post("/scenarios/:id/audio", upload.single("audio"), processAudio);
 router.post("/scenarios/generate-image", generateImage);
 
+// Add a new route to get all conversation elapsed times for a specific scenario
+router.get("/scenarios/:id/elapsed-time", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if id is valid
+    if (!id || isNaN(parseInt(id))) {
+      return res.status(400).json({ message: "Invalid scenario ID" });
+    }
+
+    // Get scenario to verify it exists and get the time limit
+    const { data: scenario, error: scenarioError } = await connectSqlDB
+      .from("scenarios")
+      .select("time_limit")
+      .eq("id", id)
+      .single();
+
+    if (scenarioError || !scenario) {
+      return res.status(404).json({ message: "Scenario not found" });
+    }
+
+    // Get all conversations for this scenario
+    const { data: conversations, error: conversationsError } =
+      await connectSqlDB
+        .from("conversations")
+        .select("elapsed_time, created_at")
+        .eq("scenario_id", id)
+        .order("created_at", { ascending: false });
+
+    if (conversationsError) {
+      console.error("Error fetching conversations:", conversationsError);
+      return res.status(500).json({ message: "Error fetching conversations" });
+    }
+
+    // Calculate total elapsed time
+    const totalElapsedTime = conversations.reduce((total, conv) => {
+      return total + (conv.elapsed_time || 0);
+    }, 0);
+
+    // Calculate remaining time
+    const timeLimit = scenario.time_limit || 30; // Default 30 minutes if not set
+    const totalSeconds = timeLimit * 60;
+    const remainingSeconds = Math.max(0, totalSeconds - totalElapsedTime);
+
+    res.json({
+      time_limit: timeLimit, // in minutes
+      total_elapsed_time: totalElapsedTime, // in seconds
+      remaining_time: remainingSeconds, // in seconds
+      conversations_count: conversations.length,
+    });
+  } catch (error) {
+    console.error("Error fetching elapsed time data:", error);
+    res.status(500).json({
+      message: "Server error while fetching elapsed time data",
+      error: error.message,
+    });
+  }
+});
+
 export default router;

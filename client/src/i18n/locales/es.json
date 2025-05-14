@@ -142,7 +142,17 @@
     "savedReports": "Reportes Guardados",
     "generatingReport": "Generando reporte...",
     "reportsAvailable": "reportes disponibles",
-    "noReportsAvailable": "No hay reportes disponibles"
+    "noReportsAvailable": "No hay reportes disponibles",
+    "timeLimit": "Límite de Tiempo",
+    "minutes": "Minutos",
+    "timeUsage": "Uso de Tiempo",
+    "usedTime": "Usado",
+    "remainingTime": "Restante",
+    "timeExpired": "Su tiempo para este escenario ha expirado.",
+    "timeRemaining": "Tiempo Restante",
+    "resetTimer": "Reiniciar Tiempo",
+    "noTimeRemaining": "No hay tiempo restante para este escenario. El límite de tiempo ha sido alcanzado.",
+    "checkingTimeStatus": "Verificando estado del tiempo..."
   },
   "console": {
     "startConversation": "Iniciar Conversación",

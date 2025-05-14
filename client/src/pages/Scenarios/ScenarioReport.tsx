@@ -3,6 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { useScenarios } from "../../context/ScenarioContext";
 import { useAuth } from "../../context/AuthContext";
 import Breadcrumb from "../../components/Breadcrumbs/Breadcrumb";
+import SwitcherTwo from "../../components/Switchers/SwitcherTwo";
 import { useTranslation } from "react-i18next";
 import {
   getOpenAIAssistantsRequest,
@@ -11,7 +12,10 @@ import {
   exportReportToPdfRequest,
   exportReportToWordRequest,
   getReportsRequest,
+  getReportByIdRequest,
+  updateReportShowToUserRequest,
 } from "../../api/scenarios.api";
+import SwitcherThree from "../../components/Switchers/SwitcherThree";
 
 interface ConversationMessage {
   role: string;
@@ -53,6 +57,7 @@ interface Report {
   title: string;
   content: string;
   conversations_ids: number[];
+  show_to_user: boolean;
   created_at: string;
   updated_at: string;
   user: {
@@ -193,12 +198,9 @@ const ScenarioReport = () => {
           // Load saved reports
           try {
             const reportsData = await getReportsRequest(parseInt(id));
+            // Don't automatically select a report, let user choose from the list
             setSavedReports(reportsData);
-
-            // Select the most recent report if available
-            if (reportsData && reportsData.length > 0) {
-              setSelectedReport(reportsData[0]);
-            }
+            // We'll display all reports in the UI for selection
           } catch (reportsError) {
             console.error("Error loading reports:", reportsError);
           }
@@ -922,33 +924,90 @@ Based on the evaluation, this candidate ${Math.random() > 0.5 ? "shows promise a
         )}
 
         {/* Saved Reports Section */}
-        {selectedReport && (
+        {savedReports.length > 0 && (
           <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark p-6">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-semibold">
-                {t("scenarios.savedReport")}
-              </h3>
-              <div className="flex gap-2">
-                <button
-                  onClick={exportToPdf}
-                  className="px-3 py-1.5 text-sm text-white bg-red-500 rounded hover:bg-opacity-90"
-                >
-                  {t("scenarios.exportToPdf")}
-                </button>
-                <button
-                  onClick={exportToWord}
-                  className="px-3 py-1.5 text-sm text-white bg-blue-700 rounded hover:bg-opacity-90"
-                >
-                  {t("scenarios.exportToWord")}
-                </button>
-              </div>
-            </div>
+            <h3 className="text-xl font-semibold mb-4">
+              {t("scenarios.savedReports")}
+            </h3>
 
-            <div className="text-sm text-gray-500 mb-4">
-              {t("scenarios.savedAt")}:{" "}
-              {new Date(selectedReport.created_at).toLocaleString()}
-              <br />
-              {t("scenarios.savedBy")}: {selectedReport.user?.name || "Unknown"}
+            <div className="grid gap-4">
+              {savedReports.map((report) => (
+                <div
+                  key={report.id}
+                  className="border rounded-md p-4 hover:border-primary cursor-pointer"
+                  onClick={() => setSelectedReport(report)}
+                >
+                  <div className="flex justify-between items-center mb-2">
+                    <h4 className="font-medium">{report.title}</h4>
+                    <div className="flex flex-col">
+                      <div className="flex gap-2">
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedReport(report);
+                            exportToPdf();
+                          }}
+                          className="px-2 py-1 text-xs text-white bg-red-500 rounded hover:bg-opacity-90"
+                        >
+                          PDF
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedReport(report);
+                            exportToWord();
+                          }}
+                          className="px-2 py-1 text-xs text-white bg-blue-700 rounded hover:bg-opacity-90"
+                        >
+                          Word
+                        </button>
+                      </div>
+                      <div className="flex pt-6">
+                        {/* Add toggle to show/hide report for user */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-xs text-gray-600 dark:text-gray-400">
+                            {t("scenarios.showToUser")}
+                          </span>
+                          <SwitcherThree
+                            id={`report-visibility-${report.id}`}
+                            initialValue={report.show_to_user}
+                            onChange={(value) => {
+                              // Update the report's show_to_user property
+                              updateReportShowToUserRequest(
+                                id!,
+                                report.id,
+                                value,
+                              )
+                                .then((response) => {
+                                  // Update the report in the state
+                                  setSavedReports((prev) =>
+                                    prev.map((r) =>
+                                      r.id === report.id
+                                        ? { ...r, show_to_user: value }
+                                        : r,
+                                    ),
+                                  );
+                                })
+                                .catch((error) => {
+                                  console.error(
+                                    "Failed to update report visibility:",
+                                    error,
+                                  );
+                                });
+                            }}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="text-sm text-gray-500">
+                    {t("scenarios.savedAt")}:{" "}
+                    {new Date(report.created_at).toLocaleString()}
+                    <br />
+                    {t("scenarios.savedBy")}: {report.user?.name || "Unknown"}
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         )}

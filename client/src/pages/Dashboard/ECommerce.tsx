@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import CardDataStats from "../../components/CardDataStats";
 import ChartOne from "../../components/Charts/ChartOne";
 import ChartThree from "../../components/Charts/ChartThree";
@@ -8,6 +8,8 @@ import MapOne from "../../components/Maps/MapOne";
 import { useUsers } from "../../context/UserContext";
 import { useScenarios } from "../../context/ScenarioContext";
 import { Link } from "react-router-dom";
+import { getReportsRequest } from "../../api/scenarios.api";
+import { useTranslation } from "react-i18next";
 // import TableUsers from "../../components/Tables/TableUsers";
 
 interface User {
@@ -17,97 +19,208 @@ interface User {
 }
 
 interface Scenario {
-  id: number;
+  id?: number;
   title: string;
   context: string;
   status: string;
-  assigned_user: User;
-  created_by: User;
-  created_at: string;
+  users?: number[];
+  assigned_user?: User;
+  created_by?: User | number;
+  created_at?: string;
   updated_at?: string;
-  aspects?: { value: string; label: string }[];
+  aspects?: string | { value: string; label: string }[];
+  categories?: string;
   files?: string[];
 }
 
+interface Report {
+  id: number;
+  title: string;
+  content: string;
+  conversations_ids: number[];
+  show_to_user: boolean;
+  created_at: string;
+  updated_at: string;
+  user: {
+    id: number;
+    name: string;
+    email: string;
+  };
+}
+
+interface ScenarioWithReports extends Scenario {
+  reports: Report[];
+}
+
 const ECommerce: React.FC = () => {
+  const { t } = useTranslation();
   const { currentUser } = useUsers();
-  // get scenarios by user id
   const { scenarios, loadScenarios } = useScenarios();
+  const [scenariosWithReports, setScenariosWithReports] = useState<
+    ScenarioWithReports[]
+  >([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   useEffect(() => {
-    loadScenarios();
+    const loadData = async () => {
+      setIsLoading(true);
+      await loadScenarios();
+      setIsLoading(false);
+    };
+    loadData();
   }, []);
 
-  const scenariosByUser = scenarios.filter(
-    (scenario) => scenario.assigned_user.id === currentUser?.id,
-  );
+  useEffect(() => {
+    const fetchReportsForScenarios = async () => {
+      if (scenarios.length === 0) return;
 
-  const filteredScenarios = scenarios
+      try {
+        const scenariosWithReportsData = await Promise.all(
+          scenarios.map(async (scenario) => {
+            try {
+              const reports = await getReportsRequest(scenario.id || 0);
+              // Filter reports with show_to_user set to true
+              const visibleReports = reports.filter(
+                (report: Report) => report.show_to_user,
+              );
+              return {
+                ...scenario,
+                reports: visibleReports,
+              } as ScenarioWithReports;
+            } catch (error) {
+              console.error(
+                `Error fetching reports for scenario ${scenario.id}:`,
+                error,
+              );
+              return {
+                ...scenario,
+                reports: [],
+              } as ScenarioWithReports;
+            }
+          }),
+        );
+        setScenariosWithReports(scenariosWithReportsData);
+      } catch (error) {
+        console.error("Error fetching reports:", error);
+      }
+    };
+
+    fetchReportsForScenarios();
+  }, [scenarios]);
+
+  const filteredScenarios = scenariosWithReports
     .filter((scenario) => {
-      if (currentUser?.role === "admin") {
+      if (!currentUser) return false;
+
+      if (currentUser.role === "admin") {
         return true; // Admin sees all scenarios
       }
-      if (currentUser?.role === "company") {
-        return scenario.created_by.id === Number(currentUser?.id); // Company sees only their created scenarios
+      if (currentUser.role === "company") {
+        // Check if created_by is a User object or a number
+        if (
+          typeof scenario.created_by === "object" &&
+          scenario.created_by?.id
+        ) {
+          return scenario.created_by.id === Number(currentUser.id);
+        } else if (typeof scenario.created_by === "number") {
+          return scenario.created_by === Number(currentUser.id);
+        }
+        return false;
       }
       // Regular user only sees scenarios assigned to them
-      return scenario.assigned_user?.id === Number(currentUser?.id);
+      return scenario.assigned_user?.id === Number(currentUser.id);
     })
     .sort((a, b) => {
       // Sort by created_at in descending order (newest first)
       return (
-        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        new Date(b.created_at || "").getTime() -
+        new Date(a.created_at || "").getTime()
       );
     });
-  console.log(filteredScenarios);
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-60">Loading...</div>
+    );
+  }
+
   return (
     <>
-      {/* if currentUser is admin, show all scenarios, if currentUser is company, show scenarios by user id  and if currentUser is user, show scenarios by user id */}
-      {/* {currentUser?.role === "admin" && ( */}
       <div className="grid grid-cols-3 gap-4 md:gap-6 xl:gap-7.5">
         {filteredScenarios.map((scenario) => (
           <div key={scenario.id} className="col-span-3 grid grid-cols-3 gap-4">
             <Link to={`/scenarios/${scenario.id}`} className="col-span-1">
               <CardDataStats
                 title={scenario.title}
-                total="calificación"
-                rate="43%"
-              >
-                <svg
-                  className="fill-primary dark:fill-white"
-                  width="22"
-                  height="16"
-                  viewBox="0 0 22 16"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M11 15.1156C4.19376 15.1156 0.825012 8.61876 0.687512 8.34376C0.584387 8.13751 0.584387 7.86251 0.687512 7.65626C0.825012 7.38126 4.19376 0.918762 11 0.918762C17.8063 0.918762 21.175 7.38126 21.3125 7.65626C21.4156 7.86251 21.4156 8.13751 21.3125 8.34376C21.175 8.61876 17.8063 15.1156 11 15.1156ZM2.26876 8.00001C3.02501 9.27189 5.98126 13.5688 11 13.5688C16.0188 13.5688 18.975 9.27189 19.7313 8.00001C18.975 6.72814 16.0188 2.43126 11 2.43126C5.98126 2.43126 3.02501 6.72814 2.26876 8.00001Z"
-                    fill=""
-                  />
-                  <path
-                    d="M11 10.9219C9.38438 10.9219 8.07812 9.61562 8.07812 8C8.07812 6.38438 9.38438 5.07812 11 5.07812C12.6156 5.07812 13.9219 6.38438 13.9219 8C13.9219 9.61562 12.6156 10.9219 11 10.9219ZM11 6.625C10.2437 6.625 9.625 7.24375 9.625 8C9.625 8.75625 10.2437 9.375 11 9.375C11.7563 9.375 12.375 8.75625 12.375 8C12.375 7.24375 11.7563 6.625 11 6.625Z"
-                    fill=""
-                  />
-                </svg>
-              </CardDataStats>
+                total={
+                  scenario.reports && scenario.reports.length > 0
+                    ? `${scenario.reports.length} ${t("scenarios.reportsAvailable")}`
+                    : t("scenarios.noReportsAvailable")
+                }
+              />
             </Link>
             <div className="col-span-2">
-              {/* <ChartOne scenario={scenario} /> */}
-              <ChartTwo scenario={scenario} />
+              {scenario.reports && scenario.reports.length > 0 ? (
+                <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark p-4 h-full overflow-auto">
+                  <h3 className="text-lg font-semibold mb-3">
+                    Reportes disponibles
+                  </h3>
+                  <div className="space-y-3">
+                    {scenario.reports.map((report) => (
+                      <div
+                        key={report.id}
+                        className="p-3 border rounded hover:bg-gray-50 dark:hover:bg-boxdark-2"
+                      >
+                        <h4 className="font-medium">{report.title}</h4>
+                        <div className="flex justify-between text-sm text-gray-500 mt-1">
+                          <span>
+                            Creado:{" "}
+                            {new Date(report.created_at).toLocaleDateString()}
+                          </span>
+                          <Link
+                            to={`/scenarios/${scenario.id}/report?reportId=${report.id}`}
+                            className="text-primary hover:underline"
+                          >
+                            Ver detalles
+                          </Link>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ) : (
+                <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark p-4 h-full flex items-center justify-center">
+                  <div className="text-center">
+                    <svg
+                      className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-600 mb-3"
+                      xmlns="http://www.w3.org/2000/svg"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                      />
+                    </svg>
+                    <h3 className="text-md font-medium text-gray-500 dark:text-gray-400">
+                      No hay reportes disponibles
+                    </h3>
+                    <p className="mt-1 text-sm text-gray-400">
+                      Aún no se han generado reportes visibles para este
+                      escenario
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         ))}
       </div>
-      {/* )} */}
       <div className="grid grid-cols-12 gap-4 md:gap-6 2xl:gap-7.5">
-        {/* <ChartOne /> */}
-        {/* <ChartTwo /> */}
-        {/* <ChartThree /> */}
-        {/* <MapOne /> */}
-        {/* <div className="col-span-12 xl:col-span-8">
-          <TableUsers />
-        </div> */}
-        {/* <ChatCard /> */}
+        {/* Other components removed for brevity */}
       </div>
     </>
   );

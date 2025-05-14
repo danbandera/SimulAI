@@ -6,7 +6,7 @@ interface CardDataStatsProps {
   rate?: string;
   levelUp?: boolean;
   levelDown?: boolean;
-  children: ReactNode;
+  // children: ReactNode;
 }
 
 const CardDataStats: React.FC<CardDataStatsProps> = ({
@@ -15,13 +15,13 @@ const CardDataStats: React.FC<CardDataStatsProps> = ({
   rate,
   levelUp,
   levelDown,
-  children,
+  // children,
 }) => {
   return (
     <div className="rounded-sm border border-stroke bg-white py-6 px-7.5 shadow-default dark:border-strokedark dark:bg-boxdark h-full">
-      <div className="flex h-11.5 w-11.5 items-center justify-center rounded-full bg-meta-2 dark:bg-meta-4">
-        {children}
-      </div>
+      {/* <div className="flex h-11.5 w-11.5 items-center justify-center rounded-full bg-meta-2 dark:bg-meta-4"> */}
+      {/* {children} */}
+      {/* </div> */}
 
       <div className="mt-4 flex items-end justify-between">
         <div>

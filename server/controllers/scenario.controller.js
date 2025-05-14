@@ -1552,3 +1552,55 @@ export const exportReportToWord = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// Update report's show_to_user property
+export const updateReportShowToUser = async (req, res) => {
+  try {
+    const { id, reportId } = req.params;
+    const { show_to_user } = req.body;
+
+    if (show_to_user === undefined) {
+      return res.status(400).json({
+        message: "Missing required parameter",
+        details: "show_to_user is required",
+      });
+    }
+
+    // Validate report exists and belongs to the scenario
+    const { data: existingReport, error: reportError } = await connectSqlDB
+      .from("reports")
+      .select("id")
+      .eq("id", Number(reportId))
+      .eq("scenario_id", Number(id))
+      .single();
+
+    if (reportError || !existingReport) {
+      return res.status(404).json({ message: "Report not found" });
+    }
+
+    // Update the show_to_user property
+    const { data: updatedReport, error } = await connectSqlDB
+      .from("reports")
+      .update({ show_to_user: Boolean(show_to_user) })
+      .eq("id", Number(reportId))
+      .eq("scenario_id", Number(id))
+      .select()
+      .single();
+
+    if (error) {
+      console.error("Error updating report:", error);
+      return res.status(500).json({
+        message: "Failed to update report",
+        details: error.message,
+      });
+    }
+
+    res.json({
+      message: "Report updated successfully",
+      report: updatedReport,
+    });
+  } catch (error) {
+    console.error("Error in updateReportShowToUser:", error);
+    res.status(500).json({ message: error.message });
+  }
+};

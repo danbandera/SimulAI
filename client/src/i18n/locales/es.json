@@ -137,7 +137,12 @@
     "savedBy": "Guardado por",
     "savingReport": "Guardando reporte...",
     "reportCopied": "Reporte copiado al portapapeles",
-    "categories": "Categorías"
+    "categories": "Categorías",
+    "showToUser": "Visible para el usuario",
+    "savedReports": "Reportes Guardados",
+    "generatingReport": "Generando reporte...",
+    "reportsAvailable": "reportes disponibles",
+    "noReportsAvailable": "No hay reportes disponibles"
   },
   "console": {
     "startConversation": "Iniciar Conversación",

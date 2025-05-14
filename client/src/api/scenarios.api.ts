@@ -281,3 +281,20 @@ export const exportReportToWordRequest = async (
     throw error;
   }
 };
+
+export const updateReportShowToUserRequest = async (
+  scenarioId: number | string,
+  reportId: number | string,
+  showToUser: boolean,
+) => {
+  try {
+    const response = await axios.patch(
+      `/scenarios/${scenarioId}/reports/${reportId}/show-to-user`,
+      { show_to_user: showToUser },
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error updating report show to user flag:", error);
+    throw error;
+  }
+};

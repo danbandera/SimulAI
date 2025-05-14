@@ -19,6 +19,7 @@ import {
   getReportById,
   exportReportToPdf,
   exportReportToWord,
+  updateReportShowToUser,
 } from "../controllers/scenario.controller.js";
 import multer from "multer";
 import { authRequired } from "../middlewares/validateToken.js";
@@ -47,6 +48,10 @@ router.get("/scenarios/:id/reports", getReports);
 router.get("/scenarios/:id/reports/:reportId", getReportById);
 router.get("/scenarios/:id/reports/:reportId/export/pdf", exportReportToPdf);
 router.get("/scenarios/:id/reports/:reportId/export/word", exportReportToWord);
+router.patch(
+  "/scenarios/:id/reports/:reportId/show-to-user",
+  updateReportShowToUser
+);
 
 router.post("/scenarios/:id/conversations", saveConversation);
 router.get("/scenarios/conversations", getAllConversations);

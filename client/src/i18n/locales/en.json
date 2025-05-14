@@ -140,7 +140,11 @@
     "savedBy": "Saved by",
     "savingReport": "Saving report...",
     "reportCopied": "Report copied to clipboard",
-    "categories": "Categories"
+    "categories": "Categories",
+    "showToUser": "Visible to user",
+    "savedReports": "Saved Reports",
+    "reportsAvailable": "reports available",
+    "noReportsAvailable": "No reports available"
   },
   "console": {
     "startConversation": "Start Conversation",

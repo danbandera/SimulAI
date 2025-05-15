@@ -138,7 +138,6 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
             .withFaceExpressions();
 
           if (detections) {
-            // console.log("detections", detections.expressions);
             // Store facial expressions with timestamp
             setFacialExpressions((prev) => [
               ...prev,
@@ -381,7 +380,6 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
       // We'll start the timer only after the avatar is loaded
       // Start loading the avatar
       const token = await getAccessToken();
-      console.log("token", token);
       avatar.current = new StreamingAvatar({
         token,
         basePath:
@@ -718,8 +716,6 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
       );
     }
   };
-
-  console.log(activeUser);
 
   return (
     <div className="relative flex flex-col items-end" ref={containerRef}>

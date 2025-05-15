@@ -26,9 +26,7 @@ export interface Scenario {
   created_at?: string;
   updated_at?: string;
   parent_scenario?: number;
-  user_id_assigned?: number;
   created_by?: number;
-  assigned_user?: User;
   created_by_user?: User;
   aspects?: string;
   categories?: string;

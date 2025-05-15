@@ -71,7 +71,7 @@ const NewScenario = () => {
     title: duplicateData?.title || "",
     context: duplicateData?.context || "",
     status: duplicateData?.status || "draft",
-    user: null as number | null,
+    users: [] as number[],
     aspects: "",
     categories: "",
     files: [] as File[],
@@ -117,10 +117,12 @@ const NewScenario = () => {
     }));
   };
 
-  const handleUserSelect = (selectedOption: SingleValue<UserOption>) => {
+  const handleUserSelect = (selectedOptions: readonly UserOption[]) => {
     setFormData((prev) => ({
       ...prev,
-      user: selectedOption ? selectedOption.value : null,
+      users: selectedOptions
+        ? selectedOptions.map((option) => option.value)
+        : [],
     }));
   };
 
@@ -193,8 +195,8 @@ const NewScenario = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!formData.user) {
-      toast.error("Please select a user");
+    if (!formData.users.length) {
+      toast.error("Please select at least one user");
       return;
     }
 
@@ -204,13 +206,15 @@ const NewScenario = () => {
       formDataToSend.append("title", formData.title);
       formDataToSend.append("context", formData.context);
       formDataToSend.append("status", formData.status);
-      formDataToSend.append("user_id_assigned", String(formData.user));
+
+      // Append each user ID to the FormData
+      formData.users.forEach((userId) => {
+        formDataToSend.append("users_assigned", String(userId));
+      });
+
       formDataToSend.append("created_by", String(currentUser?.id));
 
       // Save aspects as comma-separated string
-      // const aspectsString = formData.aspects
-      //   .map((aspect) => aspect.label)
-      //   .join(",");
       formDataToSend.append("aspects", formData.aspects);
       formDataToSend.append("categories", formData.categories);
 
@@ -228,33 +232,37 @@ const NewScenario = () => {
       });
       console.log("FormData to send:", formDataToSend);
 
-      // Get the selected user's details
-      const selectedUser = users.find((user) => user.id === formData.user);
-      if (!selectedUser) {
-        throw new Error("Selected user not found");
+      // Get the selected users' details
+      const selectedUsers = users.filter((user) =>
+        formData.users.includes(user.id!),
+      );
+      if (!selectedUsers.length) {
+        throw new Error("Selected users not found");
       }
 
       await createScenario(formDataToSend);
 
-      // Send email notification
-      await sendEmail({
-        email: selectedUser.email,
-        subject: `New Scenario Assignment: ${formData.title}`,
-        message: `
-          <div style="font-family: Arial, sans-serif;">
-            <h2>Hello ${selectedUser.name},</h2>
-            <p>You have been assigned to a new scenario in SimulAI.</p>
-            
-            <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
-              <p><strong>Scenario:</strong> ${formData.title}</p>
-              <p><strong>Context:</strong> ${formData.context || "No context provided"}</p>
+      // Send email notification to each selected user
+      for (const selectedUser of selectedUsers) {
+        await sendEmail({
+          email: selectedUser.email,
+          subject: `New Scenario Assignment: ${formData.title}`,
+          message: `
+            <div style="font-family: Arial, sans-serif;">
+              <h2>Hello ${selectedUser.name},</h2>
+              <p>You have been assigned to a new scenario in SimulAI.</p>
+              
+              <div style="background-color: #f5f5f5; padding: 15px; border-radius: 5px; margin: 20px 0;">
+                <p><strong>Scenario:</strong> ${formData.title}</p>
+                <p><strong>Context:</strong> ${formData.context || "No context provided"}</p>
+              </div>
+              
+              <p>You can access this scenario from your dashboard.</p>
+              <p>Best regards,<br>SimulAI Team</p>
             </div>
-            
-            <p>You can access this scenario from your dashboard.</p>
-            <p>Best regards,<br>SimulAI Team</p>
-          </div>
-        `,
-      });
+          `,
+        });
+      }
 
       toast.success("Scenario created successfully");
       navigate("/scenarios");
@@ -332,15 +340,19 @@ const NewScenario = () => {
                 <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
                   <div className="w-full xl:w-1/2">
                     <label className="mb-2.5 block text-black dark:text-white">
-                      {t("scenarios.assignUser")}{" "}
+                      {t("scenarios.assignUsers")}{" "}
                       <span className="text-meta-1">*</span>
                     </label>
                     <Select
                       options={userOptions}
                       onChange={handleUserSelect}
+                      isMulti={true}
                       className="react-select-container"
                       classNamePrefix="react-select"
-                      placeholder={t("scenarios.selectUser")}
+                      placeholder={t("scenarios.selectUsers")}
+                      value={userOptions.filter((option) =>
+                        formData.users.includes(option.value),
+                      )}
                     />
                   </div>
 

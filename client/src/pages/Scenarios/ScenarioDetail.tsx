@@ -7,6 +7,7 @@ import { ConsolePage } from "./ConsolePage";
 import InteractiveAvatar from "../../components/InteractiveAvatar/InteractiveAvatar";
 import Swal from "sweetalert2";
 import { useTranslation } from "react-i18next";
+import { User } from "../../api/users.api";
 
 // Define a local interface that matches what we get from the API
 interface ScenarioDetail {
@@ -14,11 +15,6 @@ interface ScenarioDetail {
   title: string;
   context: string;
   status: string;
-  assigned_user?: {
-    id: number;
-    name: string;
-    email: string;
-  };
   created_by?: {
     id: number;
     name: string;
@@ -34,6 +30,7 @@ interface ScenarioDetail {
   interactive_avatar?: string;
   avatar_language?: string;
   timeLimit?: number;
+  users?: number[];
 }
 
 interface TimeInfo {
@@ -49,7 +46,7 @@ const ScenarioDetail = () => {
   const navigate = useNavigate();
   const { getScenario, deleteScenario, getScenarioElapsedTime } =
     useScenarios();
-  const { currentUser } = useUsers();
+  const { currentUser, users, getUsers } = useUsers();
   const [scenario, setScenario] = useState<ScenarioDetail | null>(null);
   const [timeInfo, setTimeInfo] = useState<TimeInfo | null>(null);
   // get the aspects from the scenario as string
@@ -68,6 +65,10 @@ const ScenarioDetail = () => {
       return `${minutes}m ${remainingSeconds}s`;
     }
   };
+
+  useEffect(() => {
+    getUsers();
+  }, [getUsers]);
 
   useEffect(() => {
     const loadScenario = async () => {
@@ -345,6 +346,38 @@ const ScenarioDetail = () => {
                         />
                       </div>
                     )}
+                  <div>
+                    <h4 className="font-medium text-black dark:text-white mb-2">
+                      {t("scenarios.assignedUsers", "Assigned Users")}
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {scenario.users && scenario.users.length > 0 ? (
+                        scenario.users.map((userId, index) => {
+                          // Find user info without type checking
+                          const usersList = users as any[];
+                          const userInfo = usersList.find(
+                            (u) => Number(u.id) === Number(userId),
+                          );
+                          const displayName = userInfo
+                            ? `${userInfo.name} (${userInfo.email})`
+                            : `User ${userId}`;
+
+                          return (
+                            <span
+                              key={index}
+                              className="rounded-full bg-blue-500 bg-opacity-10 px-3 py-1 text-sm text-blue-500"
+                            >
+                              {displayName}
+                            </span>
+                          );
+                        })
+                      ) : (
+                        <span className="text-gray-500">
+                          {t("scenarios.noUsersAssigned", "No users assigned")}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

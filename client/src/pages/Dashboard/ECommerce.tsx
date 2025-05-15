@@ -112,6 +112,21 @@ const ECommerce: React.FC = () => {
     fetchReportsForScenarios();
   }, [scenarios]);
 
+  // Add a useEffect to log scenarios data for debugging
+  useEffect(() => {
+    if (scenariosWithReports.length > 0) {
+      console.log(
+        "Scenarios with users arrays:",
+        scenariosWithReports.map((s) => ({
+          id: s.id,
+          title: s.title,
+          users: s.users,
+          assigned_user: s.assigned_user?.id,
+        })),
+      );
+    }
+  }, [scenariosWithReports]);
+
   const filteredScenarios = scenariosWithReports
     .filter((scenario) => {
       if (!currentUser) return false;
@@ -119,8 +134,9 @@ const ECommerce: React.FC = () => {
       if (currentUser.role === "admin") {
         return true; // Admin sees all scenarios
       }
+
       if (currentUser.role === "company") {
-        // Check if created_by is a User object or a number
+        // Company sees only their created scenarios
         if (
           typeof scenario.created_by === "object" &&
           scenario.created_by?.id
@@ -131,8 +147,16 @@ const ECommerce: React.FC = () => {
         }
         return false;
       }
-      // Regular user only sees scenarios assigned to them
-      return scenario.assigned_user?.id === Number(currentUser.id);
+
+      // Regular user only sees scenarios they're explicitly assigned to
+      const userId = Number(currentUser.id);
+
+      // Check if user is in the users array
+      if (scenario.users && Array.isArray(scenario.users)) {
+        return scenario.users.includes(userId);
+      }
+
+      return false; // User not assigned to this scenario
     })
     .sort((a, b) => {
       // Sort by created_at in descending order (newest first)
@@ -168,6 +192,15 @@ const ECommerce: React.FC = () => {
                   scenario.reports && scenario.reports.length > 0
                     ? `${scenario.reports.length} ${t("scenarios.reportsAvailable")}`
                     : t("scenarios.noReportsAvailable")
+                }
+                description={
+                  scenario.users && scenario.users.length > 0
+                    ? `${scenario.users.length} ${
+                        scenario.users.length === 1
+                          ? t("scenarios.userAssigned", "user assigned")
+                          : t("scenarios.usersAssigned", "users assigned")
+                      }`
+                    : t("scenarios.noUsersAssigned", "No users assigned")
                 }
               />
             </Link>

@@ -25,23 +25,25 @@ interface Scenario {
   title: string;
   context: string;
   status: string;
-  user_id_assigned: number | null;
-  aspects: string;
-  categories: string;
-  files: string[];
-  assignedIA: string;
+  users: number[];
+  aspects?: string;
+  categories?: string;
+  files?: string[];
+  assignedIA?: string;
   assignedIAModel?: string;
   generated_image_url?: string;
+  show_image_prompt?: boolean;
   interactive_avatar?: string;
   avatar_language?: string;
   timeLimit?: number;
+  time_limit?: number;
 }
 
 interface FormData {
   title: string;
   context: string;
   status: string;
-  user: UserOption | null;
+  users: UserOption[];
   aspects: string;
   categories: string;
   files: File[];
@@ -114,7 +116,7 @@ const EditScenario = () => {
     title: "",
     context: "",
     status: "draft",
-    user: null,
+    users: [],
     aspects: "",
     categories: "",
     files: [],
@@ -139,16 +141,35 @@ const EditScenario = () => {
     const loadScenario = async () => {
       const scenario = await getScenario(Number(id));
 
+      // Find users assigned to this scenario
+      let assignedUsers: UserOption[] = [];
+      if (scenario.users && Array.isArray(scenario.users)) {
+        // If users is already an array in the API response
+        assignedUsers = scenario.users.map((userId) => {
+          const user = users.find((u) => u.id === userId);
+          return {
+            value: userId,
+            label: user ? `${user.name} (${user.email})` : userId.toString(),
+          };
+        });
+      } else if (scenario.user_id_assigned) {
+        // For backward compatibility with single user assignment
+        const user = users.find((u) => u.id === scenario.user_id_assigned);
+        assignedUsers = [
+          {
+            value: scenario.user_id_assigned,
+            label: user
+              ? `${user.name} (${user.email})`
+              : scenario.user_id_assigned.toString(),
+          },
+        ];
+      }
+
       setFormData({
         title: scenario.title,
         context: scenario.context,
         status: scenario.status,
-        user: scenario.user_id_assigned
-          ? {
-              value: scenario.user_id_assigned,
-              label: scenario.user_id_assigned.toString(),
-            }
-          : null,
+        users: assignedUsers,
         aspects: scenario.aspects || "",
         categories: scenario.categories || "",
         files: [],
@@ -160,11 +181,11 @@ const EditScenario = () => {
         show_image_prompt: scenario.show_image_prompt || false,
         interactiveAvatar: scenario.interactive_avatar || "",
         avatarLanguage: scenario.avatar_language || "es",
-        timeLimit: scenario.timeLimit || 30,
+        timeLimit: scenario.timeLimit || scenario.time_limit || 30,
       });
     };
     loadScenario();
-  }, [id]);
+  }, [id, users]);
 
   const handleChange = (
     e: React.ChangeEvent<
@@ -178,10 +199,10 @@ const EditScenario = () => {
     }));
   };
 
-  const handleUserSelect = (selectedOption: SingleValue<UserOption>) => {
+  const handleUserSelect = (selectedOptions: readonly UserOption[]) => {
     setFormData((prev) => ({
       ...prev,
-      user: selectedOption,
+      users: selectedOptions ? [...selectedOptions] : [],
     }));
   };
 
@@ -271,8 +292,8 @@ const EditScenario = () => {
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!formData.user) {
-      toast.error("Please select a user");
+    if (!formData.users.length) {
+      toast.error("Please select at least one user");
       return;
     }
 
@@ -281,7 +302,12 @@ const EditScenario = () => {
       formDataToSend.append("title", formData.title);
       formDataToSend.append("context", formData.context);
       formDataToSend.append("status", formData.status);
-      formDataToSend.append("user_id_assigned", String(formData.user.value));
+
+      // Append each user ID to the FormData
+      formData.users.forEach((user) => {
+        formDataToSend.append("users_assigned", String(user.value));
+      });
+
       formDataToSend.append("created_by", String(currentUser?.id));
 
       // Save aspects as comma-separated string
@@ -733,6 +759,25 @@ const EditScenario = () => {
                     </div>
                   </div>
                 )}
+
+                <div className="w-full xl:w-1/2">
+                  <label className="mb-2.5 block text-black dark:text-white">
+                    {t("scenarios.assignUsers")}{" "}
+                    <span className="text-meta-1">*</span>
+                  </label>
+                  <Select
+                    options={users.map((user) => ({
+                      value: user.id,
+                      label: `${user.name} (${user.email})`,
+                    }))}
+                    value={formData.users}
+                    onChange={handleUserSelect}
+                    isMulti={true}
+                    className="react-select-container"
+                    classNamePrefix="react-select"
+                    placeholder={t("scenarios.selectUsers")}
+                  />
+                </div>
 
                 <div className="flex justify-center">
                   <button

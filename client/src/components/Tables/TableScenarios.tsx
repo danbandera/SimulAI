@@ -15,7 +15,7 @@ interface Scenario {
   title: string;
   context: string;
   status: string;
-  assigned_user: User;
+  users: number[];
   created_by: User;
   created_at: string;
   updated_at?: string;
@@ -35,14 +35,25 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
   // Filter scenarios based on user role
   const filteredScenarios = scenarios
     .filter((scenario) => {
+      if (!currentUser) return false;
+
       if (currentUser?.role === "admin") {
         return true; // Admin sees all scenarios
       }
+
       if (currentUser?.role === "company") {
         return scenario.created_by.id === Number(currentUser?.id); // Company sees only their created scenarios
       }
-      // Regular user only sees scenarios assigned to them
-      return scenario.assigned_user?.id === Number(currentUser?.id);
+
+      // Regular user only sees scenarios they're explicitly assigned to
+      const userId = Number(currentUser?.id);
+
+      // Check if user is in the users array
+      if (scenario.users && Array.isArray(scenario.users)) {
+        return scenario.users.includes(userId);
+      }
+
+      return false; // User not assigned to this scenario
     })
     .sort((a, b) => {
       // Sort by created_at in descending order (newest first)
@@ -123,7 +134,7 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
           </div>
           <div className="p-2.5 text-center xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              {t("scenarios.assignedTo")}
+              {t("scenarios.assignedTo", "Assigned to")}
             </h5>
           </div>
           {isAdmin && (
@@ -158,10 +169,17 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
               </Link>
             </div>
 
-            <div className="flex items-center justify-center p-2.5 xl:p-5">
-              <p className="text-black dark:text-white">
-                {scenario.assigned_user?.name || "Unassigned"}
-              </p>
+            <div className="flex items-center gap-3">
+              {scenario.users && scenario.users.length > 0 ? (
+                <span>
+                  {scenario.users.length}{" "}
+                  {scenario.users.length === 1 ? "user" : "users"}
+                </span>
+              ) : (
+                <span className="text-gray-400">
+                  {t("scenarios.notAssigned", "Not assigned")}
+                </span>
+              )}
             </div>
 
             {isAdmin && (

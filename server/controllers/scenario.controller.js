@@ -173,11 +173,6 @@ export const getScenarios = async (req, res) => {
   try {
     const result = await connectSqlDB.from("scenarios").select(`
         *,
-        assigned_user:user_id_assigned (
-          id,
-          name,
-          email
-        ),
         created_by (
           id,
           name,
@@ -186,10 +181,16 @@ export const getScenarios = async (req, res) => {
       `);
 
     // Rename time_limit to timeLimit for all scenarios for client-side consistency
+    // And ensure users is always an array
     if (result.data && Array.isArray(result.data)) {
       result.data.forEach((scenario) => {
         if (scenario.time_limit !== undefined) {
           scenario.timeLimit = scenario.time_limit;
+        }
+
+        // Ensure users is always an array
+        if (!scenario.users) {
+          scenario.users = [];
         }
       });
     }
@@ -209,11 +210,6 @@ export const getScenarioById = async (req, res) => {
       .select(
         `
         *,
-        assigned_user:user_id_assigned (
-          id,
-          name,
-          email
-        ),
         created_by (
           id,
           name,
@@ -231,6 +227,11 @@ export const getScenarioById = async (req, res) => {
     // Rename time_limit to timeLimit for client-side consistency
     if (result.data.time_limit !== undefined) {
       result.data.timeLimit = result.data.time_limit;
+    }
+
+    // Ensure users is always an array
+    if (!result.data.users) {
+      result.data.users = [];
     }
 
     res.json(result.data);
@@ -272,7 +273,6 @@ export const createScenario = async (req, res) => {
         const {
           title,
           context,
-          user_id_assigned,
           created_by,
           parent_scenario,
           status,
@@ -284,14 +284,21 @@ export const createScenario = async (req, res) => {
           show_image_prompt,
         } = req.body;
 
+        // Get users_assigned as an array
+        const users_assigned = req.body.users_assigned
+          ? Array.isArray(req.body.users_assigned)
+            ? req.body.users_assigned
+            : [req.body.users_assigned]
+          : [];
+
         // Validate required fields
         if (!title) {
           return res.status(400).json({ message: "Title is required" });
         }
-        if (!user_id_assigned) {
+        if (users_assigned.length === 0) {
           return res
             .status(400)
-            .json({ message: "User assignment is required" });
+            .json({ message: "At least one user assignment is required" });
         }
         if (!created_by) {
           return res
@@ -349,12 +356,12 @@ export const createScenario = async (req, res) => {
           }
         }
 
-        // Create scenario with PDF contents
+        // Create scenario with PDF contents and users array
         const scenarioData = {
           title,
           context,
           status,
-          user_id_assigned,
+          users: users_assigned.map((id) => Number(id)), // Store as array of numbers
           created_by,
           parent_scenario: parent_scenario || null,
           aspects: aspects,
@@ -377,21 +384,7 @@ export const createScenario = async (req, res) => {
         const { data: scenario, error: scenarioError } = await connectSqlDB
           .from("scenarios")
           .insert(scenarioData)
-          .select(
-            `
-            *,
-            assigned_user:user_id_assigned (
-              id,
-              name,
-              email
-            ),
-            created_by (
-              id,
-              name,
-              email
-            )
-          `
-          )
+          .select()
           .single();
 
         if (scenarioError) {
@@ -466,6 +459,13 @@ export const updateScenario = async (req, res) => {
           generatedImageUrl,
           show_image_prompt,
         } = req.body;
+
+        // Get users_assigned as an array
+        const users_assigned = req.body.users_assigned
+          ? Array.isArray(req.body.users_assigned)
+            ? req.body.users_assigned
+            : [req.body.users_assigned]
+          : [];
 
         // Get existing scenario data to access current PDF contents and files
         const { data: existingScenario } = await connectSqlDB
@@ -580,7 +580,6 @@ ${newPdfContents}`
           context,
           status,
           aspects: aspects,
-          // categories: categories.split(",").map((item) => item.trim()),
           categories: categories,
           files: allFiles,
           assignedIA,
@@ -597,25 +596,16 @@ ${newPdfContents}`
             : existingScenario?.time_limit || 30,
         };
 
+        // Update users array if users_assigned is provided
+        if (users_assigned.length > 0) {
+          updateData.users = users_assigned.map((id) => Number(id));
+        }
+
         const { data: scenario, error: scenarioError } = await connectSqlDB
           .from("scenarios")
           .update(updateData)
           .eq("id", id)
-          .select(
-            `
-            *,
-            assigned_user:user_id_assigned (
-              id,
-              name,
-              email
-            ),
-            created_by (
-              id,
-              name,
-              email
-            )
-          `
-          )
+          .select()
           .single();
 
         if (scenarioError) {

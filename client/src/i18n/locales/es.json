@@ -152,7 +152,10 @@
     "timeRemaining": "Tiempo Restante",
     "resetTimer": "Reiniciar Tiempo",
     "noTimeRemaining": "No hay tiempo restante para este escenario. El límite de tiempo ha sido alcanzado.",
-    "checkingTimeStatus": "Verificando estado del tiempo..."
+    "checkingTimeStatus": "Verificando estado del tiempo...",
+    "assignUsers": "Asignar Usuarios",
+    "selectUsers": "Seleccionar Usuarios",
+    "selectCategories": "Seleccionar Categorías"
   },
   "console": {
     "startConversation": "Iniciar Conversación",

@@ -154,7 +154,10 @@
     "timeExpired": "Your allotted time for this scenario has expired.",
     "timeRemaining": "Time Remaining",
     "noTimeRemaining": "No time remaining for this scenario. The time limit has been reached.",
-    "checkingTimeStatus": "Please wait while we check your remaining time..."
+    "checkingTimeStatus": "Please wait while we check your remaining time...",
+    "assignUsers": "Assign Users",
+    "selectUsers": "Select Users",
+    "selectCategories": "Select Categories"
   },
   "console": {
     "startConversation": "Start Conversation",

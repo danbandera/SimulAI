@@ -194,6 +194,38 @@ const ScenarioDetail = () => {
             <div className="p-6.5">
               <div className="mb-4.5">
                 <div className="flex flex-col gap-4">
+                  <div>
+                    <h4 className="font-medium text-black dark:text-white mb-2">
+                      {t("scenarios.assignedUsers", "Assigned Users")}
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {scenario.users && scenario.users.length > 0 ? (
+                        scenario.users.map((userId, index) => {
+                          // Find user info without type checking
+                          const usersList = users as any[];
+                          const userInfo = usersList.find(
+                            (u) => Number(u.id) === Number(userId),
+                          );
+                          const displayName = userInfo
+                            ? `${userInfo.name} (${userInfo.email})`
+                            : `User ${userId}`;
+
+                          return (
+                            <span
+                              key={index}
+                              className="rounded-full bg-blue-500 bg-opacity-10 px-3 py-1 text-sm text-blue-500"
+                            >
+                              {displayName}
+                            </span>
+                          );
+                        })
+                      ) : (
+                        <span className="text-gray-500">
+                          {t("scenarios.noUsersAssigned", "No users assigned")}
+                        </span>
+                      )}
+                    </div>
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <h4 className="font-medium text-black dark:text-white mb-2">
@@ -346,38 +378,6 @@ const ScenarioDetail = () => {
                         />
                       </div>
                     )}
-                  <div>
-                    <h4 className="font-medium text-black dark:text-white mb-2">
-                      {t("scenarios.assignedUsers", "Assigned Users")}
-                    </h4>
-                    <div className="flex flex-wrap gap-2">
-                      {scenario.users && scenario.users.length > 0 ? (
-                        scenario.users.map((userId, index) => {
-                          // Find user info without type checking
-                          const usersList = users as any[];
-                          const userInfo = usersList.find(
-                            (u) => Number(u.id) === Number(userId),
-                          );
-                          const displayName = userInfo
-                            ? `${userInfo.name} (${userInfo.email})`
-                            : `User ${userId}`;
-
-                          return (
-                            <span
-                              key={index}
-                              className="rounded-full bg-blue-500 bg-opacity-10 px-3 py-1 text-sm text-blue-500"
-                            >
-                              {displayName}
-                            </span>
-                          );
-                        })
-                      ) : (
-                        <span className="text-gray-500">
-                          {t("scenarios.noUsersAssigned", "No users assigned")}
-                        </span>
-                      )}
-                    </div>
-                  </div>
                 </div>
               </div>
             </div>

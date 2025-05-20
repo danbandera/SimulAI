@@ -9,7 +9,8 @@
     "lightMode": "Light Mode",
     "language": "Language",
     "english": "English",
-    "spanish": "Spanish"
+    "spanish": "Spanish",
+    "french": "French"
   },
   "auth": {
     "signIn": "Sign In",
@@ -52,7 +53,7 @@
     "delete": "Delete",
     "selectRole": "Select Role",
     "admin": "Admin",
-    "company": "Company",
+    "company": "Client",
     "user": "User",
     "passsword": "Password",
     "passwordEdit": "Password (leave empty to keep current)"

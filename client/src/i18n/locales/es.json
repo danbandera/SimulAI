@@ -9,7 +9,8 @@
     "lightMode": "Modo Claro",
     "language": "Idioma",
     "english": "Inglés",
-    "spanish": "Español"
+    "spanish": "Español",
+    "french": "Francés"
   },
   "auth": {
     "signIn": "Iniciar Sesión",
@@ -52,7 +53,7 @@
     "delete": "Eliminar",
     "selectRole": "Seleccionar Rol",
     "admin": "Administrador",
-    "company": "Empresa",
+    "company": "Cliente",
     "user": "Usuario",
     "passsword": "Contraseña",
     "passwordEdit": "Contraseña (dejar vacío para mantener la actual)"

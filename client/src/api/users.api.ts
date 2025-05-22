@@ -11,6 +11,7 @@ export interface User {
   profile_image?: string;
   created_by: number;
   created_at?: string;
+  users?: number[];
 }
 
 export const getUsersRequest = async () => {

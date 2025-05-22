@@ -26,15 +26,22 @@ interface User {
   profile_image?: string;
   created_by: number;
   created_at?: string;
+  users?: number[];
 }
 
 interface UserContextType {
   users: User[];
   currentUser: User | null;
   getUsers: () => Promise<void>;
-  createUser: (user: User) => Promise<void>;
+  createUser: (user: User) => Promise<{
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+    created_at: string;
+  }>;
   deleteUser: (id: number) => Promise<void>;
-  updateUser: (id: number, user: User) => Promise<void>;
+  updateUser: (id: number, user: User) => Promise<User>;
   getUser: (id: number) => Promise<User>;
   updateUserProfileImage: (id: number, file: File) => Promise<void>;
 }

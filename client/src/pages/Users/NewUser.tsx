@@ -1,16 +1,26 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUsers } from "../../context/UserContext";
 import Breadcrumb from "../../components/Breadcrumbs/Breadcrumb";
-import SelectRole from "../../components/Forms/SelectGroup/SelectRole";
 import { toast } from "react-hot-toast";
 import { generateRandomPassword } from "../../utils/passwordUtils";
 import { sendEmail } from "../../api/email.api";
 import { useTranslation } from "react-i18next";
+import Select, { SingleValue } from "react-select";
+
+interface UserOption {
+  value: number;
+  label: string;
+}
+interface RoleOption {
+  value: string;
+  label: string;
+}
+
 const NewUser: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { createUser } = useUsers();
+  const { createUser, updateUser, users, getUsers, getUser } = useUsers();
   const { currentUser } = useUsers();
   const [formData, setFormData] = useState({
     name: "",
@@ -18,7 +28,34 @@ const NewUser: React.FC = () => {
     department: "",
     email: "",
     role: "",
+    users: [] as number[],
   });
+  const userOptions: UserOption[] = users
+    .filter((user) => user.role === "user")
+    .map((user) => ({
+      value: user.id || 0,
+      label: `${user.name} ${user.lastname}`,
+    }));
+
+  const handleUserSelect = (selectedOptions: readonly UserOption[]) => {
+    setFormData({
+      ...formData,
+      users: selectedOptions.map((option) => option.value),
+    });
+  };
+
+  const roleOptions: RoleOption[] = [
+    { value: "user", label: t("users.user") },
+    { value: "company", label: t("users.company") },
+    { value: "admin", label: t("users.admin") },
+  ];
+
+  const handleRoleChange = (selectedOption: SingleValue<any>) => {
+    setFormData({
+      ...formData,
+      role: selectedOption?.value || "",
+    });
+  };
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
@@ -36,12 +73,25 @@ const NewUser: React.FC = () => {
       const password = generateRandomPassword();
 
       // Create user with generated password
-      await createUser({
+      const newUser = await createUser({
         ...formData,
         password,
         created_by: Number(currentUser?.id),
       });
 
+      if (formData.role === "company" && newUser?.id) {
+        await Promise.all(
+          formData.users.map(async (userId) => {
+            const userToUpdate = await getUser(userId);
+            if (userToUpdate) {
+              await updateUser(userId, {
+                ...userToUpdate,
+                created_by: newUser.id,
+              });
+            }
+          }),
+        );
+      }
       // Send welcome email with password
       await sendEmail({
         email: formData.email,
@@ -69,6 +119,9 @@ const NewUser: React.FC = () => {
     }
   };
 
+  useEffect(() => {
+    getUsers();
+  }, []);
   return (
     <>
       <Breadcrumb pageName={t("users.newUser")} />
@@ -146,8 +199,38 @@ const NewUser: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="mb-4.5">
-                  <SelectRole value={formData.role} onChange={handleChange} />
+                <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
+                  <div className="w-full xl:w-1/2">
+                    {/* <SelectRole value={formData.role} onChange={handleChange} /> */}
+                    <label className="mb-2.5 block text-black dark:text-white">
+                      {t("users.role")}
+                    </label>
+                    <Select<RoleOption>
+                      options={roleOptions}
+                      onChange={handleRoleChange}
+                      value={roleOptions.find(
+                        (option) => option.value === formData.role,
+                      )}
+                    />
+                  </div>
+                  {formData.role === "company" && (
+                    <div className="w-full xl:w-1/2">
+                      <label className="mb-2.5 block text-black dark:text-white">
+                        {t("scenarios.selectUsers")}
+                      </label>
+                      <Select
+                        options={userOptions}
+                        onChange={handleUserSelect}
+                        isMulti={true}
+                        className="react-select-container"
+                        classNamePrefix="react-select"
+                        placeholder={t("scenarios.selectUsers")}
+                        value={userOptions.filter((option) =>
+                          formData.users.includes(option.value),
+                        )}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <button

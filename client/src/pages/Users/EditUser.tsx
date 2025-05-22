@@ -2,15 +2,24 @@ import { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useUsers } from "../../context/UserContext";
 import Breadcrumb from "../../components/Breadcrumbs/Breadcrumb";
-import SelectRole from "../../components/Forms/SelectGroup/SelectRole";
 import { toast } from "react-hot-toast";
 import { useTranslation } from "react-i18next";
+import Select, { SingleValue } from "react-select";
+
+interface UserOption {
+  value: number;
+  label: string;
+}
+interface RoleOption {
+  value: string;
+  label: string;
+}
 
 const EditUser: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { t } = useTranslation();
-  const { updateUser, getUser } = useUsers();
+  const { updateUser, getUser, users, getUsers } = useUsers();
   const [formData, setFormData] = useState({
     name: "",
     lastname: "",
@@ -19,14 +28,44 @@ const EditUser: React.FC = () => {
     role: "",
     created_by: 0,
     password: "",
+    users: [] as number[],
   });
+
+  const userOptions: UserOption[] = users
+    .filter((user) => user.role === "user")
+    .map((user) => ({
+      value: user.id || 0,
+      label: `${user.name} ${user.lastname}`,
+    }));
+
+  const handleUserSelect = (selectedOptions: readonly UserOption[]) => {
+    setFormData({
+      ...formData,
+      users: selectedOptions.map((option) => option.value),
+    });
+  };
+
+  const roleOptions: RoleOption[] = [
+    { value: "user", label: t("users.user") },
+    { value: "company", label: t("users.company") },
+    { value: "admin", label: t("users.admin") },
+  ];
+
+  const handleRoleChange = (selectedOption: SingleValue<any>) => {
+    setFormData({
+      ...formData,
+      role: selectedOption?.value || "",
+    });
+  };
 
   useEffect(() => {
     const loadUser = async () => {
       try {
         const userData = await getUser(Number(id));
+        const associatedUsers = users
+          .filter((user) => user.created_by === Number(id))
+          .map((user) => user.id || 0);
 
-        console.log("Loaded user:", userData);
         setFormData({
           name: userData.name,
           lastname: userData.lastname,
@@ -35,6 +74,7 @@ const EditUser: React.FC = () => {
           role: userData.role,
           created_by: userData.created_by,
           password: "", // Don't load the password
+          users: associatedUsers,
         });
       } catch (error) {
         console.error("Error loading user:", error);
@@ -44,8 +84,8 @@ const EditUser: React.FC = () => {
     };
 
     loadUser();
-  }, [id, getUser]);
-
+    getUsers();
+  }, [id]);
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>,
   ) => {
@@ -58,6 +98,19 @@ const EditUser: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
+      if (formData.role === "company") {
+        await Promise.all(
+          formData.users.map(async (userId) => {
+            const userToUpdate = await getUser(userId);
+            if (userToUpdate) {
+              await updateUser(userId, {
+                ...userToUpdate,
+                created_by: Number(id),
+              });
+            }
+          }),
+        );
+      }
       await updateUser(Number(id), formData);
       toast.success("User updated successfully!");
       navigate("/users");
@@ -144,8 +197,37 @@ const EditUser: React.FC = () => {
                 </div>
                 <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
                   <div className="w-full xl:w-1/2">
-                    <SelectRole value={formData.role} onChange={handleChange} />
+                    <label className="mb-2.5 block text-black dark:text-white">
+                      {t("users.role")}
+                    </label>
+                    <Select<RoleOption>
+                      options={roleOptions}
+                      onChange={handleRoleChange}
+                      value={roleOptions.find(
+                        (option) => option.value === formData.role,
+                      )}
+                    />
                   </div>
+                  {formData.role === "company" && (
+                    <div className="w-full xl:w-1/2">
+                      <label className="mb-2.5 block text-black dark:text-white">
+                        {t("scenarios.selectUsers")}
+                      </label>
+                      <Select
+                        options={userOptions}
+                        onChange={handleUserSelect}
+                        isMulti={true}
+                        className="react-select-container"
+                        classNamePrefix="react-select"
+                        placeholder={t("scenarios.selectUsers")}
+                        value={userOptions.filter((option) =>
+                          formData.users.includes(option.value),
+                        )}
+                      />
+                    </div>
+                  )}
+                </div>
+                <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
                   <div className="w-full xl:w-1/2">
                     <label className="mb-2.5 block text-black dark:text-white">
                       {t("users.passwordEdit")}

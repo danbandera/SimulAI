@@ -107,7 +107,8 @@ export const createUser = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, lastname, department, role, email, password } = req.body;
+    const { name, lastname, department, role, email, password, created_by } =
+      req.body;
     const updateData = {
       name,
       lastname,
@@ -115,6 +116,7 @@ export const updateUser = async (req, res) => {
       role,
       email,
       profile_image: "",
+      created_by,
     };
 
     // Handle profile image upload if file is present

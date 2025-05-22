@@ -63,6 +63,7 @@ const NewScenario = () => {
       );
     };
     loadSettingsFn();
+    getUsers();
   }, []);
   // Get duplicate data from location state if it exists
   const duplicateData = location.state?.duplicateData;
@@ -100,10 +101,6 @@ const NewScenario = () => {
     { value: "es", label: t("scenarios.spanish") },
     { value: "en", label: t("scenarios.english") },
   ];
-
-  useEffect(() => {
-    getUsers();
-  }, []);
 
   const handleChange = (
     e: React.ChangeEvent<

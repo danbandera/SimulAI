@@ -55,3 +55,15 @@ export const updateUserProfileImageRequest = async (id: number, file: File) => {
     throw error;
   }
 };
+
+export const importUsersFromCSVRequest = async (file: File) => {
+  const formData = new FormData();
+  formData.append("file", file);
+
+  const response = await axios.post("/users/import", formData, {
+    headers: {
+      "Content-Type": "multipart/form-data",
+    },
+  });
+  return response.data;
+};

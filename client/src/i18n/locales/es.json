@@ -56,7 +56,8 @@
     "company": "Cliente",
     "user": "Usuario",
     "passsword": "Contraseña",
-    "passwordEdit": "Contraseña (dejar vacío para mantener la actual)"
+    "passwordEdit": "Contraseña (dejar vacío para mantener la actual)",
+    "importCSV": "Importar CSV"
   },
   "scenarios": {
     "title": "Escenarios",

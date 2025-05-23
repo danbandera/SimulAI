@@ -3,6 +3,7 @@ import { connectSqlDB } from "../db.cjs";
 import bcrypt from "bcryptjs";
 import { createAccessToken } from "../libs/jwt.js";
 import { uploadToS3, deleteFromS3 } from "../utils/s3.utils.js";
+import { parse } from "csv-parse/sync";
 
 export const getUsers = async (req, res) => {
   try {
@@ -234,6 +235,112 @@ export const updateUserProfileImage = async (req, res) => {
     console.error("Update Profile Image Error:", error);
     res.status(500).json({
       message: "Error updating profile image",
+      error: error.message,
+    });
+  }
+};
+
+export const importUsersFromCSV = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ message: "No CSV file provided" });
+    }
+
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    const fileContent = req.file.buffer.toString();
+    const records = parse(fileContent, {
+      columns: true,
+      skip_empty_lines: true,
+      trim: true, // Trim whitespace from values
+    });
+
+    const results = {
+      success: [],
+      skipped: [],
+    };
+
+    for (const record of records) {
+      try {
+        // Skip empty rows
+        if (!record.name && !record.lastname && !record.email && !record.role) {
+          continue;
+        }
+
+        // Check for required fields
+        if (!record.name || !record.lastname || !record.email || !record.role) {
+          results.skipped.push({
+            row: record,
+            reason: "Missing required fields",
+          });
+          continue;
+        }
+
+        // Check for existing user
+        const { data: existingUser } = await connectSqlDB
+          .from("users")
+          .select()
+          .eq("email", record.email)
+          .maybeSingle();
+
+        if (existingUser) {
+          results.skipped.push({
+            row: record,
+            reason: "User with this email already exists",
+          });
+          continue;
+        }
+
+        // Generate random password
+        const password = Math.random().toString(36).slice(-8);
+        const hashedPassword = await bcrypt.hash(password, 10);
+
+        // Create user
+        const { data: newUser, error: insertError } = await connectSqlDB
+          .from("users")
+          .insert({
+            name: record.name,
+            lastname: record.lastname,
+            department: record.department || "",
+            role: record.role,
+            email: record.email,
+            password: hashedPassword,
+            created_by: req.user.id,
+            profile_image: "",
+          })
+          .select()
+          .single();
+
+        if (insertError) {
+          results.skipped.push({
+            row: record,
+            reason: insertError.message,
+          });
+          continue;
+        }
+
+        results.success.push({
+          user: newUser,
+          password, // Include the generated password in the response
+        });
+      } catch (error) {
+        results.skipped.push({
+          row: record,
+          reason: error.message,
+        });
+      }
+    }
+
+    res.json({
+      message: "Import completed",
+      results,
+    });
+  } catch (error) {
+    console.error("Import Users Error:", error);
+    res.status(500).json({
+      message: "Error importing users",
       error: error.message,
     });
   }

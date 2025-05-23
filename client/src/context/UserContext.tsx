@@ -12,6 +12,7 @@ import {
   updateUserRequest,
   getUserRequest,
   updateUserProfileImageRequest,
+  importUsersFromCSVRequest,
 } from "../api/users.api";
 import { useAuth } from "./AuthContext";
 
@@ -44,6 +45,13 @@ interface UserContextType {
   updateUser: (id: number, user: User) => Promise<User>;
   getUser: (id: number) => Promise<User>;
   updateUserProfileImage: (id: number, file: File) => Promise<void>;
+  importUsersFromCSV: (file: File) => Promise<{
+    message: string;
+    results: {
+      success: Array<{ user: User; password: string }>;
+      skipped: Array<{ row: any; reason: string }>;
+    };
+  }>;
 }
 
 interface UserProviderProps {
@@ -152,6 +160,19 @@ export const UserProvider = ({ children }: UserProviderProps) => {
       throw error;
     }
   };
+
+  const importUsersFromCSV = async (file: File) => {
+    try {
+      const response = await importUsersFromCSVRequest(file);
+      // Refresh users list after import
+      await getUsers();
+      return response;
+    } catch (error: any) {
+      console.error("Error importing users:", error);
+      throw new Error(error.response?.data?.message || "Error importing users");
+    }
+  };
+
   return (
     <UserContext.Provider
       value={{
@@ -163,6 +184,7 @@ export const UserProvider = ({ children }: UserProviderProps) => {
         updateUser,
         getUser,
         updateUserProfileImage,
+        importUsersFromCSV,
       }}
     >
       {children}

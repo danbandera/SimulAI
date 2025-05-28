@@ -7,7 +7,6 @@ import StreamingAvatar, {
   VoiceEmotion,
   type StartAvatarResponse,
 } from "@heygen/streaming-avatar";
-// import { AVATARS } from "../../constants/avatars";
 import { setupChromaKey } from "./chromaKey";
 import { useScenarios } from "../../context/ScenarioContext";
 import ScenarioDetail from "../../pages/Scenarios/ScenarioDetail";
@@ -37,8 +36,7 @@ interface InteractiveAvatarProps {
 const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   const [isLoadingSession, setIsLoadingSession] = useState(false);
   const [stream, setStream] = useState<MediaStream>();
-  // const [avatarId, setAvatarId] = useState<string>(AVATARS[0].avatar_id);
-  // const [language, setLanguage] = useState<string>("en");
+
   const [data, setData] = useState<StartAvatarResponse>();
   const [text, setText] = useState<string>("");
   const [isUserTalking, setIsUserTalking] = useState(false);
@@ -81,7 +79,6 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   // Face Detection component modify later
   const FaceDetection = () => {
     const videoRef = useRef<HTMLVideoElement>(null);
-    // const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
       const loadModels = async () => {
@@ -126,12 +123,8 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
       if (!videoRef.current) return;
 
       const video = videoRef.current;
-      // const canvas = canvasRef.current;
 
       video.addEventListener("play", () => {
-        //const displaySize = { width: video.width, height: video.height };
-        // faceapi.matchDimensions(canvas, displaySize);
-
         const interval = setInterval(async () => {
           const detections = await faceapi
             .detectSingleFace(video)
@@ -146,15 +139,6 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
                 expressions: detections.expressions,
               },
             ]);
-            //   const resizedDetections = faceapi.resizeResults(
-            //     detections,
-            //     displaySize,
-            //   );
-            //   const ctx = canvas.getContext("2d");
-            //   if (ctx) {
-            //     ctx.clearRect(0, 0, canvas.width, canvas.height);
-            //     faceapi.draw.drawFaceExpressions(canvas, resizedDetections);
-            //   }
           }
         }, 1000);
 
@@ -172,12 +156,6 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
           height="240"
           className="rounded-lg"
         />
-        {/* <canvas
-          ref={canvasRef}
-          className="absolute top-0 left-0"
-          width="320"
-          height="240"
-        /> */}
       </div>
     );
   };
@@ -248,7 +226,6 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
     };
     loadSettingsFn();
   }, [loadSettings]);
-  // console.log(settings?.promt_for_virtual_avatar);
 
   const knowledgeBase = settings?.promt_for_virtual_avatar.replace(
     "CONTEXT_FOR_PERSONA",

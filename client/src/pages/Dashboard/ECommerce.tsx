@@ -1,10 +1,5 @@
 import React, { useEffect, useState } from "react";
 import CardDataStats from "../../components/CardDataStats";
-import ChartOne from "../../components/Charts/ChartOne";
-import ChartThree from "../../components/Charts/ChartThree";
-import ChartTwo from "../../components/Charts/ChartTwo";
-import ChatCard from "../../components/Chat/ChatCard";
-import MapOne from "../../components/Maps/MapOne";
 import { useUsers } from "../../context/UserContext";
 import { useScenarios } from "../../context/ScenarioContext";
 import { Link } from "react-router-dom";
@@ -14,7 +9,6 @@ import {
   exportReportToWordRequest,
 } from "../../api/scenarios.api";
 import { useTranslation } from "react-i18next";
-// import TableUsers from "../../components/Tables/TableUsers";
 
 interface User {
   id: number;

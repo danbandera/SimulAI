@@ -1,14 +1,16 @@
-import { Navigate, useLocation } from "react-router-dom";
+import { Navigate, Outlet } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 interface ProtectedRouteProps {
-  children: React.ReactNode;
-  allowedRoles?: string[];
+  children?: React.ReactNode;
+  redirectTo?: string;
 }
 
-const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
-  const { user, isAuthenticated, loading } = useAuth();
-  const location = useLocation();
+const ProtectedRoute = ({
+  children,
+  redirectTo = "/login",
+}: ProtectedRouteProps) => {
+  const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
     return (
@@ -19,14 +21,10 @@ const ProtectedRoute = ({ children, allowedRoles }: ProtectedRouteProps) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to="/login" state={{ from: location }} replace />;
+    return <Navigate to={redirectTo} replace />;
   }
 
-  if (allowedRoles && !allowedRoles.includes(user?.role || "")) {
-    return <Navigate to="/unauthorized" replace />;
-  }
-
-  return <>{children}</>;
+  return children ? <>{children}</> : <Outlet />;
 };
 
 export default ProtectedRoute;

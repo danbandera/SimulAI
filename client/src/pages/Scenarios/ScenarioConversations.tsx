@@ -5,9 +5,6 @@ import Breadcrumb from "../../components/Breadcrumbs/Breadcrumb";
 import { jsPDF } from "jspdf";
 import { useTranslation } from "react-i18next";
 
-import fs from "fs";
-import { log } from "console";
-
 interface ConversationMessage {
   role: string;
   message: string;
@@ -38,7 +35,6 @@ const ScenarioConversations = () => {
       if (id) {
         try {
           const apiData = await getConversations(Number(id));
-          console.log("Loaded conversations:", apiData);
 
           // Transform API response to match our interface if needed
           const transformedData = apiData.map((conv: any) => ({
@@ -60,7 +56,6 @@ const ScenarioConversations = () => {
 
     loadConversations();
   }, [id, getConversations]);
-  console.log("Conversations:", conversations);
 
   const toggleExpand = (convId: number) => {
     setExpandedConversations((prev) => ({

@@ -232,6 +232,9 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
     scenario?.context || "",
   );
 
+  let sessionStartTime: number;
+  let timerInterval: NodeJS.Timeout;
+
   async function getAccessToken() {
     try {
       if (!settings?.heygen_key) {
@@ -249,6 +252,16 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
       );
 
       const data = await res.json();
+      if (data) {
+        sessionStartTime = Date.now();
+        timerInterval = setInterval(() => {
+          const elapsedTime = Math.floor(
+            (Date.now() - sessionStartTime) / 1000,
+          );
+          console.log(`Elapsed time: ${elapsedTime} seconds`);
+        }, 1000);
+      }
+
       return data.data.token;
     } catch (error) {
       console.error("Error retrieving access token:", error);

@@ -68,7 +68,7 @@ const ScenarioDetail = () => {
 
   useEffect(() => {
     getUsers();
-  }, [getUsers]);
+  }, []);
 
   useEffect(() => {
     const loadScenario = async () => {
@@ -140,13 +140,9 @@ const ScenarioDetail = () => {
     }
   };
 
-  if (!scenario) {
-    return <div>Loading...</div>;
-  }
-
   return (
     <>
-      <Breadcrumb pageName={scenario.title} />
+      <Breadcrumb pageName={scenario?.title || ""} />
 
       <div className="grid grid-cols-1 gap-9">
         {/* Scenario Details Card */}
@@ -199,8 +195,8 @@ const ScenarioDetail = () => {
                       {t("scenarios.assignedUsers", "Assigned Users")}
                     </h4>
                     <div className="flex flex-wrap gap-2">
-                      {scenario.users && scenario.users.length > 0 ? (
-                        scenario.users.map((userId, index) => {
+                      {scenario?.users && scenario?.users.length > 0 ? (
+                        scenario?.users.map((userId, index) => {
                           // Find user info without type checking
                           const usersList = users as any[];
                           const userInfo = usersList.find(
@@ -232,7 +228,7 @@ const ScenarioDetail = () => {
                         {t("scenarios.status")}
                       </h4>
                       <span className="text-sm text-black dark:text-white">
-                        {scenario.status}
+                        {scenario?.status}
                       </span>
                     </div>
                     <div>
@@ -240,17 +236,18 @@ const ScenarioDetail = () => {
                         {t("scenarios.createdAt")}
                       </h4>
                       <span className="text-sm text-black dark:text-white">
-                        {new Date(scenario.created_at).toLocaleString()}
+                        {new Date(scenario?.created_at || "").toLocaleString()}
                       </span>
                     </div>
                   </div>
-                  {scenario.timeLimit && (
+                  {scenario?.timeLimit && (
                     <div>
                       <h4 className="font-medium text-black dark:text-white mb-2">
                         {t("scenarios.timeLimit", "Time Limit")}
                       </h4>
                       <span className="text-sm text-black dark:text-white">
-                        {scenario.timeLimit} {t("scenarios.minutes", "minutes")}
+                        {scenario?.timeLimit}{" "}
+                        {t("scenarios.minutes", "minutes")}
                       </span>
                     </div>
                   )}
@@ -304,17 +301,17 @@ const ScenarioDetail = () => {
                       {t("scenarios.context")}
                     </h4>
                     <p className="text-sm text-black dark:text-white">
-                      {scenario.context}
+                      {scenario?.context}
                     </p>
                   </div>
                   <div className="grid grid-cols-2 gap-4">
-                    {scenario.aspects && scenario.aspects.length > 0 && (
+                    {scenario?.aspects && scenario?.aspects.length > 0 && (
                       <div>
                         <h4 className="font-medium text-black dark:text-white mb-2">
                           {t("scenarios.aspects")}
                         </h4>
                         <div className="flex flex-wrap gap-2">
-                          {scenario.aspects.split(",").map((aspect, index) => (
+                          {scenario?.aspects.split(",").map((aspect, index) => (
                             <span
                               key={index}
                               className="rounded-full bg-primary bg-opacity-10 px-3 py-1 text-sm text-primary"
@@ -325,33 +322,34 @@ const ScenarioDetail = () => {
                         </div>
                       </div>
                     )}
-                    {scenario.categories && scenario.categories.length > 0 && (
-                      <div>
-                        <h4 className="font-medium text-black dark:text-white mb-2">
-                          {t("scenarios.categories")}
-                        </h4>
-                        <div className="flex flex-wrap gap-2">
-                          {scenario.categories
-                            .split(",")
-                            .map((category, index) => (
-                              <span
-                                key={index}
-                                className="rounded-full bg-orange-500 bg-opacity-10 px-3 py-1 text-sm text-orange-500"
-                              >
-                                {category}
-                              </span>
-                            ))}
+                    {scenario?.categories &&
+                      scenario?.categories.length > 0 && (
+                        <div>
+                          <h4 className="font-medium text-black dark:text-white mb-2">
+                            {t("scenarios.categories")}
+                          </h4>
+                          <div className="flex flex-wrap gap-2">
+                            {scenario?.categories
+                              .split(",")
+                              .map((category, index) => (
+                                <span
+                                  key={index}
+                                  className="rounded-full bg-orange-500 bg-opacity-10 px-3 py-1 text-sm text-orange-500"
+                                >
+                                  {category}
+                                </span>
+                              ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                   </div>
-                  {scenario.files && scenario.files.length > 0 && (
+                  {scenario?.files && scenario?.files.length > 0 && (
                     <div>
                       <h4 className="font-medium text-black dark:text-white mb-2">
                         {t("scenarios.attachFiles")}
                       </h4>
                       <div className="flex flex-wrap gap-2">
-                        {scenario.files.map((file, index) => (
+                        {scenario?.files.map((file, index) => (
                           <a
                             key={index}
                             href={file}
@@ -365,14 +363,14 @@ const ScenarioDetail = () => {
                       </div>
                     </div>
                   )}
-                  {scenario.generated_image_url &&
-                    scenario.show_image_prompt && (
+                  {scenario?.generated_image_url &&
+                    scenario?.show_image_prompt && (
                       <div>
                         <h4 className="font-medium text-black dark:text-white mb-2">
                           Generated Image
                         </h4>
                         <img
-                          src={scenario.generated_image_url}
+                          src={scenario?.generated_image_url}
                           alt="Generated"
                           className="w-full max-w-md rounded-lg"
                         />
@@ -405,8 +403,17 @@ const ScenarioDetail = () => {
           <div className="p-6.5 relative">
             <InteractiveAvatar
               scenarioId={parseInt(id || "0")}
-              scenarioTitle={scenario.title}
-              currentUser={currentUser}
+              scenarioTitle={scenario?.title || ""}
+              currentUser={
+                currentUser
+                  ? {
+                      id: currentUser.id!,
+                      name: currentUser.name,
+                      email: currentUser.email,
+                      role: currentUser.role,
+                    }
+                  : null
+              }
             />
           </div>
         </div>

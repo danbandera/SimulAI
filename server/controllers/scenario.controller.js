@@ -1,16 +1,10 @@
 import { connectSqlDB } from "../db.cjs";
-import Conversation from "../models/conversation.model.js";
 import multer from "multer";
-import path from "path";
-import fs from "fs";
 import { uploadToS3, deleteFromS3 } from "../utils/s3.utils.js";
 import { processPDFFiles } from "../utils/pdf.utils.js";
 import OpenAI from "openai";
 import ffmpeg from "fluent-ffmpeg";
 import { decryptValue } from "../libs/encryption.js";
-import MistralClient from "../clients/mistral.client.js";
-import LlamaClient from "../clients/llama.client.js";
-import OpenAIClient from "../clients/openai.client.js";
 import PDFDocument from "pdfkit";
 import { Document, Packer, Paragraph, TextRun, HeadingLevel } from "docx";
 
@@ -23,9 +17,6 @@ const ffmpegPath =
     : "ffmpeg";
 
 ffmpeg.setFfmpegPath(ffmpegPath);
-
-// Initialize OpenAI client with null API key
-let openai = null;
 
 // Function to get OpenAI API key from settings
 const getOpenAIKey = async () => {
@@ -46,110 +37,6 @@ const getOpenAIKey = async () => {
     throw error;
   }
 };
-
-// Function to get Mistral API key from settings
-const getMistralKey = async () => {
-  try {
-    const { data: settings, error } = await connectSqlDB
-      .from("settings")
-      .select("mistral_key")
-      .single();
-
-    if (error || !settings || !settings.mistral_key) {
-      console.error("Error fetching Mistral API key from settings:", error);
-      throw new Error("Mistral API key not found in settings");
-    }
-
-    return decryptValue(settings.mistral_key);
-  } catch (error) {
-    console.error("Error getting Mistral API key:", error);
-    throw error;
-  }
-};
-
-// Function to get Llama API key from settings
-const getLlamaKey = async () => {
-  try {
-    const { data: settings, error } = await connectSqlDB
-      .from("settings")
-      .select("llama_key")
-      .single();
-
-    if (error || !settings || !settings.llama_key) {
-      console.error("Error fetching Llama API key from settings:", error);
-      throw new Error("Llama API key not found in settings");
-    }
-
-    return decryptValue(settings.llama_key);
-  } catch (error) {
-    console.error("Error getting Llama API key:", error);
-    throw error;
-  }
-};
-
-// Function to get the appropriate AI client based on the scenario settings
-const getAIClient = async (assignedIA) => {
-  switch (assignedIA) {
-    case "openai":
-      const openaiKey = await getOpenAIKey();
-      return new OpenAIClient({ apiKey: openaiKey });
-    case "mistral":
-      const mistralKey = await getMistralKey();
-      return new MistralClient({ apiKey: mistralKey });
-    case "llama":
-      const llamaKey = await getLlamaKey();
-      return new LlamaClient({ apiKey: llamaKey });
-    default:
-      throw new Error(`Unsupported AI provider: ${assignedIA}`);
-  }
-};
-
-// Function to process text with the appropriate AI model
-const processWithAI = async (client, model, systemContext, userContent) => {
-  const messages = [
-    { role: "system", content: systemContext },
-    { role: "user", content: userContent },
-  ];
-
-  switch (client.constructor.name) {
-    case "OpenAIClient":
-    case "MistralClient":
-      const response = await client.chat({
-        model: model,
-        messages: messages,
-      });
-      return response.choices[0].message.content;
-
-    case "LlamaClient":
-      const llamaResponse = await client.complete({
-        model: model,
-        system: systemContext,
-        prompt: userContent,
-      });
-      return llamaResponse.choices[0].text;
-
-    default:
-      throw new Error(`Unsupported AI client type: ${client.constructor.name}`);
-  }
-};
-
-// Create uploads directory if it doesn't exist
-const uploadDir = path.join(process.cwd(), "uploads", "scenarios");
-if (!fs.existsSync(uploadDir)) {
-  fs.mkdirSync(uploadDir, { recursive: true });
-}
-
-// Configure multer for file uploads
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    cb(null, uploadDir);
-  },
-  filename: function (req, file, cb) {
-    // Sanitize filename to remove spaces and special characters
-    const sanitizedName = file.originalname.replace(/[^a-zA-Z0-9.]/g, "_");
-    cb(null, Date.now() + "-" + sanitizedName);
-  },
-});
 
 // Create a more robust multer instance with error handling
 const upload = multer({
@@ -180,15 +67,12 @@ export const getScenarios = async (req, res) => {
         )
       `);
 
-    // Rename time_limit to timeLimit for all scenarios for client-side consistency
-    // And ensure users is always an array
     if (result.data && Array.isArray(result.data)) {
       result.data.forEach((scenario) => {
         if (scenario.time_limit !== undefined) {
           scenario.timeLimit = scenario.time_limit;
         }
 
-        // Ensure users is always an array
         if (!scenario.users) {
           scenario.users = [];
         }
@@ -793,158 +677,6 @@ export const getAllConversations = async (req, res) => {
     res.json(data);
   } catch (error) {
     res.status(500).json({ message: error.message });
-  }
-};
-
-export const processAudio = async (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: "No audio file provided" });
-  }
-
-  try {
-    // Get the scenario ID from the request parameters
-    const { id } = req.params;
-
-    // Get the scenario data from the database
-    const { data: scenario, error } = await connectSqlDB
-      .from("scenarios")
-      .select("*")
-      .eq("id", id)
-      .single();
-
-    if (error) {
-      throw new Error(`Error fetching scenario: ${error.message}`);
-    }
-
-    // Get the appropriate AI client based on the scenario's assigned AI
-    const aiClient = await getAIClient(scenario.assignedIA);
-
-    // Get OpenAI client specifically for audio processing
-    const openaiKey = await getOpenAIKey();
-    const openaiClient = new OpenAIClient({ apiKey: openaiKey });
-
-    // Build the system context using scenario data
-    const systemContext = `You are an AI interviewer conducting an evaluation. Here is your context:
-    - Scenario Title: ${scenario.title}
-    - Description: ${scenario.context}
-    - Aspects to evaluate: ${scenario.aspects}.
-    ${
-      scenario.aspects
-        ? `- Aspects to evaluate: ${scenario.aspects
-            .map((aspect) => aspect.label)
-            .join(", ")}`
-        : ""
-    }
-    - This content from a (or many) PDF use this information to evaluate the candidate: ${
-      scenario.pdf_contents
-    }
-    
-    IMPORTANT INSTRUCTIONS:
-    1. You MUST ONLY respond in Spanish
-    2. You should evaluate the candidate based on the aspects mentioned above
-    3. Keep your responses professional and constructive
-    4. Focus on the scenario context provided`;
-
-    // Get the correct directory paths
-    const uploadsDir = path.join(process.cwd(), "uploads");
-    const scenariosDir = path.join(uploadsDir, "scenarios");
-
-    // Ensure directories exist
-    if (!fs.existsSync(uploadsDir)) {
-      fs.mkdirSync(uploadsDir, { recursive: true });
-    }
-    if (!fs.existsSync(scenariosDir)) {
-      fs.mkdirSync(scenariosDir, { recursive: true });
-    }
-
-    // Create temporary file path for the uploaded audio
-    const tempFile = path.join(scenariosDir, `temp-${Date.now()}.webm`);
-    fs.writeFileSync(tempFile, req.file.buffer);
-
-    // Upload user's audio to S3 first
-    const userAudioUrl = await uploadToS3(
-      {
-        buffer: req.file.buffer,
-        originalname: `user-audio-${Date.now()}.webm`,
-        mimetype: req.file.mimetype,
-      },
-      "audio-responses"
-    );
-
-    // Convert webm to wav
-    const wavFile = path.join(scenariosDir, `temp-${Date.now()}.wav`);
-
-    await new Promise((resolve, reject) => {
-      ffmpeg(tempFile)
-        .toFormat("wav")
-        .audioCodec("pcm_s16le")
-        .on("error", (err) => {
-          console.error("FFmpeg error:", err);
-          reject(err);
-        })
-        .on("end", () => {
-          resolve();
-        })
-        .save(wavFile);
-    });
-
-    // Use OpenAI's Whisper for transcription
-    const transcript = await openaiClient.createTranscription(
-      fs.createReadStream(wavFile)
-    );
-
-    // Process with the appropriate AI model
-    const response = await processWithAI(
-      aiClient,
-      scenario.assignedIAModel,
-      systemContext,
-      transcript.text
-    );
-
-    // Generate speech from response
-    const mp3 = await openaiClient.createSpeech(response);
-
-    const buffer = Buffer.from(await mp3.arrayBuffer());
-    const tempResponseFile = path.join(
-      scenariosDir,
-      `response-${Date.now()}.mp3`
-    );
-    fs.writeFileSync(tempResponseFile, buffer);
-
-    // Upload the AI response audio to S3
-    const s3AudioUrl = await uploadToS3(
-      {
-        buffer: buffer,
-        originalname: `ai-response-${Date.now()}.mp3`,
-        mimetype: "audio/mpeg",
-      },
-      "audio-responses"
-    );
-
-    // Clean up all temporary files
-    try {
-      fs.unlinkSync(tempFile);
-      fs.unlinkSync(wavFile);
-      fs.unlinkSync(tempResponseFile);
-    } catch (cleanupError) {
-      console.error("Error cleaning up temporary files:", cleanupError);
-    }
-
-    // Return the transcription, response, and audio URLs without saving the conversation
-    res.json({
-      transcription: transcript.text,
-      response,
-      userAudioUrl: userAudioUrl,
-      aiAudioUrl: s3AudioUrl,
-    });
-  } catch (error) {
-    console.error("Detailed error in processAudio:", error);
-    if (error.response) {
-      console.error("OpenAI API error response:", error.response.data);
-    }
-    res
-      .status(500)
-      .json({ error: "Failed to process audio", details: error.message });
   }
 };
 

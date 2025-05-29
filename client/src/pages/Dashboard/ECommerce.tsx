@@ -107,19 +107,7 @@ const ECommerce: React.FC = () => {
   }, [scenarios]);
 
   // Add a useEffect to log scenarios data for debugging
-  useEffect(() => {
-    if (scenariosWithReports.length > 0) {
-      console.log(
-        "Scenarios with users arrays:",
-        scenariosWithReports.map((s) => ({
-          id: s.id,
-          title: s.title,
-          users: s.users,
-          assigned_user: s.assigned_user?.id,
-        })),
-      );
-    }
-  }, [scenariosWithReports]);
+  useEffect(() => {}, [scenariosWithReports]);
 
   const filteredScenarios = scenariosWithReports
     .filter((scenario) => {

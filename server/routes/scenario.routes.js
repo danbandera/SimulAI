@@ -10,7 +10,6 @@ import {
   getConversations,
   getConversation,
   getAllConversations,
-  processAudio,
   generateImage,
   getOpenAIAssistants,
   generateReportWithAssistant,
@@ -139,8 +138,7 @@ const audioUpload = multer({
 router.post(
   "/scenarios/:id/process-audio",
   authRequired,
-  audioUpload.single("audio"),
-  processAudio
+  audioUpload.single("audio")
 );
 
 // Add a route to process the final evaluation message
@@ -371,7 +369,6 @@ router.post(
   }
 );
 
-// router.post("/scenarios/:id/audio", upload.single("audio"), processAudio);
 router.post("/scenarios/generate-image", generateImage);
 
 // Add a new route to get all conversation elapsed times for a specific scenario

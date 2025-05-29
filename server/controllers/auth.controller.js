@@ -22,10 +22,10 @@ const getMailCredentials = async () => {
   return {
     username: decryptValue(settings.mail_username),
     password: decryptValue(settings.mail_password),
-    host: settings.mail_host,
+    host: decryptValue(settings.mail_host),
     port: settings.mail_port,
-    from: settings.mail_from,
-    fromName: settings.mail_from_name,
+    from: decryptValue(settings.mail_from),
+    fromName: decryptValue(settings.mail_from_name),
   };
 };
 

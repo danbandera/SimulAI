@@ -95,6 +95,40 @@ export const createUser = async (req, res) => {
       created_by,
     } = req.body;
     console.log("Create User:", req.body);
+
+    // Get the creating user's information to enforce company rules
+    const { data: creatingUser, error: creatingUserError } = await connectSqlDB
+      .from("users")
+      .select("role, company_id")
+      .eq("id", created_by)
+      .single();
+
+    if (creatingUserError) {
+      console.error("Error fetching creating user:", creatingUserError);
+      return res
+        .status(500)
+        .json({ message: "Error validating user permissions" });
+    }
+
+    let finalCompanyId = company_id;
+    let finalRole = role;
+
+    // Enforce company rules for company users
+    if (creatingUser.role === "company") {
+      finalCompanyId = creatingUser.company_id; // Force same company as creator
+      finalRole = "user"; // Company users can only create regular users
+    }
+
+    // Validate role assignment - only admins can create company/admin users
+    if (
+      (finalRole === "company" || finalRole === "admin") &&
+      creatingUser.role !== "admin"
+    ) {
+      return res.status(403).json({
+        message: "Only administrators can create company or admin users",
+      });
+    }
+
     // Check for existing user with better error handling
     const { data: existingUser, error: searchError } = await connectSqlDB
       .from("users")
@@ -121,8 +155,8 @@ export const createUser = async (req, res) => {
       .insert({
         name,
         lastname,
-        company_id,
-        role,
+        company_id: finalCompanyId,
+        role: finalRole,
         email,
         password: hashedPassword,
         created_by,
@@ -192,11 +226,50 @@ export const updateUser = async (req, res) => {
       password,
       created_by,
     } = req.body;
+
+    // Check if user is authenticated
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    // Get the updating user's information to enforce company rules
+    const { data: updatingUser, error: updatingUserError } = await connectSqlDB
+      .from("users")
+      .select("role, company_id")
+      .eq("id", req.user.id) // Use the authenticated user's ID
+      .single();
+
+    if (updatingUserError) {
+      console.error("Error fetching updating user:", updatingUserError);
+      return res
+        .status(500)
+        .json({ message: "Error validating user permissions" });
+    }
+
+    let finalCompanyId = company_id;
+    let finalRole = role;
+
+    // Enforce company rules for company users
+    if (updatingUser.role === "company") {
+      finalCompanyId = updatingUser.company_id; // Force same company as updater
+      finalRole = "user"; // Company users can only manage regular users
+    }
+
+    // Validate role assignment - only admins can assign company/admin roles
+    if (
+      (finalRole === "company" || finalRole === "admin") &&
+      updatingUser.role !== "admin"
+    ) {
+      return res.status(403).json({
+        message: "Only administrators can assign company or admin roles",
+      });
+    }
+
     const updateData = {
       name,
       lastname,
-      company_id,
-      role,
+      company_id: finalCompanyId,
+      role: finalRole,
       email,
       profile_image: "",
       created_by,

@@ -175,6 +175,11 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
   const { currentUser } = useUsers();
   const [filteredScenarios, setFilteredScenarios] = useState<Scenario[]>([]);
 
+  // Pagination state
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(10);
+  const [paginatedScenarios, setPaginatedScenarios] = useState<Scenario[]>([]);
+
   const isAdmin = currentUser?.role === "admin";
 
   useEffect(() => {
@@ -186,6 +191,18 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
       status: "",
     });
   }, [scenarios, currentUser]);
+
+  // Update pagination when filtered scenarios change
+  useEffect(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage;
+    const endIndex = startIndex + itemsPerPage;
+    setPaginatedScenarios(filteredScenarios.slice(startIndex, endIndex));
+  }, [filteredScenarios, currentPage, itemsPerPage]);
+
+  // Reset to first page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filteredScenarios.length]);
 
   const filterScenarios = (filters: {
     search: string;
@@ -317,6 +334,60 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
     });
   };
 
+  // Pagination helper functions
+  const totalPages = Math.ceil(filteredScenarios.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage + 1;
+  const endIndex = Math.min(
+    currentPage * itemsPerPage,
+    filteredScenarios.length,
+  );
+
+  const handlePageChange = (page: number) => {
+    setCurrentPage(page);
+  };
+
+  const handleItemsPerPageChange = (
+    e: React.ChangeEvent<HTMLSelectElement>,
+  ) => {
+    setItemsPerPage(parseInt(e.target.value));
+    setCurrentPage(1); // Reset to first page
+  };
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const maxVisiblePages = 5;
+
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        pages.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        for (let i = 1; i <= 4; i++) {
+          pages.push(i);
+        }
+        pages.push("...");
+        pages.push(totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        pages.push(1);
+        pages.push("...");
+        for (let i = totalPages - 3; i <= totalPages; i++) {
+          pages.push(i);
+        }
+      } else {
+        pages.push(1);
+        pages.push("...");
+        for (let i = currentPage - 1; i <= currentPage + 1; i++) {
+          pages.push(i);
+        }
+        pages.push("...");
+        pages.push(totalPages);
+      }
+    }
+
+    return pages;
+  };
+
   return (
     <div className="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
       <h4 className="mb-6 text-xl font-semibold text-black dark:text-white px-5">
@@ -355,10 +426,10 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
           </div>
         </div>
 
-        {filteredScenarios.map((scenario, key) => (
+        {paginatedScenarios.map((scenario, key) => (
           <div
             className={`grid gap-4 ${isAdmin ? "grid-cols-4" : "grid-cols-3"} ${
-              key === filteredScenarios.length - 1
+              key === paginatedScenarios.length - 1
                 ? ""
                 : "border-b border-stroke dark:border-strokedark"
             }`}
@@ -404,7 +475,90 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
             </div>
           </div>
         ))}
+
+        {/* No scenarios message */}
+        {filteredScenarios.length === 0 && (
+          <div className="flex items-center justify-center py-8">
+            <p className="text-gray-500 dark:text-gray-400">
+              {t("scenarios.noScenarios", "No scenarios found")}
+            </p>
+          </div>
+        )}
       </div>
+
+      {/* Pagination Controls */}
+      {filteredScenarios.length > 0 && (
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 py-4 px-5">
+          {/* Items per page selector */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              {t("pagination.show", "Show")}
+            </span>
+            <select
+              value={itemsPerPage}
+              onChange={handleItemsPerPageChange}
+              className="rounded border border-stroke bg-transparent py-1 px-2 text-sm outline-none transition focus:border-primary active:border-primary dark:border-form-strokedark dark:bg-form-input dark:focus:border-primary"
+            >
+              <option value={5}>5</option>
+              <option value={10}>10</option>
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+            </select>
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              {t("pagination.entries", "entries")}
+            </span>
+          </div>
+
+          {/* Results info */}
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            {t("pagination.showing", "Showing")} {startIndex}{" "}
+            {t("pagination.to", "to")} {endIndex} {t("pagination.of", "of")}{" "}
+            {filteredScenarios.length} {t("pagination.entries", "entries")}
+          </div>
+
+          {/* Page navigation */}
+          {totalPages > 1 && (
+            <div className="flex items-center gap-1">
+              {/* Previous button */}
+              <button
+                onClick={() => handlePageChange(currentPage - 1)}
+                disabled={currentPage === 1}
+                className="flex items-center justify-center w-8 h-8 text-sm border border-stroke rounded hover:bg-gray-2 disabled:opacity-50 disabled:cursor-not-allowed dark:border-strokedark dark:hover:bg-meta-4"
+              >
+                ‹
+              </button>
+
+              {/* Page numbers */}
+              {getPageNumbers().map((page, index) => (
+                <button
+                  key={index}
+                  onClick={() =>
+                    typeof page === "number" && handlePageChange(page)
+                  }
+                  disabled={page === "..."}
+                  className={`flex items-center justify-center w-8 h-8 text-sm border border-stroke rounded ${
+                    page === currentPage
+                      ? "bg-primary text-white border-primary"
+                      : "hover:bg-gray-2 dark:border-strokedark dark:hover:bg-meta-4"
+                  } ${page === "..." ? "cursor-default" : ""}`}
+                >
+                  {page}
+                </button>
+              ))}
+
+              {/* Next button */}
+              <button
+                onClick={() => handlePageChange(currentPage + 1)}
+                disabled={currentPage === totalPages}
+                className="flex items-center justify-center w-8 h-8 text-sm border border-stroke rounded hover:bg-gray-2 disabled:opacity-50 disabled:cursor-not-allowed dark:border-strokedark dark:hover:bg-meta-4"
+              >
+                ›
+              </button>
+            </div>
+          )}
+        </div>
+      )}
     </div>
   );
 };

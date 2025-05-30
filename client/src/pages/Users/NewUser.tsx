@@ -35,10 +35,13 @@ const NewUser: React.FC = () => {
   const [formData, setFormData] = useState({
     name: "",
     lastname: "",
-    company_id: undefined as number | undefined,
+    company_id:
+      currentUser?.role === "company"
+        ? currentUser?.company_id
+        : (undefined as number | undefined),
     department_ids: [] as number[],
     email: "",
-    role: "",
+    role: currentUser?.role === "company" ? "user" : "",
     users: [] as number[],
   });
 
@@ -47,16 +50,34 @@ const NewUser: React.FC = () => {
   >([]);
 
   const userOptions: UserOption[] = users
-    .filter((user) => user.role === "user")
+    .filter((user) => {
+      // Only show regular users
+      if (user.role !== "user") return false;
+
+      // If creating a company user, only show users that can be assigned
+      if (formData.role === "company") {
+        // Show users without a company (only if they are part of the same company) or users from different companies
+        return (
+          !user.company_id ||
+          (user.company_id && user.company_id === formData.company_id)
+        );
+      }
+
+      return true;
+    })
     .map((user) => ({
       value: user.id || 0,
       label: `${user.name} ${user.lastname}`,
     }));
 
-  const companyOptions: CompanyOption[] = companies.map((company) => ({
-    value: company.id || 0,
-    label: company.name,
-  }));
+  // Filter companies based on user role
+  const companyOptions: CompanyOption[] =
+    currentUser?.role === "admin"
+      ? companies.map((company) => ({
+          value: company.id || 0,
+          label: company.name,
+        }))
+      : []; // Company users can't change company
 
   const handleUserSelect = (selectedOptions: readonly UserOption[]) => {
     setFormData({
@@ -125,22 +146,50 @@ const NewUser: React.FC = () => {
       // Generate random password
       const password = generateRandomPassword();
 
-      // Create user with generated password
-      const newUser = await createUser({
+      // Prepare user data
+      const userData = {
         ...formData,
         password,
         created_by: Number(currentUser?.id),
-      });
+      };
+
+      // For company users, ensure they assign their own company
+      if (currentUser?.role === "company") {
+        userData.company_id = currentUser.company_id;
+        userData.role = "user"; // Company users can only create regular users
+      }
+
+      // Validate role assignment - only admins can create company/admin users
+      if (userData.role === "company" || userData.role === "admin") {
+        if (currentUser?.role !== "admin") {
+          toast.error("Only administrators can create company or admin users");
+          return;
+        }
+      }
+
+      // Create user with generated password
+      const newUser = await createUser(userData);
 
       if (formData.role === "company" && newUser?.id) {
         await Promise.all(
           formData.users.map(async (userId) => {
             const userToUpdate = await getUser(userId);
             if (userToUpdate) {
-              await updateUser(userId, {
-                ...userToUpdate,
-                created_by: newUser.id,
-              });
+              // Only update if the user is not already assigned to this company
+              if (userToUpdate.company_id !== userData.company_id) {
+                await updateUser(userId, {
+                  ...userToUpdate,
+                  created_by: newUser.id,
+                  company_id: userData.company_id, // Update company to match the company user
+                  department_ids: [], // Clear departments since they're moving to a different company
+                });
+              } else {
+                // Just update the created_by if they're already in the same company
+                await updateUser(userId, {
+                  ...userToUpdate,
+                  created_by: newUser.id,
+                });
+              }
             }
           }),
         );
@@ -175,7 +224,25 @@ const NewUser: React.FC = () => {
   useEffect(() => {
     getUsers();
     getCompanies();
-  }, []);
+
+    // For company users, automatically load departments from their company
+    if (
+      currentUser?.role === "company" &&
+      currentUser?.company_id &&
+      companies.length > 0
+    ) {
+      const userCompany = companies.find(
+        (c) => c.id === currentUser.company_id,
+      );
+      if (userCompany) {
+        const departmentOptions = userCompany.departments.map((dept) => ({
+          value: dept.id || 0,
+          label: dept.name,
+        }));
+        setAvailableDepartments(departmentOptions);
+      }
+    }
+  }, [companies]);
   return (
     <>
       <Breadcrumb pageName={t("users.newUser")} />
@@ -223,20 +290,26 @@ const NewUser: React.FC = () => {
                   </div>
                 </div>
                 <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
-                  <div className="w-full xl:w-1/2">
-                    <label className="mb-2.5 block text-black dark:text-white">
-                      {t("users.company")}
-                    </label>
-                    <Select
-                      options={companyOptions}
-                      onChange={handleCompanyChange}
-                      value={companyOptions.find(
-                        (option) => option.value === formData.company_id,
-                      )}
-                    />
-                  </div>
+                  {/* Company selection - Only for Admin */}
+                  {currentUser?.role === "admin" && (
+                    <div className="w-full xl:w-1/2">
+                      <label className="mb-2.5 block text-black dark:text-white">
+                        {t("users.company")}
+                      </label>
+                      <Select
+                        options={companyOptions}
+                        onChange={handleCompanyChange}
+                        value={companyOptions.find(
+                          (option) => option.value === formData.company_id,
+                        )}
+                      />
+                    </div>
+                  )}
 
-                  <div className="w-full xl:w-1/2">
+                  {/* Department selection - For all users who can create users */}
+                  <div
+                    className={`w-full ${currentUser?.role === "admin" ? "xl:w-1/2" : ""}`}
+                  >
                     <label className="mb-2.5 block text-black dark:text-white">
                       {t("users.department")}
                     </label>
@@ -266,18 +339,22 @@ const NewUser: React.FC = () => {
                       required
                     />
                   </div>
-                  <div className="w-full xl:w-1/2">
-                    <label className="mb-2.5 block text-black dark:text-white">
-                      {t("users.role")}
-                    </label>
-                    <Select<RoleOption>
-                      options={roleOptions}
-                      onChange={handleRoleChange}
-                      value={roleOptions.find(
-                        (option) => option.value === formData.role,
-                      )}
-                    />
-                  </div>
+
+                  {/* Role selection - Only for Admin */}
+                  {currentUser?.role === "admin" && (
+                    <div className="w-full xl:w-1/2">
+                      <label className="mb-2.5 block text-black dark:text-white">
+                        {t("users.role")}
+                      </label>
+                      <Select<RoleOption>
+                        options={roleOptions}
+                        onChange={handleRoleChange}
+                        value={roleOptions.find(
+                          (option) => option.value === formData.role,
+                        )}
+                      />
+                    </div>
+                  )}
                 </div>
 
                 <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
@@ -297,6 +374,10 @@ const NewUser: React.FC = () => {
                           formData.users.includes(option.value),
                         )}
                       />
+                      <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
+                        Note: Selected users will be assigned to this company
+                        and their departments will be cleared.
+                      </p>
                     </div>
                   )}
                 </div>

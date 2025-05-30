@@ -15,13 +15,19 @@ import { authRequired } from "../middlewares/validateToken.js";
 
 const router = Router();
 
-router.get("/users", getUsers);
-router.post("/users", validateSchema(registerSchema), createUser);
-router.get("/users/:id", getUser);
-router.put("/users/:id", upload.single("profile_image"), updateUser);
-router.delete("/users/:id", deleteUser);
+router.get("/users", authRequired, getUsers);
+router.post("/users", authRequired, validateSchema(registerSchema), createUser);
+router.get("/users/:id", authRequired, getUser);
+router.put(
+  "/users/:id",
+  authRequired,
+  upload.single("profile_image"),
+  updateUser
+);
+router.delete("/users/:id", authRequired, deleteUser);
 router.put(
   "/users/:id/profile-image",
+  authRequired,
   upload.single("profile_image"),
   updateUserProfileImage
 );

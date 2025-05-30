@@ -28,7 +28,7 @@ const EditUser: React.FC = () => {
   const navigate = useNavigate();
   const { id } = useParams();
   const { t } = useTranslation();
-  const { updateUser, getUser, users, getUsers } = useUsers();
+  const { updateUser, getUser, users, getUsers, currentUser } = useUsers();
   const { companies, getCompanies } = useCompanies();
   const [formData, setFormData] = useState({
     name: "",
@@ -47,16 +47,34 @@ const EditUser: React.FC = () => {
   >([]);
 
   const userOptions: UserOption[] = users
-    .filter((user) => user.role === "user")
+    .filter((user) => {
+      // Only show regular users
+      if (user.role !== "user") return false;
+
+      // If creating a company user, only show users that can be assigned
+      if (formData.role === "company") {
+        // Show users without a company (only if they are part of the same company) or users from different companies
+        return (
+          !user.company_id ||
+          (user.company_id && user.company_id === formData.company_id)
+        );
+      }
+
+      return true;
+    })
     .map((user) => ({
       value: user.id || 0,
       label: `${user.name} ${user.lastname}`,
     }));
 
-  const companyOptions: CompanyOption[] = companies.map((company) => ({
-    value: company.id || 0,
-    label: company.name,
-  }));
+  // Filter companies based on user role
+  const companyOptions: CompanyOption[] =
+    currentUser?.role === "admin"
+      ? companies.map((company) => ({
+          value: company.id || 0,
+          label: company.name,
+        }))
+      : []; // Company users can't change company
 
   const handleUserSelect = (selectedOptions: readonly UserOption[]) => {
     setFormData({
@@ -170,20 +188,51 @@ const EditUser: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     try {
-      if (formData.role === "company") {
+      // Prepare user data
+      const userData = { ...formData };
+
+      // For company users, ensure they cannot change the company assignment
+      if (currentUser?.role === "company") {
+        userData.company_id = currentUser.company_id;
+        // Company users can only edit regular users, not change roles
+        if (userData.role !== "user") {
+          userData.role = "user";
+        }
+      }
+
+      // Validate role assignment - only admins can assign company/admin roles
+      if (userData.role === "company" || userData.role === "admin") {
+        if (currentUser?.role !== "admin") {
+          toast.error("Only administrators can assign company or admin roles");
+          return;
+        }
+      }
+
+      if (formData.role === "company" && currentUser?.role === "admin") {
         await Promise.all(
           formData.users.map(async (userId) => {
             const userToUpdate = await getUser(userId);
             if (userToUpdate) {
-              await updateUser(userId, {
-                ...userToUpdate,
-                created_by: Number(id),
-              });
+              // Only update if the user is not already assigned to this company
+              if (userToUpdate.company_id !== userData.company_id) {
+                await updateUser(userId, {
+                  ...userToUpdate,
+                  created_by: Number(id),
+                  company_id: userData.company_id, // Update company to match the user they're assigned to
+                  department_ids: [], // Clear departments since they're moving to a different company
+                });
+              } else {
+                // Just update the created_by if they're already in the same company
+                await updateUser(userId, {
+                  ...userToUpdate,
+                  created_by: Number(id),
+                });
+              }
             }
           }),
         );
       }
-      await updateUser(Number(id), formData);
+      await updateUser(Number(id), userData);
       toast.success("User updated successfully!");
       navigate("/users");
     } catch (error) {
@@ -238,20 +287,26 @@ const EditUser: React.FC = () => {
                   </div>
                 </div>
                 <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
-                  <div className="w-full xl:w-1/2">
-                    <label className="mb-2.5 block text-black dark:text-white">
-                      {t("users.company")}
-                    </label>
-                    <Select
-                      options={companyOptions}
-                      onChange={handleCompanyChange}
-                      value={companyOptions.find(
-                        (option) => option.value === formData.company_id,
-                      )}
-                    />
-                  </div>
+                  {/* Company selection - Only for Admin */}
+                  {currentUser?.role === "admin" && (
+                    <div className="w-full xl:w-1/2">
+                      <label className="mb-2.5 block text-black dark:text-white">
+                        {t("users.company")}
+                      </label>
+                      <Select
+                        options={companyOptions}
+                        onChange={handleCompanyChange}
+                        value={companyOptions.find(
+                          (option) => option.value === formData.company_id,
+                        )}
+                      />
+                    </div>
+                  )}
 
-                  <div className="w-full xl:w-1/2">
+                  {/* Department selection - For all users who can edit users */}
+                  <div
+                    className={`w-full ${currentUser?.role === "admin" ? "xl:w-1/2" : ""}`}
+                  >
                     <label className="mb-2.5 block text-black dark:text-white">
                       {t("users.department")}
                     </label>
@@ -295,36 +350,40 @@ const EditUser: React.FC = () => {
                   </div>
                 </div>
                 <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
-                  <div className="w-full xl:w-1/2">
-                    <label className="mb-2.5 block text-black dark:text-white">
-                      {t("users.role")}
-                    </label>
-                    <Select<RoleOption>
-                      options={roleOptions}
-                      onChange={handleRoleChange}
-                      value={roleOptions.find(
-                        (option) => option.value === formData.role,
-                      )}
-                    />
-                  </div>
-                  {formData.role === "company" && (
+                  {/* Role selection - Only for Admin */}
+                  {currentUser?.role === "admin" && (
                     <div className="w-full xl:w-1/2">
                       <label className="mb-2.5 block text-black dark:text-white">
-                        {t("scenarios.selectUsers")}
+                        {t("users.role")}
                       </label>
-                      <Select
-                        options={userOptions}
-                        onChange={handleUserSelect}
-                        isMulti={true}
-                        className="react-select-container"
-                        classNamePrefix="react-select"
-                        placeholder={t("scenarios.selectUsers")}
-                        value={userOptions.filter((option) =>
-                          formData.users.includes(option.value),
+                      <Select<RoleOption>
+                        options={roleOptions}
+                        onChange={handleRoleChange}
+                        value={roleOptions.find(
+                          (option) => option.value === formData.role,
                         )}
                       />
                     </div>
                   )}
+                  {formData.role === "company" &&
+                    currentUser?.role === "admin" && (
+                      <div className="w-full xl:w-1/2">
+                        <label className="mb-2.5 block text-black dark:text-white">
+                          {t("scenarios.selectUsers")}
+                        </label>
+                        <Select
+                          options={userOptions}
+                          onChange={handleUserSelect}
+                          isMulti={true}
+                          className="react-select-container"
+                          classNamePrefix="react-select"
+                          placeholder={t("scenarios.selectUsers")}
+                          value={userOptions.filter((option) =>
+                            formData.users.includes(option.value),
+                          )}
+                        />
+                      </div>
+                    )}
                 </div>
                 <button
                   type="submit"

@@ -7,7 +7,7 @@ import DefaultLayout from "./layout/DefaultLayout";
 import Users from "./pages/Users/Users";
 import NewUser from "./pages/Users/NewUser";
 import EditUser from "./pages/Users/EditUser";
-import { UserProvider } from "./context/UserContext";
+import { UserProvider, useUsers } from "./context/UserContext";
 import Companies from "./pages/Companies/Companies";
 import NewCompany from "./pages/Companies/NewCompany";
 import EditCompany from "./pages/Companies/EditCompany";
@@ -26,6 +26,23 @@ import RecoverPassword from "./pages/RecoverPassword/RecoverPassword";
 import ResetPassword from "./pages/ResetPassword/ResetPassword";
 import SettingsAdmin from "./pages/SettingsAdmin";
 import ScenarioReport from "./pages/Scenarios/ScenarioReport";
+
+// Admin-only route wrapper
+const AdminRoute = ({ children }: { children: React.ReactNode }) => {
+  const { currentUser } = useUsers();
+
+  if (currentUser?.role !== "admin") {
+    return (
+      <div className="flex justify-center items-center h-60">
+        <div className="text-lg text-red-500">
+          Access denied. Admin privileges required.
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+};
 
 function App() {
   return (
@@ -85,7 +102,9 @@ function App() {
                     element={
                       <>
                         <PageTitle title="Companies | Admin Dashboard" />
-                        <Companies />
+                        <AdminRoute>
+                          <Companies />
+                        </AdminRoute>
                       </>
                     }
                   />
@@ -94,7 +113,9 @@ function App() {
                     element={
                       <>
                         <PageTitle title="New Company | Admin Dashboard" />
-                        <NewCompany />
+                        <AdminRoute>
+                          <NewCompany />
+                        </AdminRoute>
                       </>
                     }
                   />
@@ -103,7 +124,9 @@ function App() {
                     element={
                       <>
                         <PageTitle title="Edit Company | Admin Dashboard" />
-                        <EditCompany />
+                        <AdminRoute>
+                          <EditCompany />
+                        </AdminRoute>
                       </>
                     }
                   />

@@ -26,8 +26,8 @@ const Users = () => {
       // Show success message with number of imported users
       if (result.results.success.length > 0) {
         await Swal.fire({
-          title: "¡Éxito!",
-          text: `Se importaron ${result.results.success.length} nuevos usuarios`,
+          title: t("alerts.importSuccessTitle"),
+          text: `${result.results.success.length} ${t("alerts.importSuccessMessage")}`,
           icon: "success",
           confirmButtonColor: "#3C50E0",
         });
@@ -36,8 +36,8 @@ const Users = () => {
       // Show skipped message if there were any skipped users
       if (result.results.skipped.length > 0) {
         await Swal.fire({
-          title: "Usuarios omitidos",
-          text: `Se omitieron ${result.results.skipped.length} usuarios (ya existen o tienen datos inválidos)`,
+          title: t("alerts.importSkippedTitle"),
+          text: `${result.results.skipped.length} ${t("alerts.importSkippedMessage")}`,
           icon: "info",
           confirmButtonColor: "#3C50E0",
         });
@@ -50,8 +50,8 @@ const Users = () => {
       }
     } catch (error: any) {
       await Swal.fire({
-        title: "Error",
-        text: error.message || "Error al importar usuarios",
+        title: t("alerts.importErrorTitle"),
+        text: error.message || t("alerts.importErrorMessage"),
         icon: "error",
         confirmButtonColor: "#D34053",
       });

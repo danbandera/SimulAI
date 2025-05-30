@@ -195,27 +195,31 @@ const TableCompanies = ({ companies }: { companies: Company[] }) => {
     e.preventDefault();
 
     const result = await Swal.fire({
-      title: "¿Estás seguro?",
-      text: "No podrás revertir esta acción",
+      title: t("alerts.deleteConfirmTitle"),
+      text: t("alerts.deleteConfirmMessage"),
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#3C50E0",
       cancelButtonColor: "#D34053",
+      confirmButtonText: t("alerts.yes"),
+      cancelButtonText: t("alerts.cancel"),
     });
 
     if (result.isConfirmed) {
       try {
         await deleteCompany(companyId);
         Swal.fire({
-          title: "¡Eliminado!",
-          text: "La empresa ha sido eliminada.",
+          title: t("alerts.deleteSuccessTitle"),
+          text: t("alerts.companyDeletedMessage"),
           icon: "success",
+          confirmButtonColor: "#3C50E0",
         });
       } catch (error) {
         Swal.fire({
-          title: "Error",
-          text: "No se pudo eliminar la empresa.",
+          title: t("alerts.deleteErrorTitle"),
+          text: t("alerts.companyDeleteErrorMessage"),
           icon: "error",
+          confirmButtonColor: "#D34053",
         });
       }
     }

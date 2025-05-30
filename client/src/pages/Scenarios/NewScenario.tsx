@@ -52,15 +52,33 @@ const NewScenario = () => {
           };
         }),
       );
-      setInteractiveAvatarOptions(
-        settings.interactive_avatar.split(",").map((item: string) => {
-          const [value, label] = item.trim().split(":");
-          return {
-            value: value?.trim() || "",
-            label: label?.trim() || value?.trim() || "",
-          };
-        }),
-      );
+
+      // Parse interactive avatars from JSON format
+      let avatarOptions = [];
+      if (settings.interactive_avatar) {
+        try {
+          const avatars = JSON.parse(settings.interactive_avatar);
+          avatarOptions = avatars.map((avatar: any) => ({
+            value: avatar.id,
+            label: avatar.name,
+          }));
+        } catch (error) {
+          // Fallback to old format for backward compatibility
+          console.warn(
+            "Failed to parse interactive_avatar as JSON, using old format",
+          );
+          avatarOptions = settings.interactive_avatar
+            .split(",")
+            .map((item: string) => {
+              const [value, label] = item.trim().split(":");
+              return {
+                value: value?.trim() || "",
+                label: label?.trim() || value?.trim() || "",
+              };
+            });
+        }
+      }
+      setInteractiveAvatarOptions(avatarOptions);
     };
     loadSettingsFn();
     getUsers();

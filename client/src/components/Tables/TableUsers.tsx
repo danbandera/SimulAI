@@ -319,27 +319,31 @@ const TableUsers = ({ users }: { users: any }) => {
     e.preventDefault(); // Prevent the Link navigation
 
     const result = await Swal.fire({
-      title: "¿Estás seguro?",
-      text: "No podrás revertir esta acción",
+      title: t("alerts.deleteConfirmTitle"),
+      text: t("alerts.deleteConfirmMessage"),
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#3C50E0",
       cancelButtonColor: "#D34053",
+      confirmButtonText: t("alerts.yes"),
+      cancelButtonText: t("alerts.cancel"),
     });
 
     if (result.isConfirmed) {
       try {
         await deleteUser(userId);
         Swal.fire({
-          title: "¡Eliminado!",
-          text: "El usuario ha sido eliminado.",
+          title: t("alerts.deleteSuccessTitle"),
+          text: t("alerts.userDeletedMessage"),
           icon: "success",
+          confirmButtonColor: "#3C50E0",
         });
       } catch (error) {
         Swal.fire({
-          title: "Error",
-          text: "No se pudo eliminar el usuario.",
+          title: t("alerts.deleteErrorTitle"),
+          text: t("alerts.userDeleteErrorMessage"),
           icon: "error",
+          confirmButtonColor: "#D34053",
         });
       }
     }
@@ -423,8 +427,8 @@ const TableUsers = ({ users }: { users: any }) => {
           <div className="p-2.5 text-center xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
               {currentUser?.role === "admin"
-                ? "Company/Department"
-                : "Department"}
+                ? t("users.companyDepartment")
+                : t("users.department")}
             </h5>
           </div>
           <div className="p-2.5 text-center xl:p-5">

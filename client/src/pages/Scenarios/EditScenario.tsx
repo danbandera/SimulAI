@@ -37,6 +37,7 @@ interface Scenario {
   avatar_language?: string;
   timeLimit?: number;
   time_limit?: number;
+  user_id_assigned?: number;
 }
 
 interface FormData {
@@ -94,17 +95,36 @@ const EditScenario = () => {
           };
         }),
       );
-      setInteractiveAvatarOptions(
-        settings.interactive_avatar.split(",").map((item: string) => {
-          const [value, label] = item.trim().split(":");
-          return {
-            value: value?.trim() || "",
-            label: label?.trim() || value?.trim() || "",
-          };
-        }),
-      );
+
+      // Parse interactive avatars from JSON format
+      let avatarOptions = [];
+      if (settings.interactive_avatar) {
+        try {
+          const avatars = JSON.parse(settings.interactive_avatar);
+          avatarOptions = avatars.map((avatar: any) => ({
+            value: avatar.id,
+            label: avatar.name,
+          }));
+        } catch (error) {
+          // Fallback to old format for backward compatibility
+          console.warn(
+            "Failed to parse interactive_avatar as JSON, using old format",
+          );
+          avatarOptions = settings.interactive_avatar
+            .split(",")
+            .map((item: string) => {
+              const [value, label] = item.trim().split(":");
+              return {
+                value: value?.trim() || "",
+                label: label?.trim() || value?.trim() || "",
+              };
+            });
+        }
+      }
+      setInteractiveAvatarOptions(avatarOptions);
     };
     loadSettingsFn();
+    getUsers();
   }, []);
 
   const languageOptions = [
@@ -134,12 +154,8 @@ const EditScenario = () => {
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
 
   useEffect(() => {
-    getUsers();
-  }, []);
-
-  useEffect(() => {
     const loadScenario = async () => {
-      const scenario = await getScenario(Number(id));
+      const scenario = (await getScenario(Number(id))) as Scenario;
 
       // Find users assigned to this scenario
       let assignedUsers: UserOption[] = [];
@@ -181,7 +197,8 @@ const EditScenario = () => {
         show_image_prompt: scenario.show_image_prompt || false,
         interactiveAvatar: scenario.interactive_avatar || "",
         avatarLanguage: scenario.avatar_language || "es",
-        timeLimit: scenario.timeLimit || scenario.time_limit || 30,
+        timeLimit:
+          (scenario as any).timeLimit || (scenario as any).time_limit || 30,
       });
     };
     loadScenario();
@@ -692,10 +709,12 @@ const EditScenario = () => {
                       <span className="text-meta-1">*</span>
                     </label>
                     <Select
-                      options={users.map((user) => ({
-                        value: user.id,
-                        label: `${user.name} (${user.email})`,
-                      }))}
+                      options={users
+                        .filter((user) => user.id !== undefined)
+                        .map((user) => ({
+                          value: user.id!,
+                          label: `${user.name} (${user.email})`,
+                        }))}
                       value={formData.users}
                       onChange={handleUserSelect}
                       isMulti={true}

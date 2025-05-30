@@ -102,8 +102,9 @@ const Profile = () => {
       // sweetalert
       Swal.fire({
         icon: "error",
-        title: "Oops...",
-        text: "New passwords don't match!",
+        title: t("alerts.passwordMismatchTitle"),
+        text: t("alerts.passwordMismatchMessage"),
+        confirmButtonColor: "#D34053",
       });
       return;
     }

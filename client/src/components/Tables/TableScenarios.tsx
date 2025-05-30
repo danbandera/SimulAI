@@ -290,27 +290,31 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
     e.preventDefault(); // Prevent the Link navigation
 
     const result = await Swal.fire({
-      title: "¿Estás seguro?",
-      text: "No podrás revertir esta acción",
+      title: t("alerts.deleteConfirmTitle"),
+      text: t("alerts.deleteConfirmMessage"),
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#3C50E0",
       cancelButtonColor: "#D34053",
+      confirmButtonText: t("alerts.yes"),
+      cancelButtonText: t("alerts.cancel"),
     });
 
     if (result.isConfirmed) {
       try {
         await deleteScenario(scenarioId);
         Swal.fire({
-          title: "¡Eliminado!",
-          text: "El usuario ha sido eliminado.",
+          title: t("alerts.deleteSuccessTitle"),
+          text: t("alerts.scenarioDeletedMessage"),
           icon: "success",
+          confirmButtonColor: "#3C50E0",
         });
       } catch (error) {
         Swal.fire({
-          title: "Error",
-          text: "No se pudo eliminar el usuario.",
+          title: t("alerts.deleteErrorTitle"),
+          text: t("alerts.scenarioDeleteErrorMessage"),
           icon: "error",
+          confirmButtonColor: "#D34053",
         });
       }
     }

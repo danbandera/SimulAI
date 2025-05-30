@@ -17,20 +17,32 @@ import { ScenarioProvider } from "./context/ScenarioContext";
 import NewScenario from "./pages/Scenarios/NewScenario";
 import ScenarioDetail from "./pages/Scenarios/ScenarioDetail";
 import Login from "./pages/Login/Login";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import SendEmail from "./components/SendEmail";
 import ScenarioConversations from "./pages/Scenarios/ScenarioConversations";
 import EditScenario from "./pages/Scenarios/EditScenario";
 import RecoverPassword from "./pages/RecoverPassword/RecoverPassword";
 import ResetPassword from "./pages/ResetPassword/ResetPassword";
-import SettingsAdmin from "./pages/SettingsAdmin";
+import AISettings from "./pages/AISettings";
+import SystemSettings from "./pages/SystemSettings";
 import ScenarioReport from "./pages/Scenarios/ScenarioReport";
 
 // Admin-only route wrapper
 const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   const { currentUser } = useUsers();
+  const { user, loading } = useAuth();
 
+  // Show loading while authentication or user data is being loaded
+  if (loading || (user && !currentUser)) {
+    return (
+      <div className="flex justify-center items-center h-60">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Check admin privileges after loading is complete
   if (currentUser?.role !== "admin") {
     return (
       <div className="flex justify-center items-center h-60">
@@ -186,11 +198,24 @@ function App() {
                   />
 
                   <Route
-                    path="/settings-admin"
+                    path="/ai-settings"
                     element={
                       <>
-                        <PageTitle title="Settings | Admin Dashboard" />
-                        <SettingsAdmin />
+                        <PageTitle title="AI Settings | Admin Dashboard" />
+                        <AdminRoute>
+                          <AISettings />
+                        </AdminRoute>
+                      </>
+                    }
+                  />
+                  <Route
+                    path="/system-settings"
+                    element={
+                      <>
+                        <PageTitle title="System Settings | Admin Dashboard" />
+                        <AdminRoute>
+                          <SystemSettings />
+                        </AdminRoute>
                       </>
                     }
                   />

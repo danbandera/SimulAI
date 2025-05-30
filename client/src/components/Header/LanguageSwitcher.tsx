@@ -7,8 +7,8 @@ const LanguageSwitcher = () => {
   const [dropdownOpen, setDropdownOpen] = useState(false);
 
   const languages = [
-    { code: "en", label: t("common.english") },
     { code: "es", label: t("common.spanish") },
+    { code: "en", label: t("common.english") },
     { code: "fr", label: t("common.french") },
   ];
 

@@ -7,8 +7,36 @@ import { parse } from "csv-parse/sync";
 
 export const getUsers = async (req, res) => {
   try {
-    const result = await connectSqlDB.from("users").select();
-    res.json(result.data);
+    // Get all users
+    const { data: users, error: usersError } = await connectSqlDB
+      .from("users")
+      .select("*");
+
+    if (usersError) {
+      throw usersError;
+    }
+
+    // Get user departments for all users
+    const usersWithDepartments = await Promise.all(
+      users.map(async (user) => {
+        const { data: userDepartments, error: deptError } = await connectSqlDB
+          .from("user_departments")
+          .select("department_id")
+          .eq("user_id", user.id);
+
+        if (deptError) {
+          console.error("Error fetching user departments:", deptError);
+          return { ...user, department_ids: [] };
+        }
+
+        return {
+          ...user,
+          department_ids: userDepartments.map((ud) => ud.department_id),
+        };
+      })
+    );
+
+    res.json(usersWithDepartments);
   } catch (error) {
     console.error("Database Error:", error);
     res.status(500).json({ message: error.message });
@@ -18,16 +46,37 @@ export const getUsers = async (req, res) => {
 export const getUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const result = await connectSqlDB
+    const { data: user, error: userError } = await connectSqlDB
       .from("users")
-      .select()
+      .select("*")
       .eq("id", id)
       .single();
 
-    if (result.data.length === 0) {
+    if (userError) {
+      throw userError;
+    }
+
+    if (!user) {
       return res.status(404).json({ message: "User not found" });
     }
-    res.json(result.data);
+
+    // Get user departments
+    const { data: userDepartments, error: deptError } = await connectSqlDB
+      .from("user_departments")
+      .select("department_id")
+      .eq("user_id", id);
+
+    if (deptError) {
+      console.error("Error fetching user departments:", deptError);
+      return res.json({ ...user, department_ids: [] });
+    }
+
+    const userWithDepartments = {
+      ...user,
+      department_ids: userDepartments.map((ud) => ud.department_id),
+    };
+
+    res.json(userWithDepartments);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -35,8 +84,16 @@ export const getUser = async (req, res) => {
 
 export const createUser = async (req, res) => {
   try {
-    const { name, lastname, department, role, email, password, created_by } =
-      req.body;
+    const {
+      name,
+      lastname,
+      company_id,
+      department_ids,
+      role,
+      email,
+      password,
+      created_by,
+    } = req.body;
     console.log("Create User:", req.body);
     // Check for existing user with better error handling
     const { data: existingUser, error: searchError } = await connectSqlDB
@@ -64,7 +121,7 @@ export const createUser = async (req, res) => {
       .insert({
         name,
         lastname,
-        department,
+        company_id,
         role,
         email,
         password: hashedPassword,
@@ -77,6 +134,23 @@ export const createUser = async (req, res) => {
     if (insertError) {
       console.error("Error inserting user:", insertError);
       return res.status(500).json({ message: "Error creating user" });
+    }
+
+    // Insert user departments if provided
+    if (department_ids && department_ids.length > 0) {
+      const userDepartments = department_ids.map((deptId) => ({
+        user_id: newUser.id,
+        department_id: deptId,
+      }));
+
+      const { error: deptInsertError } = await connectSqlDB
+        .from("user_departments")
+        .insert(userDepartments);
+
+      if (deptInsertError) {
+        console.error("Error inserting user departments:", deptInsertError);
+        // Continue even if department insertion fails
+      }
     }
 
     // Create access token after successful user creation
@@ -108,12 +182,20 @@ export const createUser = async (req, res) => {
 export const updateUser = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, lastname, department, role, email, password, created_by } =
-      req.body;
+    const {
+      name,
+      lastname,
+      company_id,
+      department_ids,
+      role,
+      email,
+      password,
+      created_by,
+    } = req.body;
     const updateData = {
       name,
       lastname,
-      department,
+      company_id,
       role,
       email,
       profile_image: "",
@@ -152,6 +234,29 @@ export const updateUser = async (req, res) => {
 
     if (result.error) {
       throw result.error;
+    }
+
+    // Update user departments
+    if (department_ids !== undefined) {
+      // First, delete existing user departments
+      await connectSqlDB.from("user_departments").delete().eq("user_id", id);
+
+      // Then insert new departments if any
+      if (department_ids.length > 0) {
+        const userDepartments = department_ids.map((deptId) => ({
+          user_id: parseInt(id),
+          department_id: deptId,
+        }));
+
+        const { error: deptInsertError } = await connectSqlDB
+          .from("user_departments")
+          .insert(userDepartments);
+
+        if (deptInsertError) {
+          console.error("Error updating user departments:", deptInsertError);
+          // Continue even if department update fails
+        }
+      }
     }
 
     res.json(result.data);
@@ -303,7 +408,7 @@ export const importUsersFromCSV = async (req, res) => {
           .insert({
             name: record.name,
             lastname: record.lastname,
-            department: record.department || "",
+            company_id: record.company_id || null,
             role: record.role,
             email: record.email,
             password: hashedPassword,
@@ -319,6 +424,30 @@ export const importUsersFromCSV = async (req, res) => {
             reason: insertError.message,
           });
           continue;
+        }
+
+        // Handle department_ids if provided (comma-separated string)
+        if (record.department_ids && record.company_id) {
+          try {
+            const departmentIds = record.department_ids
+              .split(",")
+              .map((id) => parseInt(id.trim()))
+              .filter((id) => !isNaN(id));
+
+            if (departmentIds.length > 0) {
+              const userDepartments = departmentIds.map((deptId) => ({
+                user_id: newUser.id,
+                department_id: deptId,
+              }));
+
+              await connectSqlDB
+                .from("user_departments")
+                .insert(userDepartments);
+            }
+          } catch (deptError) {
+            console.error("Error inserting departments for user:", deptError);
+            // Continue even if department insertion fails
+          }
         }
 
         results.success.push({

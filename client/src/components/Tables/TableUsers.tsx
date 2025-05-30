@@ -1,15 +1,43 @@
 import { useNavigate } from "react-router-dom";
 import { useUsers } from "../../context/UserContext";
+import { useCompanies } from "../../context/CompanyContext";
 import { toast } from "react-hot-toast";
 import { Link } from "react-router-dom";
 import Swal from "sweetalert2";
 import { useTranslation } from "react-i18next";
+import { useEffect } from "react";
 
 const TableUsers = ({ users }: { users: any }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { deleteUser } = useUsers();
   const { currentUser } = useUsers();
+  const { companies, getCompanies } = useCompanies();
+
+  useEffect(() => {
+    getCompanies();
+  }, []);
+
+  // Helper function to get company name
+  const getCompanyName = (companyId: number) => {
+    const company = companies.find((c) => c.id === companyId);
+    return company ? company.name : "N/A";
+  };
+
+  // Helper function to get department names
+  const getDepartmentNames = (companyId: number, departmentIds: number[]) => {
+    const company = companies.find((c) => c.id === companyId);
+    if (company && departmentIds && departmentIds.length > 0) {
+      const departmentNames = departmentIds
+        .map((deptId) => {
+          const department = company.departments.find((d) => d.id === deptId);
+          return department ? department.name : null;
+        })
+        .filter(Boolean);
+      return departmentNames.length > 0 ? departmentNames.join(", ") : "N/A";
+    }
+    return "N/A";
+  };
 
   // Filter users based on role
   const filteredUsers = users.filter((user: any) => {
@@ -64,7 +92,7 @@ const TableUsers = ({ users }: { users: any }) => {
       </h4>
 
       <div className="flex flex-col">
-        <div className="grid grid-cols-3 rounded-sm bg-gray-2 dark:bg-meta-4 sm:grid-cols-5">
+        <div className="grid grid-cols-3 rounded-sm bg-gray-2 dark:bg-meta-4 sm:grid-cols-6">
           <div className="p-2.5 xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
               {t("users.name")}
@@ -73,6 +101,11 @@ const TableUsers = ({ users }: { users: any }) => {
           <div className="p-2.5 text-center xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
               {t("users.email")}
+            </h5>
+          </div>
+          <div className="p-2.5 text-center xl:p-5">
+            <h5 className="text-sm font-medium uppercase xsm:text-base">
+              Company/Department
             </h5>
           </div>
           <div className="p-2.5 text-center xl:p-5">
@@ -94,7 +127,7 @@ const TableUsers = ({ users }: { users: any }) => {
 
         {filteredUsers.map((user: any, key: any) => (
           <div
-            className={`grid grid-cols-3 sm:grid-cols-5 ${
+            className={`grid grid-cols-3 sm:grid-cols-6 ${
               key === filteredUsers.length - 1
                 ? ""
                 : "border-b border-stroke dark:border-strokedark"
@@ -112,13 +145,26 @@ const TableUsers = ({ users }: { users: any }) => {
             </div>
 
             <div className="flex items-center justify-center p-2.5 xl:p-5">
-              <p className="text-meta-3">
-                {user.role === "admin"
-                  ? t("users.admin")
-                  : user.role == "company"
-                    ? t("users.company")
-                    : t("users.user")}
+              <p className="text-black dark:text-white text-sm">
+                {user.company_id ? getCompanyName(user.company_id) : "N/A"}
+                {user.company_id &&
+                  user.department_ids &&
+                  user.department_ids.length > 0 && (
+                    <>
+                      <br />
+                      <span className="text-xs text-gray-500">
+                        {getDepartmentNames(
+                          user.company_id,
+                          user.department_ids,
+                        )}
+                      </span>
+                    </>
+                  )}
               </p>
+            </div>
+
+            <div className="flex items-center justify-center p-2.5 xl:p-5">
+              <p className="text-meta-3">{user.role}</p>
             </div>
             <div className="flex items-center justify-center p-2.5 xl:p-5">
               <Link

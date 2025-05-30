@@ -6,14 +6,14 @@ CREATE TABLE users (
   id SERIAL PRIMARY KEY,
   name VARCHAR(255) NOT NULL,
   lastname VARCHAR(255) NOT NULL,
-  department VARCHAR(255) DEFAULT NULL,
+  company_id INTEGER REFERENCES companies(id) ON DELETE SET NULL,
   role VARCHAR(255) NOT NULL,
   email VARCHAR(255) NOT NULL UNIQUE,
   password VARCHAR(255) NOT NULL,
   profile_image TEXT,
   created_by INTEGER REFERENCES users(id) ON DELETE CASCADE,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);  
+);
 
 -- Create companies table
 CREATE TABLE companies (
@@ -31,6 +31,15 @@ CREATE TABLE departments (
   company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create user_departments junction table for many-to-many relationship
+CREATE TABLE user_departments (
+  id SERIAL PRIMARY KEY,
+  user_id INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  department_id INTEGER REFERENCES departments(id) ON DELETE CASCADE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, department_id)
 );
 
 -- Crear la tabla scenarios

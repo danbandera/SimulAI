@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUsers } from "../../context/UserContext";
+import { useCompanies } from "../../context/CompanyContext";
 import Breadcrumb from "../../components/Breadcrumbs/Breadcrumb";
 import { toast } from "react-hot-toast";
 import { generateRandomPassword } from "../../utils/passwordUtils";
@@ -16,26 +17,46 @@ interface RoleOption {
   value: string;
   label: string;
 }
+interface CompanyOption {
+  value: number;
+  label: string;
+}
+interface DepartmentOption {
+  value: number;
+  label: string;
+}
 
 const NewUser: React.FC = () => {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { createUser, updateUser, users, getUsers, getUser } = useUsers();
+  const { companies, getCompanies } = useCompanies();
   const { currentUser } = useUsers();
   const [formData, setFormData] = useState({
     name: "",
     lastname: "",
-    department: "",
+    company_id: undefined as number | undefined,
+    department_ids: [] as number[],
     email: "",
     role: "",
     users: [] as number[],
   });
+
+  const [availableDepartments, setAvailableDepartments] = useState<
+    DepartmentOption[]
+  >([]);
+
   const userOptions: UserOption[] = users
     .filter((user) => user.role === "user")
     .map((user) => ({
       value: user.id || 0,
       label: `${user.name} ${user.lastname}`,
     }));
+
+  const companyOptions: CompanyOption[] = companies.map((company) => ({
+    value: company.id || 0,
+    label: company.name,
+  }));
 
   const handleUserSelect = (selectedOptions: readonly UserOption[]) => {
     setFormData({
@@ -54,6 +75,38 @@ const NewUser: React.FC = () => {
     setFormData({
       ...formData,
       role: selectedOption?.value || "",
+    });
+  };
+
+  const handleCompanyChange = (selectedOption: SingleValue<CompanyOption>) => {
+    const companyId = selectedOption?.value;
+    setFormData({
+      ...formData,
+      company_id: companyId,
+      department_ids: [], // Reset departments when company changes
+    });
+
+    // Update available departments based on selected company
+    if (companyId) {
+      const selectedCompany = companies.find((c) => c.id === companyId);
+      if (selectedCompany) {
+        const departmentOptions = selectedCompany.departments.map((dept) => ({
+          value: dept.id || 0,
+          label: dept.name,
+        }));
+        setAvailableDepartments(departmentOptions);
+      }
+    } else {
+      setAvailableDepartments([]);
+    }
+  };
+
+  const handleDepartmentChange = (
+    selectedOptions: readonly DepartmentOption[],
+  ) => {
+    setFormData({
+      ...formData,
+      department_ids: selectedOptions.map((option) => option.value),
     });
   };
 
@@ -121,6 +174,7 @@ const NewUser: React.FC = () => {
 
   useEffect(() => {
     getUsers();
+    getCompanies();
   }, []);
   return (
     <>
@@ -171,18 +225,33 @@ const NewUser: React.FC = () => {
                 <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
                   <div className="w-full xl:w-1/2">
                     <label className="mb-2.5 block text-black dark:text-white">
-                      {t("users.department")}
+                      {t("users.company")}
                     </label>
-                    <input
-                      type="text"
-                      name="department"
-                      value={formData.department}
-                      onChange={handleChange}
-                      placeholder="Enter user department"
-                      className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
+                    <Select
+                      options={companyOptions}
+                      onChange={handleCompanyChange}
+                      value={companyOptions.find(
+                        (option) => option.value === formData.company_id,
+                      )}
                     />
                   </div>
 
+                  <div className="w-full xl:w-1/2">
+                    <label className="mb-2.5 block text-black dark:text-white">
+                      {t("users.department")}
+                    </label>
+                    <Select
+                      options={availableDepartments}
+                      onChange={handleDepartmentChange}
+                      value={availableDepartments.filter((option) =>
+                        formData.department_ids.includes(option.value),
+                      )}
+                      isMulti={true}
+                    />
+                  </div>
+                </div>
+
+                <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
                   <div className="w-full xl:w-1/2">
                     <label className="mb-2.5 block text-black dark:text-white">
                       {t("users.email")}
@@ -197,11 +266,7 @@ const NewUser: React.FC = () => {
                       required
                     />
                   </div>
-                </div>
-
-                <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
                   <div className="w-full xl:w-1/2">
-                    {/* <SelectRole value={formData.role} onChange={handleChange} /> */}
                     <label className="mb-2.5 block text-black dark:text-white">
                       {t("users.role")}
                     </label>
@@ -213,6 +278,9 @@ const NewUser: React.FC = () => {
                       )}
                     />
                   </div>
+                </div>
+
+                <div className="mb-4.5 flex flex-col gap-6 xl:flex-row">
                   {formData.role === "company" && (
                     <div className="w-full xl:w-1/2">
                       <label className="mb-2.5 block text-black dark:text-white">

@@ -20,7 +20,8 @@ interface User {
   id?: number;
   name: string;
   lastname: string;
-  department?: string;
+  company_id?: number;
+  department_ids?: number[];
   email: string;
   role: string;
   password: string;

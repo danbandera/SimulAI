@@ -15,6 +15,24 @@ CREATE TABLE users (
   created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );  
 
+-- Create companies table
+CREATE TABLE companies (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  created_by INTEGER REFERENCES users(id) ON DELETE CASCADE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Create departments table
+CREATE TABLE departments (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  company_id INTEGER REFERENCES companies(id) ON DELETE CASCADE,
+  created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- Crear la tabla scenarios
 CREATE TABLE scenarios (
   id SERIAL PRIMARY KEY,

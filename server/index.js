@@ -5,6 +5,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { dirname } from "path";
 import userRoutes from "./routes/user.routes.js";
+import companyRoutes from "./routes/company.routes.js";
 import scenarioRoutes from "./routes/scenario.routes.js";
 import authRoutes from "./routes/auth.routes.js";
 import settingsRoutes from "./routes/settings.routes.js";
@@ -112,6 +113,7 @@ app.use(
 
 // API routes
 app.use("/api", userRoutes);
+app.use("/api/companies", companyRoutes);
 app.use("/api", scenarioRoutes);
 app.use("/api", authRoutes);
 app.use("/api/email", emailRoutes);

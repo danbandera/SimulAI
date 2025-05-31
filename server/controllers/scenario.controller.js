@@ -6,7 +6,19 @@ import OpenAI from "openai";
 import ffmpeg from "fluent-ffmpeg";
 import { decryptValue } from "../libs/encryption.js";
 import PDFDocument from "pdfkit";
-import { Document, Packer, Paragraph, TextRun, HeadingLevel } from "docx";
+import {
+  Document,
+  Packer,
+  Paragraph,
+  TextRun,
+  HeadingLevel,
+  Table,
+  TableRow,
+  TableCell,
+  WidthType,
+  BorderStyle,
+  ImageRun,
+} from "docx";
 
 // Set FFmpeg path based on OS
 const ffmpegPath =
@@ -1059,7 +1071,7 @@ export const exportReportToPdf = async (req, res) => {
   try {
     const { id, reportId } = req.params;
 
-    // Get report data
+    // Get report data with user information
     const { data: report, error } = await connectSqlDB
       .from("reports")
       .select(
@@ -1068,7 +1080,8 @@ export const exportReportToPdf = async (req, res) => {
         user:user_id (
           id,
           name,
-          email
+          email,
+          company_id
         )
       `
       )
@@ -1088,6 +1101,17 @@ export const exportReportToPdf = async (req, res) => {
       .eq("id", Number(id))
       .single();
 
+    // Get company information if user has a company
+    let company = null;
+    if (report.user?.company_id) {
+      const { data: companyData } = await connectSqlDB
+        .from("companies")
+        .select("name, logo")
+        .eq("id", report.user.company_id)
+        .single();
+      company = companyData;
+    }
+
     // Create PDF document
     const doc = new PDFDocument({ margin: 50 });
 
@@ -1100,6 +1124,38 @@ export const exportReportToPdf = async (req, res) => {
 
     // Pipe PDF document to response
     doc.pipe(res);
+
+    // Add company header if available
+    if (company) {
+      const headerY = 50;
+
+      // Add company name on the left
+      doc.fontSize(14).text(company.name, 50, headerY, { align: "left" });
+
+      // Add company logo on the right if available
+      if (company.logo) {
+        try {
+          // Fetch logo from URL
+          const logoResponse = await fetch(company.logo);
+          if (logoResponse.ok) {
+            const logoBuffer = await logoResponse.arrayBuffer();
+            const logoImage = Buffer.from(logoBuffer);
+
+            // Add logo to the right side of the header
+            doc.image(logoImage, doc.page.width - 150, headerY - 10, {
+              fit: [100, 40],
+              align: "right",
+            });
+          }
+        } catch (logoError) {
+          console.error("Error adding logo to PDF:", logoError);
+          // Continue without logo if there's an error
+        }
+      }
+
+      // Move down after header
+      doc.moveDown(3);
+    }
 
     // Add content to PDF
     doc.fontSize(20).text(`${report.title}`, { align: "center" });
@@ -1156,7 +1212,7 @@ export const exportReportToWord = async (req, res) => {
   try {
     const { id, reportId } = req.params;
 
-    // Get report data
+    // Get report data with user information
     const { data: report, error } = await connectSqlDB
       .from("reports")
       .select(
@@ -1165,7 +1221,8 @@ export const exportReportToWord = async (req, res) => {
         user:user_id (
           id,
           name,
-          email
+          email,
+          company_id
         )
       `
       )
@@ -1185,64 +1242,161 @@ export const exportReportToWord = async (req, res) => {
       .eq("id", Number(id))
       .single();
 
+    // Get company information if user has a company
+    let company = null;
+    if (report.user?.company_id) {
+      const { data: companyData } = await connectSqlDB
+        .from("companies")
+        .select("name, logo")
+        .eq("id", report.user.company_id)
+        .single();
+      company = companyData;
+    }
+
+    // Prepare header content
+    const headerChildren = [];
+
+    // Add company header if available
+    if (company) {
+      let logoBuffer = null;
+
+      // Fetch logo if available
+      if (company.logo) {
+        try {
+          const logoResponse = await fetch(company.logo);
+          if (logoResponse.ok) {
+            const logoArrayBuffer = await logoResponse.arrayBuffer();
+            logoBuffer = Buffer.from(logoArrayBuffer);
+          }
+        } catch (logoError) {
+          console.error("Error fetching logo for Word document:", logoError);
+          // Continue without logo if there's an error
+        }
+      }
+
+      // Create a table for header layout (company name left, logo right)
+      const headerTable = new Table({
+        width: {
+          size: 100,
+          type: WidthType.PERCENTAGE,
+        },
+        rows: [
+          new TableRow({
+            children: [
+              new TableCell({
+                children: [
+                  new Paragraph({
+                    text: company.name,
+                    alignment: "left",
+                    spacing: { after: 200 },
+                  }),
+                ],
+                width: {
+                  size: 70,
+                  type: WidthType.PERCENTAGE,
+                },
+                borders: {
+                  top: { style: BorderStyle.NONE },
+                  bottom: { style: BorderStyle.NONE },
+                  left: { style: BorderStyle.NONE },
+                  right: { style: BorderStyle.NONE },
+                },
+              }),
+              new TableCell({
+                children: [
+                  logoBuffer
+                    ? new Paragraph({
+                        children: [
+                          new ImageRun({
+                            data: logoBuffer,
+                            transformation: {
+                              width: 100,
+                              height: 40,
+                            },
+                          }),
+                        ],
+                        alignment: "right",
+                      })
+                    : new Paragraph({
+                        text: "",
+                        alignment: "right",
+                      }),
+                ],
+                width: {
+                  size: 30,
+                  type: WidthType.PERCENTAGE,
+                },
+                borders: {
+                  top: { style: BorderStyle.NONE },
+                  bottom: { style: BorderStyle.NONE },
+                  left: { style: BorderStyle.NONE },
+                  right: { style: BorderStyle.NONE },
+                },
+              }),
+            ],
+          }),
+        ],
+      });
+
+      headerChildren.push(headerTable);
+      headerChildren.push(new Paragraph({ text: "" })); // Spacing
+    }
+
     // Create Word document
     const doc = new Document({
       sections: [
         {
           properties: {},
-          children: [],
+          children: headerChildren,
         },
       ],
     });
 
-    // Add title
-    doc.addSection({
-      children: [
-        new Paragraph({
-          text: report.title,
-          heading: HeadingLevel.TITLE,
-          alignment: "center",
-        }),
-        new Paragraph({
-          text: `Scenario: ${scenario?.title || "Unknown"}`,
-          alignment: "left",
-        }),
-        new Paragraph({
-          text: `Generated: ${new Date(report.created_at).toLocaleString()}`,
-          alignment: "left",
-        }),
-        new Paragraph({
-          text: `By: ${report.user?.name || "Unknown"}`,
-          alignment: "left",
-        }),
-        new Paragraph({
-          text: "",
-          alignment: "left",
-        }),
-      ],
-    });
+    // Add title and content
+    const contentChildren = [
+      new Paragraph({
+        text: report.title,
+        heading: HeadingLevel.TITLE,
+        alignment: "center",
+      }),
+      new Paragraph({
+        text: `Scenario: ${scenario?.title || "Unknown"}`,
+        alignment: "left",
+      }),
+      new Paragraph({
+        text: `Generated: ${new Date(report.created_at).toLocaleString()}`,
+        alignment: "left",
+      }),
+      new Paragraph({
+        text: `By: ${report.user?.name || "Unknown"}`,
+        alignment: "left",
+      }),
+      new Paragraph({
+        text: "",
+        alignment: "left",
+      }),
+    ];
 
     // Process content with Markdown-like formatting
     const lines = report.content.split("\n");
-    const paragraphs = [];
 
     lines.forEach((line) => {
       if (line.startsWith("# ")) {
-        paragraphs.push(
+        contentChildren.push(
           new Paragraph({
             text: line.replace("# ", ""),
             heading: HeadingLevel.HEADING_1,
           })
         );
       } else if (line.startsWith("## ")) {
-        paragraphs.push(
+        contentChildren.push(
           new Paragraph({
             text: line.replace("## ", ""),
             heading: HeadingLevel.HEADING_2,
           })
         );
       } else if (line.startsWith("### ")) {
-        paragraphs.push(
+        contentChildren.push(
           new Paragraph({
             text: line.replace("### ", ""),
             heading: HeadingLevel.HEADING_3,
@@ -1251,7 +1405,7 @@ export const exportReportToWord = async (req, res) => {
       } else if (line.match(/^[A-Za-z\s]+: \d+$/)) {
         // Format aspect scores
         const [aspect, score] = line.split(":").map((s) => s.trim());
-        paragraphs.push(
+        contentChildren.push(
           new Paragraph({
             children: [
               new TextRun({
@@ -1265,15 +1419,15 @@ export const exportReportToWord = async (req, res) => {
           })
         );
       } else if (line.trim() === "") {
-        paragraphs.push(new Paragraph({}));
+        contentChildren.push(new Paragraph({}));
       } else {
-        paragraphs.push(new Paragraph({ text: line }));
+        contentChildren.push(new Paragraph({ text: line }));
       }
     });
 
-    // Add content paragraphs to document
+    // Add content to document
     doc.addSection({
-      children: paragraphs,
+      children: contentChildren,
     });
 
     // Generate Word document buffer

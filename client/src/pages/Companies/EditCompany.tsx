@@ -5,7 +5,7 @@ import { useUsers } from "../../context/UserContext";
 import Breadcrumb from "../../components/Breadcrumbs/Breadcrumb";
 import { toast } from "react-hot-toast";
 import { useTranslation } from "react-i18next";
-import { FiPlus, FiTrash } from "react-icons/fi";
+import { FiPlus, FiTrash, FiUpload, FiX } from "react-icons/fi";
 
 interface Department {
   id?: number;
@@ -25,6 +25,9 @@ const EditCompany: React.FC = () => {
     departments: [{ name: "" }] as Department[],
   });
 
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
+  const [existingLogo, setExistingLogo] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -39,6 +42,12 @@ const EditCompany: React.FC = () => {
                 ? company.departments
                 : [{ name: "" }],
           });
+
+          // Set existing logo
+          if (company.logo) {
+            setExistingLogo(company.logo);
+            setLogoPreview(company.logo);
+          }
         }
       } catch (error) {
         console.error("Error loading company:", error);
@@ -57,6 +66,57 @@ const EditCompany: React.FC = () => {
       ...formData,
       [e.target.name]: e.target.value,
     });
+  };
+
+  const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith("image/")) {
+        toast.error("Please select an image file");
+        return;
+      }
+
+      // Validate file size (5MB limit)
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error("Logo file size must be less than 5MB");
+        return;
+      }
+
+      setLogoFile(file);
+
+      // Create preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setLogoPreview(e.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const removeLogo = () => {
+    setLogoFile(null);
+    setLogoPreview(existingLogo); // Reset to existing logo if any
+    // Reset file input
+    const fileInput = document.getElementById(
+      "logo-upload",
+    ) as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = "";
+    }
+  };
+
+  const removeExistingLogo = () => {
+    setExistingLogo(null);
+    setLogoPreview(null);
+    setLogoFile(null);
+    // Reset file input
+    const fileInput = document.getElementById(
+      "logo-upload",
+    ) as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = "";
+    }
   };
 
   const handleDepartmentChange = (index: number, value: string) => {
@@ -107,11 +167,21 @@ const EditCompany: React.FC = () => {
     }
 
     try {
-      await updateCompany(Number(id), {
-        name: formData.name,
-        departments: validDepartments,
-        created_by: Number(currentUser?.id),
-      });
+      // If there's a new logo file, use FormData, otherwise use regular object
+      if (logoFile) {
+        const submitData = new FormData();
+        submitData.append("name", formData.name);
+        submitData.append("departments", JSON.stringify(validDepartments));
+        submitData.append("logo", logoFile);
+
+        await updateCompany(Number(id), submitData);
+      } else {
+        await updateCompany(Number(id), {
+          name: formData.name,
+          departments: validDepartments,
+          created_by: Number(currentUser?.id),
+        });
+      }
 
       toast.success("Company updated successfully!");
       navigate("/companies");
@@ -197,6 +267,52 @@ const EditCompany: React.FC = () => {
                       </div>
                     ))}
                   </div>
+                </div>
+
+                <div className="mb-4.5">
+                  <label className="mb-2.5 block text-black dark:text-white">
+                    Company Logo
+                  </label>
+
+                  {logoPreview ? (
+                    <div className="mb-3">
+                      <div className="relative inline-block">
+                        <img
+                          src={logoPreview}
+                          alt="Logo preview"
+                          className="h-20 w-20 object-contain rounded border border-stroke dark:border-strokedark"
+                        />
+                        <button
+                          type="button"
+                          onClick={logoFile ? removeLogo : removeExistingLogo}
+                          className="absolute -top-2 -right-2 inline-flex items-center justify-center rounded-full bg-danger p-1 text-white hover:bg-opacity-90"
+                        >
+                          <FiX size={12} />
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="mb-3">
+                      <label
+                        htmlFor="logo-upload"
+                        className="flex cursor-pointer items-center justify-center gap-2 rounded border-2 border-dashed border-stroke bg-gray py-6 px-4 text-center dark:border-strokedark dark:bg-meta-4"
+                      >
+                        <FiUpload size={20} />
+                        <span>Click to upload logo</span>
+                      </label>
+                    </div>
+                  )}
+
+                  <input
+                    type="file"
+                    id="logo-upload"
+                    accept="image/*"
+                    onChange={handleLogoChange}
+                    className="hidden"
+                  />
+                  <p className="text-sm text-gray-500 dark:text-gray-400">
+                    Supported formats: JPG, PNG, GIF. Max size: 5MB
+                  </p>
                 </div>
 
                 <button

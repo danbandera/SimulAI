@@ -288,7 +288,12 @@ const TableCompanies = ({ companies }: { companies: Company[] }) => {
       <SearchFilters onFilterChange={filterCompanies} />
 
       <div className="flex flex-col">
-        <div className="grid grid-cols-3 rounded-sm bg-gray-2 dark:bg-meta-4 sm:grid-cols-5">
+        <div className="grid grid-cols-4 rounded-sm bg-gray-2 dark:bg-meta-4 sm:grid-cols-6">
+          <div className="p-2.5 xl:p-5">
+            <h5 className="text-sm font-medium uppercase xsm:text-base">
+              Logo
+            </h5>
+          </div>
           <div className="p-2.5 xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
               Company Name
@@ -318,13 +323,29 @@ const TableCompanies = ({ companies }: { companies: Company[] }) => {
 
         {paginatedCompanies.map((company: Company, key: number) => (
           <div
-            className={`grid grid-cols-3 sm:grid-cols-5 ${
+            className={`grid grid-cols-4 sm:grid-cols-6 ${
               key === paginatedCompanies.length - 1
                 ? ""
                 : "border-b border-stroke dark:border-strokedark"
             }`}
             key={key}
           >
+            <div className="flex items-center justify-center p-2.5 xl:p-5">
+              {company.logo ? (
+                <img
+                  src={company.logo}
+                  alt={`${company.name} logo`}
+                  className="h-10 w-10 object-contain rounded"
+                />
+              ) : (
+                <div className="h-10 w-10 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center">
+                  <span className="text-xs text-gray-500 dark:text-gray-400">
+                    No Logo
+                  </span>
+                </div>
+              )}
+            </div>
+
             <div className="flex items-center gap-3 p-2.5 xl:p-5">
               <p className="text-black dark:text-white">{company.name}</p>
             </div>

@@ -1,4 +1,5 @@
 import { connectSqlDB } from "../db.cjs";
+import { uploadToS3, deleteFromS3 } from "../utils/s3.utils.js";
 
 // Get all companies with their departments
 export const getCompanies = async (req, res) => {
@@ -73,13 +74,35 @@ export const getCompany = async (req, res) => {
 // Create a new company with departments
 export const createCompany = async (req, res) => {
   try {
-    const { name, departments, created_by } = req.body;
+    let { name, departments, created_by } = req.body;
+    let logoUrl = null;
+
+    // Parse departments if it's a JSON string (from FormData)
+    if (typeof departments === "string") {
+      try {
+        departments = JSON.parse(departments);
+      } catch (parseError) {
+        console.error("Error parsing departments JSON:", parseError);
+        return res.status(400).json({ message: "Invalid departments format" });
+      }
+    }
+
+    // Handle logo upload if provided
+    if (req.file) {
+      try {
+        logoUrl = await uploadToS3(req.file, "company-logos");
+      } catch (uploadError) {
+        console.error("Error uploading logo:", uploadError);
+        return res.status(500).json({ message: "Error uploading logo" });
+      }
+    }
 
     // Create company
     const { data: newCompany, error: companyError } = await connectSqlDB
       .from("companies")
       .insert({
         name,
+        logo: logoUrl,
         created_by,
       })
       .select()
@@ -92,20 +115,27 @@ export const createCompany = async (req, res) => {
     // Create departments if provided
     let createdDepartments = [];
     if (departments && departments.length > 0) {
-      const departmentInserts = departments.map((dept) => ({
-        name: dept.name,
-        company_id: newCompany.id,
-      }));
+      // Filter out departments with empty names
+      const validDepartments = departments.filter(
+        (dept) => dept.name && dept.name.trim() !== ""
+      );
 
-      const { data: newDepartments, error: deptError } = await connectSqlDB
-        .from("departments")
-        .insert(departmentInserts)
-        .select();
+      if (validDepartments.length > 0) {
+        const departmentInserts = validDepartments.map((dept) => ({
+          name: dept.name.trim(),
+          company_id: newCompany.id,
+        }));
 
-      if (deptError) {
-        console.error("Error creating departments:", deptError);
-      } else {
-        createdDepartments = newDepartments || [];
+        const { data: newDepartments, error: deptError } = await connectSqlDB
+          .from("departments")
+          .insert(departmentInserts)
+          .select();
+
+        if (deptError) {
+          console.error("Error creating departments:", deptError);
+        } else {
+          createdDepartments = newDepartments || [];
+        }
       }
     }
 
@@ -123,15 +153,58 @@ export const createCompany = async (req, res) => {
 export const updateCompany = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, departments } = req.body;
+    let { name, departments } = req.body;
+    let logoUrl = null;
+
+    // Parse departments if it's a JSON string (from FormData)
+    if (typeof departments === "string") {
+      try {
+        departments = JSON.parse(departments);
+      } catch (parseError) {
+        console.error("Error parsing departments JSON:", parseError);
+        return res.status(400).json({ message: "Invalid departments format" });
+      }
+    }
 
     console.log(`Updating company ${id} with departments:`, departments);
+
+    // Get current company data to check for existing logo
+    const { data: currentCompany, error: currentCompanyError } =
+      await connectSqlDB.from("companies").select("logo").eq("id", id).single();
+
+    if (currentCompanyError) {
+      throw currentCompanyError;
+    }
+
+    // Handle logo upload if provided
+    if (req.file) {
+      try {
+        // Delete old logo if it exists
+        if (currentCompany.logo) {
+          try {
+            await deleteFromS3(currentCompany.logo);
+          } catch (deleteError) {
+            console.error("Error deleting old logo:", deleteError);
+            // Continue with upload even if deletion fails
+          }
+        }
+
+        logoUrl = await uploadToS3(req.file, "company-logos");
+      } catch (uploadError) {
+        console.error("Error uploading logo:", uploadError);
+        return res.status(500).json({ message: "Error uploading logo" });
+      }
+    } else {
+      // Keep existing logo if no new file is uploaded
+      logoUrl = currentCompany.logo;
+    }
 
     // Update company
     const { data: updatedCompany, error: companyError } = await connectSqlDB
       .from("companies")
       .update({
         name,
+        logo: logoUrl,
         updated_at: new Date().toISOString(),
       })
       .eq("id", id)
@@ -157,8 +230,13 @@ export const updateCompany = async (req, res) => {
     let createdDepartments = [];
 
     if (departments && departments.length > 0) {
-      // Process each department in the request
-      for (const dept of departments) {
+      // Filter out departments with empty names
+      const validDepartments = departments.filter(
+        (dept) => dept.name && dept.name.trim() !== ""
+      );
+
+      // Process each valid department in the request
+      for (const dept of validDepartments) {
         if (
           dept.id &&
           existingDepartments.find((existing) => existing.id === dept.id)
@@ -167,7 +245,7 @@ export const updateCompany = async (req, res) => {
           console.log(`Updating existing department ${dept.id}: ${dept.name}`);
           const { data: updatedDept, error: updateError } = await connectSqlDB
             .from("departments")
-            .update({ name: dept.name })
+            .update({ name: dept.name.trim() })
             .eq("id", dept.id)
             .select()
             .single();
@@ -184,7 +262,7 @@ export const updateCompany = async (req, res) => {
           const { data: newDept, error: createError } = await connectSqlDB
             .from("departments")
             .insert({
-              name: dept.name,
+              name: dept.name.trim(),
               company_id: id,
             })
             .select()
@@ -202,7 +280,9 @@ export const updateCompany = async (req, res) => {
       }
 
       // Find departments that were deleted (exist in DB but not in request)
-      const requestDeptIds = departments.filter((d) => d.id).map((d) => d.id);
+      const requestDeptIds = validDepartments
+        .filter((d) => d.id)
+        .map((d) => d.id);
       const deletedDepartments = existingDepartments.filter(
         (existing) => !requestDeptIds.includes(existing.id)
       );
@@ -283,6 +363,17 @@ export const deleteCompany = async (req, res) => {
 
     console.log(`Deleting company ${id} and cleaning up user assignments`);
 
+    // Get company data to check for logo
+    const { data: company, error: companyFetchError } = await connectSqlDB
+      .from("companies")
+      .select("logo")
+      .eq("id", id)
+      .single();
+
+    if (companyFetchError) {
+      console.error("Error fetching company:", companyFetchError);
+    }
+
     // Get all departments for this company first
     const { data: companyDepartments, error: deptError } = await connectSqlDB
       .from("departments")
@@ -325,6 +416,17 @@ export const deleteCompany = async (req, res) => {
       console.error("Error deleting departments:", deleteDeptError);
     } else {
       console.log("Successfully deleted departments");
+    }
+
+    // Delete company logo from S3 if it exists
+    if (company && company.logo) {
+      try {
+        await deleteFromS3(company.logo);
+        console.log("Successfully deleted company logo");
+      } catch (logoDeleteError) {
+        console.error("Error deleting company logo:", logoDeleteError);
+        // Continue with company deletion even if logo deletion fails
+      }
     }
 
     // Delete company

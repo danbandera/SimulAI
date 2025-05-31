@@ -11,6 +11,7 @@ export interface Department {
 export interface Company {
   id?: number;
   name: string;
+  logo?: string;
   departments: Department[];
   created_by?: number;
   created_at?: string;
@@ -22,8 +23,13 @@ export const getCompaniesRequest = async () => {
   return response.data;
 };
 
-export const createCompanyRequest = async (company: Company) => {
-  const response = await axios.post("/companies", company);
+export const createCompanyRequest = async (company: Company | FormData) => {
+  const config =
+    company instanceof FormData
+      ? { headers: { "Content-Type": "multipart/form-data" } }
+      : {};
+
+  const response = await axios.post("/companies", company, config);
   return response.data;
 };
 
@@ -32,8 +38,16 @@ export const getCompanyRequest = async (id: number) => {
   return response.data;
 };
 
-export const updateCompanyRequest = async (id: number, company: Company) => {
-  const response = await axios.put(`/companies/${id}`, company);
+export const updateCompanyRequest = async (
+  id: number,
+  company: Company | FormData,
+) => {
+  const config =
+    company instanceof FormData
+      ? { headers: { "Content-Type": "multipart/form-data" } }
+      : {};
+
+  const response = await axios.put(`/companies/${id}`, company, config);
   return response.data;
 };
 

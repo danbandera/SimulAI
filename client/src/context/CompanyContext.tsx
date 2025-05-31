@@ -18,9 +18,9 @@ import { useAuth } from "./AuthContext";
 interface CompanyContextType {
   companies: Company[];
   getCompanies: () => Promise<void>;
-  createCompany: (company: Company) => Promise<Company>;
+  createCompany: (company: Company | FormData) => Promise<Company>;
   deleteCompany: (id: number) => Promise<void>;
-  updateCompany: (id: number, company: Company) => Promise<Company>;
+  updateCompany: (id: number, company: Company | FormData) => Promise<Company>;
   getCompany: (id: number) => Promise<Company>;
 }
 
@@ -51,7 +51,7 @@ export const CompanyProvider = ({ children }: CompanyProviderProps) => {
     }
   };
 
-  const createCompany = async (company: Company) => {
+  const createCompany = async (company: Company | FormData) => {
     try {
       const response = await createCompanyRequest(company);
       setCompanies([...companies, response]);
@@ -76,7 +76,7 @@ export const CompanyProvider = ({ children }: CompanyProviderProps) => {
     }
   };
 
-  const updateCompany = async (id: number, company: Company) => {
+  const updateCompany = async (id: number, company: Company | FormData) => {
     try {
       const response = await updateCompanyRequest(id, company);
       if (response) {

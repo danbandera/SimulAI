@@ -934,7 +934,7 @@ Based on the evaluation, this candidate ${Math.random() > 0.5 ? "shows promise a
               {savedReports.map((report) => (
                 <div
                   key={report.id}
-                  className="border rounded-md p-4 hover:border-primary cursor-pointer"
+                  className="border rounded-md p-4 hover:border-primary"
                   onClick={() => setSelectedReport(report)}
                 >
                   <div className="flex justify-between items-center mb-2">
@@ -951,7 +951,7 @@ Based on the evaluation, this candidate ${Math.random() > 0.5 ? "shows promise a
                         >
                           PDF
                         </button>
-                        <button
+                        {/* <button
                           onClick={(e) => {
                             e.stopPropagation();
                             setSelectedReport(report);
@@ -960,7 +960,7 @@ Based on the evaluation, this candidate ${Math.random() > 0.5 ? "shows promise a
                           className="px-2 py-1 text-xs text-white bg-blue-700 rounded hover:bg-opacity-90"
                         >
                           Word
-                        </button>
+                        </button> */}
                       </div>
                       <div className="flex pt-6">
                         {/* Add toggle to show/hide report for user */}

@@ -213,14 +213,14 @@ const ECommerce: React.FC = () => {
                             >
                               PDF
                             </button>
-                            <button
+                            {/* <button
                               onClick={() =>
                                 exportToWord(scenario.id || 0, report.id)
                               }
                               className="px-2 py-1 text-xs text-white bg-blue-700 rounded hover:bg-opacity-90"
                             >
                               Word
-                            </button>
+                            </button> */}
                           </div>
                         </div>
                       </div>

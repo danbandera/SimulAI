@@ -430,4 +430,53 @@ router.get("/scenarios/:id/elapsed-time", async (req, res) => {
   }
 });
 
+// Add a new route to reset the timer for a specific scenario (admin only)
+router.delete("/scenarios/:id/reset-timer", async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // Check if id is valid
+    if (!id || isNaN(parseInt(id))) {
+      return res.status(400).json({ message: "Invalid scenario ID" });
+    }
+
+    // Verify scenario exists
+    const { data: scenario, error: scenarioError } = await connectSqlDB
+      .from("scenarios")
+      .select("id, title")
+      .eq("id", id)
+      .single();
+
+    if (scenarioError || !scenario) {
+      return res.status(404).json({ message: "Scenario not found" });
+    }
+
+    // Delete all conversations for this scenario to reset the timer
+    const { error: deleteError } = await connectSqlDB
+      .from("conversations")
+      .delete()
+      .eq("scenario_id", id);
+
+    if (deleteError) {
+      console.error("Error deleting conversations:", deleteError);
+      return res.status(500).json({
+        message: "Error resetting timer",
+        error: deleteError.message,
+      });
+    }
+
+    res.json({
+      message: "Timer reset successfully",
+      scenario_id: id,
+      scenario_title: scenario.title,
+    });
+  } catch (error) {
+    console.error("Error resetting timer:", error);
+    res.status(500).json({
+      message: "Server error while resetting timer",
+      error: error.message,
+    });
+  }
+});
+
 export default router;

@@ -32,6 +32,7 @@ interface InteractiveAvatarProps {
   scenarioId: number;
   scenarioTitle: string;
   currentUser?: User | null; // Use proper User type with null option
+  onTimeUpdate?: () => void; // Optional callback to refresh parent time info
 }
 const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   const [isLoadingSession, setIsLoadingSession] = useState(false);
@@ -58,7 +59,12 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
 
   const containerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
-  const { saveConversation } = useScenarios();
+  const {
+    saveConversation,
+    getScenario,
+    getScenarioElapsedTime,
+    resetScenarioTimer,
+  } = useScenarios();
   const [facialExpressions, setFacialExpressions] = useState<any[]>([]);
 
   // Use the passed currentUser if available, otherwise fall back to user from useAuth
@@ -83,7 +89,6 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const avatar = useRef<StreamingAvatar | null>(null);
   const [scenario, setScenario] = useState<ScenarioDetail | null>(null);
-  const { getScenario, getScenarioElapsedTime } = useScenarios();
   const { loadSettings } = useAuth();
   const [settings, setSettings] = useState<any>(null);
   const [isTimeOver, setIsTimeOver] = useState(false);
@@ -192,14 +197,29 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
     setIsTimerRunning(true);
     setIsConversationActive(true);
     startTimeRef.current = Date.now();
+    let updateCounter = 0; // Counter to track when to update parent
 
     timerIntervalRef.current = setInterval(() => {
-      if (startTimeRef.current === null) return;
+      if (startTimeRef.current === null || !scenario?.timeLimit) return;
 
-      const elapsed = (Date.now() - startTimeRef.current) / 1000;
-      const newTimeRemaining = Math.max(0, timeRemaining - elapsed);
+      // Calculate elapsed time since this session started
+      const sessionElapsed = (Date.now() - startTimeRef.current) / 1000;
+
+      // Calculate total elapsed time (previous sessions + current session)
+      const totalElapsed = elapsedTimeRef.current + sessionElapsed;
+
+      // Calculate remaining time based on the scenario's total time limit
+      const totalTimeInSeconds = (scenario.timeLimit as number) * 60;
+      const newTimeRemaining = Math.max(0, totalTimeInSeconds - totalElapsed);
 
       setTimeRemaining(newTimeRemaining);
+
+      // Update parent component every 5 seconds to keep progress bar in sync
+      updateCounter++;
+      if (updateCounter >= 5 && props.onTimeUpdate) {
+        props.onTimeUpdate();
+        updateCounter = 0;
+      }
 
       if (newTimeRemaining <= 0) {
         setIsTimeOver(true);
@@ -282,6 +302,11 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
       setTimeRemaining(timeData.remaining_time);
       // Reset elapsed time to what's already been used
       elapsedTimeRef.current = timeData.total_elapsed_time;
+
+      // Immediately update parent component to sync progress bar
+      if (props.onTimeUpdate) {
+        props.onTimeUpdate();
+      }
 
       // We'll start the timer only after the avatar is loaded
       // Start loading the avatar
@@ -467,6 +492,22 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
     await avatar.current?.stopAvatar();
     setStream(undefined);
     setIsSavingConversation(false);
+
+    // Update the remaining time to reflect the actual time used
+    // This ensures the display shows the correct remaining time after the session
+    if (scenario?.timeLimit) {
+      const totalTimeInSeconds = (scenario.timeLimit as number) * 60;
+      const newTimeRemaining = Math.max(
+        0,
+        totalTimeInSeconds - elapsedTimeRef.current,
+      );
+      setTimeRemaining(newTimeRemaining);
+    }
+
+    // Call the onTimeUpdate callback if provided
+    if (props.onTimeUpdate) {
+      props.onTimeUpdate();
+    }
   }
 
   async function handleSpeak() {
@@ -582,6 +623,9 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   // Add a function to reset the timer
   const resetTimer = async () => {
     try {
+      // Call the server-side API to reset the timer (deletes all conversations)
+      await resetScenarioTimer(scenarioId);
+
       // Clear the timer from localStorage
       localStorage.removeItem(`scenario_${scenarioId}_elapsed_time`);
 
@@ -596,21 +640,38 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
       // Reset the time over state
       setIsTimeOver(false);
 
+      // Reset the hasCheckedTimeStatus to force a recheck
+      setHasCheckedTimeStatus(false);
+
       toast.success(
-        t("scenarios.timerReset", "Timer has been reset successfully."),
+        t(
+          "scenarios.timerReset",
+          "Timer has been reset successfully. All previous conversations have been deleted.",
+        ),
       );
 
-      // Recheck time status
-      const timeData = await getScenarioElapsedTime(scenarioId);
-      if (timeData.remaining_time <= 0) {
-        // If the API still says we're out of time (which shouldn't happen after reset),
-        // we'll need server-side reset as well
-        toast.error(
-          t(
-            "scenarios.errorResettingTimer",
-            "There was an issue resetting the timer. Please contact support.",
-          ),
+      // Recheck time status from server to confirm reset
+      try {
+        const timeData = await getScenarioElapsedTime(scenarioId);
+        setTimeRemaining(timeData.remaining_time);
+        elapsedTimeRef.current = timeData.total_elapsed_time;
+        setHasCheckedTimeStatus(true);
+
+        if (timeData.remaining_time <= 0) {
+          setIsTimeOver(true);
+          toast.error(
+            t(
+              "scenarios.errorResettingTimer",
+              "There was an issue resetting the timer. Please contact support.",
+            ),
+          );
+        }
+      } catch (recheckError) {
+        console.error(
+          "Error rechecking time status after reset:",
+          recheckError,
         );
+        setHasCheckedTimeStatus(true);
       }
     } catch (error) {
       console.error("Error resetting timer:", error);
@@ -632,16 +693,20 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
             className={`px-4 py-2 rounded-lg ${
               isTimeOver
                 ? "bg-red-600 animate-pulse"
-                : timeRemaining > 300
-                  ? "bg-green-500"
-                  : timeRemaining > 60
-                    ? "bg-yellow-500"
-                    : "bg-red-500 animate-pulse"
+                : !isConversationActive && !stream
+                  ? "bg-gray-500"
+                  : timeRemaining > 300
+                    ? "bg-green-500"
+                    : timeRemaining > 60
+                      ? "bg-yellow-500"
+                      : "bg-red-500 animate-pulse"
             } text-white font-bold`}
           >
             {isTimeOver
               ? t("scenarios.timeExpired", "Time Expired")
-              : `${t("scenarios.timeRemaining", "Time Remaining")}: ${formatTime(timeRemaining)}`}
+              : !isConversationActive && !stream
+                ? t("scenarios.sessionEnded", "Session Ended")
+                : `${t("scenarios.timeRemaining", "Time Remaining")}: ${formatTime(timeRemaining)}`}
           </div>
         )}
 

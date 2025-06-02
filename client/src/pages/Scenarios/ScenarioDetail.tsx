@@ -66,6 +66,18 @@ const ScenarioDetail = () => {
     }
   };
 
+  // Function to refresh time information
+  const refreshTimeInfo = async () => {
+    if (id) {
+      try {
+        const timeData = await getScenarioElapsedTime(parseInt(id));
+        setTimeInfo(timeData);
+      } catch (timeError) {
+        console.error("Error loading time information:", timeError);
+      }
+    }
+  };
+
   useEffect(() => {
     getUsers();
   }, []);
@@ -80,12 +92,7 @@ const ScenarioDetail = () => {
             setScenario(data as unknown as ScenarioDetail);
 
             // Load elapsed time information
-            try {
-              const timeData = await getScenarioElapsedTime(parseInt(id));
-              setTimeInfo(timeData);
-            } catch (timeError) {
-              console.error("Error loading time information:", timeError);
-            }
+            await refreshTimeInfo();
           }
         } catch (error) {
           console.error("Error loading scenario:", error);
@@ -93,7 +100,19 @@ const ScenarioDetail = () => {
       }
     };
     loadScenario();
-  }, [id, getScenario, getScenarioElapsedTime]);
+  }, [id, getScenario]);
+
+  // Set up periodic refresh of time information
+  useEffect(() => {
+    if (!id) return;
+
+    // Refresh time info every 5 seconds to stay in sync with timer
+    const interval = setInterval(() => {
+      refreshTimeInfo();
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [id]);
 
   const handleEdit = () => {
     navigate(`/scenarios/edit/${id}`);
@@ -418,6 +437,7 @@ const ScenarioDetail = () => {
                     }
                   : null
               }
+              onTimeUpdate={refreshTimeInfo}
             />
           </div>
         </div>

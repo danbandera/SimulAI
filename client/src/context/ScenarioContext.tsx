@@ -11,6 +11,7 @@ import {
   getConversationsRequest,
   generateImageRequest,
   getScenarioElapsedTimeRequest,
+  resetScenarioTimerRequest,
 } from "../api/scenarios.api";
 
 interface Scenario {
@@ -58,6 +59,7 @@ interface ScenarioContextValue {
     remaining_time: number;
     conversations_count: number;
   }>;
+  resetScenarioTimer: (scenarioId: number) => Promise<any>;
 }
 
 interface ScenarioProviderProps {
@@ -191,6 +193,17 @@ export const ScenarioProvider = ({ children }: ScenarioProviderProps) => {
     }
   };
 
+  const resetScenarioTimer = async (scenarioId: number) => {
+    try {
+      const response = await resetScenarioTimerRequest(scenarioId);
+      return response;
+    } catch (error) {
+      console.error("Error resetting scenario timer:", error);
+      toast.error("Error resetting scenario timer");
+      throw error;
+    }
+  };
+
   return (
     <ScenarioContext.Provider
       value={{
@@ -204,6 +217,7 @@ export const ScenarioProvider = ({ children }: ScenarioProviderProps) => {
         getConversations,
         generateImage,
         getScenarioElapsedTime,
+        resetScenarioTimer,
       }}
     >
       {children}

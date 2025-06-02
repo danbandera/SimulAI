@@ -157,6 +157,7 @@
     "resetTimer": "Réinitialiser le Timer",
     "timeExpired": "Votre temps alloué pour ce scénario a expiré.",
     "timeRemaining": "Temps Restant",
+    "sessionEnded": "Session Terminée",
     "noTimeRemaining": "Aucun temps restant pour ce scénario. La limite de temps a été atteinte.",
     "checkingTimeStatus": "Veuillez patienter pendant que nous vérifions votre temps restant...",
     "assignUsers": "Assigner des Utilisateurs",

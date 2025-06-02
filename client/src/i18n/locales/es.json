@@ -153,6 +153,7 @@
     "remainingTime": "Restante",
     "timeExpired": "Su tiempo para este escenario ha expirado.",
     "timeRemaining": "Tiempo Restante",
+    "sessionEnded": "Sesión Finalizada",
     "resetTimer": "Reiniciar Tiempo",
     "noTimeRemaining": "No hay tiempo restante para este escenario. El límite de tiempo ha sido alcanzado.",
     "checkingTimeStatus": "Verificando estado del tiempo...",

@@ -311,3 +311,8 @@ export const getScenarioElapsedTimeRequest = async (id: number) => {
   const response = await axios.get(`/scenarios/${id}/elapsed-time`);
   return response.data;
 };
+
+export const resetScenarioTimerRequest = async (id: number) => {
+  const response = await axios.delete(`/scenarios/${id}/reset-timer`);
+  return response.data;
+};

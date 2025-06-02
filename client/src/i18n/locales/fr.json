@@ -161,7 +161,18 @@
     "checkingTimeStatus": "Veuillez patienter pendant que nous vérifions votre temps restant...",
     "assignUsers": "Assigner des Utilisateurs",
     "selectUsers": "Sélectionner des Utilisateurs",
-    "selectCategories": "Sélectionner des Catégories"
+    "selectCategories": "Sélectionner des Catégories",
+    "conversationsAnalyzed": "Conversations Analysées",
+    "aspectsEvaluated": "Aspects Évalués",
+    "scoresGenerated": "Scores Générés",
+    "visibleToUsers": "Visible pour les utilisateurs",
+    "hiddenFromUsers": "Caché aux utilisateurs",
+    "loadingAssistants": "Chargement des assistants...",
+    "enterReportTitle": "Entrez le titre du rapport",
+    "enterPrompt": "Entrez le prompt",
+    "noContextAvailable": "Aucun contexte disponible",
+    "noAspectsAvailable": "Aucun aspect disponible",
+    "audioNotSupported": "Votre navigateur ne supporte pas l'élément audio."
   },
   "console": {
     "startConversation": "Démarrer la Conversation",

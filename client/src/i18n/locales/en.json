@@ -160,7 +160,18 @@
     "checkingTimeStatus": "Please wait while we check your remaining time...",
     "assignUsers": "Assign Users",
     "selectUsers": "Select Users",
-    "selectCategories": "Select Categories"
+    "selectCategories": "Select Categories",
+    "conversationsAnalyzed": "Conversations Analyzed",
+    "aspectsEvaluated": "Aspects Evaluated",
+    "scoresGenerated": "Scores Generated",
+    "visibleToUsers": "Visible to users",
+    "hiddenFromUsers": "Hidden from users",
+    "loadingAssistants": "Loading assistants...",
+    "enterReportTitle": "Enter report title",
+    "enterPrompt": "Enter prompt",
+    "noContextAvailable": "No context available",
+    "noAspectsAvailable": "No aspects available",
+    "audioNotSupported": "Your browser does not support the audio element."
   },
   "console": {
     "startConversation": "Start Conversation",

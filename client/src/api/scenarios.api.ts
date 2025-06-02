@@ -257,8 +257,11 @@ export const exportReportToPdfRequest = async (
   reportId: number | string,
 ) => {
   try {
+    // Get current language from i18n
+    const currentLanguage = localStorage.getItem("i18nextLng") || "es";
+
     window.open(
-      `${axios.defaults.baseURL}/scenarios/${scenarioId}/reports/${reportId}/export/pdf`,
+      `${axios.defaults.baseURL}/scenarios/${scenarioId}/reports/${reportId}/export/pdf?lang=${currentLanguage}`,
       "_blank",
     );
     return true;
@@ -273,8 +276,11 @@ export const exportReportToWordRequest = async (
   reportId: number | string,
 ) => {
   try {
+    // Get current language from i18n
+    const currentLanguage = localStorage.getItem("i18nextLng") || "es";
+
     window.open(
-      `${axios.defaults.baseURL}/scenarios/${scenarioId}/reports/${reportId}/export/word`,
+      `${axios.defaults.baseURL}/scenarios/${scenarioId}/reports/${reportId}/export/word?lang=${currentLanguage}`,
       "_blank",
     );
     return true;

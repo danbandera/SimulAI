@@ -158,7 +158,18 @@
     "checkingTimeStatus": "Verificando estado del tiempo...",
     "assignUsers": "Asignar Usuarios",
     "selectUsers": "Seleccionar Usuarios",
-    "selectCategories": "Seleccionar Categorías"
+    "selectCategories": "Seleccionar Categorías",
+    "conversationsAnalyzed": "Conversaciones Analizadas",
+    "aspectsEvaluated": "Aspectos Evaluados",
+    "scoresGenerated": "Puntuaciones Generadas",
+    "visibleToUsers": "Visible para usuarios",
+    "hiddenFromUsers": "Oculto para usuarios",
+    "loadingAssistants": "Cargando asistentes...",
+    "enterReportTitle": "Ingrese título del reporte",
+    "enterPrompt": "Ingrese prompt",
+    "noContextAvailable": "No hay contexto disponible",
+    "noAspectsAvailable": "No hay aspectos disponibles",
+    "audioNotSupported": "Su navegador no soporta el elemento de audio."
   },
   "console": {
     "startConversation": "Iniciar Conversación",

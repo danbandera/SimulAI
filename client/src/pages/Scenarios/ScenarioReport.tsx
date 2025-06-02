@@ -17,6 +17,28 @@ import {
 } from "../../api/scenarios.api";
 import SwitcherThree from "../../components/Switchers/SwitcherThree";
 
+// Add custom styles for better text handling
+const customStyles = `
+  .line-clamp-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  
+  .prose {
+    max-width: none;
+  }
+  
+  .prose h1, .prose h2, .prose h3 {
+    color: inherit;
+  }
+  
+  .prose p {
+    margin-bottom: 1rem;
+  }
+`;
+
 interface ConversationMessage {
   role: string;
   message: string;
@@ -625,6 +647,7 @@ Based on the evaluation, this candidate ${Math.random() > 0.5 ? "shows promise a
 
   return (
     <>
+      <style>{customStyles}</style>
       <Breadcrumb pageName={`${t("scenarios.report")} - ${scenarioTitle}`} />
 
       <div className="grid grid-cols-1 gap-4 md:gap-6 2xl:gap-7.5">
@@ -801,169 +824,396 @@ Based on the evaluation, this candidate ${Math.random() > 0.5 ? "shows promise a
 
         {/* Report Section */}
         {report && (
-          <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark p-6">
-            <div className="flex flex-wrap justify-between items-center mb-6">
-              <h3 className="text-xl font-semibold">
-                {t("scenarios.generatedReport")}
-              </h3>
-              <div className="flex gap-2 mt-2 md:mt-0">
-                <button
-                  onClick={() => {
-                    // Copy report to clipboard
-                    navigator.clipboard.writeText(report);
-                    // Show toast or alert
-                    // alert(t("scenarios.reportCopied"));
-                  }}
-                  className="px-3 py-1.5 text-sm text-white bg-blue-500 rounded hover:bg-opacity-90"
-                >
-                  {t("scenarios.copyReport")}
-                </button>
-                <button
-                  onClick={saveReport}
-                  disabled={savingReport}
-                  className="px-3 py-1.5 text-sm text-white bg-green-600 rounded hover:bg-opacity-90 disabled:opacity-50"
-                >
-                  {savingReport ? (
-                    <>
-                      <svg
-                        className="animate-spin inline-block mr-1 h-4 w-4 text-white"
-                        xmlns="http://www.w3.org/2000/svg"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
+          <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+            <div className="border-b border-stroke py-4 px-6.5 dark:border-strokedark">
+              <div className="flex flex-wrap justify-between items-center mb-2">
+                <h3 className="text-xl font-semibold text-black dark:text-white">
+                  {t("scenarios.generatedReport")}
+                </h3>
+                <div className="flex gap-2 mt-2 md:mt-0">
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(report);
+                    }}
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors duration-200"
+                  >
+                    <svg
+                      className="w-4 h-4 mr-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                      />
+                    </svg>
+                    {t("scenarios.copyReport")}
+                  </button>
+                  <button
+                    onClick={saveReport}
+                    disabled={savingReport}
+                    className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-green-600 rounded-md hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors duration-200"
+                  >
+                    {savingReport ? (
+                      <>
+                        <svg
+                          className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                          ></path>
+                        </svg>
+                        {t("scenarios.savingReport")}
+                      </>
+                    ) : (
+                      <>
+                        <svg
+                          className="w-4 h-4 mr-2"
+                          fill="none"
                           stroke="currentColor"
-                          strokeWidth="4"
-                        ></circle>
-                        <path
-                          className="opacity-75"
-                          fill="currentColor"
-                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                        ></path>
-                      </svg>
-                      {t("scenarios.savingReport")}
-                    </>
-                  ) : (
-                    t("scenarios.saveReport")
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3-3m0 0l-3 3m3-3v12"
+                          />
+                        </svg>
+                        {t("scenarios.saveReport")}
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Report metadata */}
+              <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
+                <span className="flex items-center">
+                  <svg
+                    className="w-4 h-4 mr-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 9l2 2 4-4m6-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  {selectedConversations.length}{" "}
+                  {t(
+                    "scenarios.conversationsAnalyzed",
+                    "conversations analyzed",
                   )}
-                </button>
+                </span>
+                <span className="flex items-center">
+                  <svg
+                    className="w-4 h-4 mr-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                  {new Date().toLocaleString()}
+                </span>
+                <span className="flex items-center">
+                  <svg
+                    className="w-4 h-4 mr-1"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                    />
+                  </svg>
+                  AI Assistant:{" "}
+                  {assistants.find((a) => a.id === selectedAssistant)?.name ||
+                    "Unknown"}
+                </span>
               </div>
             </div>
 
-            <div className="markdown-body border rounded-md p-6 bg-gray-50 dark:bg-boxdark-2 whitespace-pre-line">
-              {report.split("\n").map((line, i) => {
-                // Add some basic Markdown styling
-                if (line.startsWith("# ")) {
-                  return (
-                    <h1 key={i} className="text-2xl font-bold mb-4 mt-2">
-                      {line.replace("# ", "")}
-                    </h1>
-                  );
-                } else if (line.startsWith("## ")) {
-                  return (
-                    <h2 key={i} className="text-xl font-bold mb-3 mt-4">
-                      {line.replace("## ", "")}
-                    </h2>
-                  );
-                } else if (line.startsWith("### ")) {
-                  return (
-                    <h3 key={i} className="text-lg font-bold mb-2 mt-3">
-                      {line.replace("### ", "")}
-                    </h3>
-                  );
-                } else if (line.match(/^[A-Za-z\s]+: \d+$/)) {
-                  // Style aspect scores
-                  const [aspect, score] = line.split(":").map((s) => s.trim());
-                  const scoreNum = parseInt(score);
-                  const scoreColor =
-                    scoreNum >= 80
-                      ? "text-green-600"
-                      : scoreNum >= 60
-                        ? "text-blue-600"
-                        : "text-red-600";
+            <div className="p-8">
+              <div className="max-w-none prose prose-lg dark:prose-invert">
+                {report.split("\n").map((line, i) => {
+                  // Enhanced Markdown-like styling with better typography
+                  if (line.startsWith("# ")) {
+                    return (
+                      <h1
+                        key={i}
+                        className="text-3xl font-bold text-gray-900 dark:text-white mb-6 mt-8 first:mt-0 pb-3 border-b-2 border-gray-200 dark:border-gray-700"
+                      >
+                        {line.replace("# ", "")}
+                      </h1>
+                    );
+                  } else if (line.startsWith("## ")) {
+                    return (
+                      <h2
+                        key={i}
+                        className="text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-4 mt-8 first:mt-0"
+                      >
+                        {line.replace("## ", "")}
+                      </h2>
+                    );
+                  } else if (line.startsWith("### ")) {
+                    return (
+                      <h3
+                        key={i}
+                        className="text-xl font-medium text-gray-700 dark:text-gray-200 mb-3 mt-6 first:mt-0"
+                      >
+                        {line.replace("### ", "")}
+                      </h3>
+                    );
+                  } else if (line.match(/^[A-Za-z\s]+: \d+$/)) {
+                    // Enhanced aspect scores with visual indicators
+                    const [aspect, score] = line
+                      .split(":")
+                      .map((s) => s.trim());
+                    const scoreNum = parseInt(score);
+                    const scoreColor =
+                      scoreNum >= 80
+                        ? "text-green-600 dark:text-green-400"
+                        : scoreNum >= 60
+                          ? "text-blue-600 dark:text-blue-400"
+                          : "text-red-600 dark:text-red-400";
 
-                  return (
-                    <div key={i} className="flex items-center mb-2">
-                      <span className="font-medium">{aspect}:</span>
-                      <span className={`ml-2 font-bold ${scoreColor}`}>
-                        {score}
-                      </span>
+                    const bgColor =
+                      scoreNum >= 80
+                        ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
+                        : scoreNum >= 60
+                          ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+                          : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800";
+
+                    return (
+                      <div
+                        key={i}
+                        className={`flex items-center justify-between p-4 mb-3 rounded-lg border ${bgColor}`}
+                      >
+                        <div className="flex items-center">
+                          <div
+                            className={`w-3 h-3 rounded-full mr-3 ${scoreNum >= 80 ? "bg-green-500" : scoreNum >= 60 ? "bg-blue-500" : "bg-red-500"}`}
+                          ></div>
+                          <span className="font-medium text-gray-900 dark:text-white">
+                            {aspect}
+                          </span>
+                        </div>
+                        <div className="flex items-center">
+                          <span
+                            className={`text-2xl font-bold ${scoreColor} mr-3`}
+                          >
+                            {score}
+                          </span>
+                          <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                            <div
+                              className={`h-2 rounded-full ${scoreNum >= 80 ? "bg-green-500" : scoreNum >= 60 ? "bg-blue-500" : "bg-red-500"}`}
+                              style={{ width: `${scoreNum}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  } else if (line.trim() === "") {
+                    return <div key={i} className="h-4" />;
+                  } else if (line.startsWith("- ") || line.startsWith("• ")) {
+                    // Enhanced bullet points
+                    return (
+                      <div key={i} className="flex items-start mb-2">
+                        <div className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                        <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                          {line.replace(/^[-•]\s*/, "")}
+                        </p>
+                      </div>
+                    );
+                  } else {
+                    // Regular paragraphs with better typography
+                    return (
+                      <p
+                        key={i}
+                        className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4 text-justify"
+                      >
+                        {line}
+                      </p>
+                    );
+                  }
+                })}
+              </div>
+
+              {/* Report footer with summary stats */}
+              <div className="mt-8 pt-6 border-t border-gray-200 dark:border-gray-700">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div className="text-2xl font-bold text-primary mb-1">
+                      {selectedConversations.length}
                     </div>
-                  );
-                } else if (line.trim() === "") {
-                  return <br key={i} />;
-                } else {
-                  return (
-                    <p key={i} className="mb-2">
-                      {line}
-                    </p>
-                  );
-                }
-              })}
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      {t(
+                        "scenarios.conversationsAnalyzed",
+                        "Conversations Analyzed",
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div className="text-2xl font-bold text-primary mb-1">
+                      {scenarioAspects.length}
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      {t("scenarios.aspectsEvaluated", "Aspects Evaluated")}
+                    </div>
+                  </div>
+                  <div className="text-center p-4 bg-gray-50 dark:bg-gray-800 rounded-lg">
+                    <div className="text-2xl font-bold text-primary mb-1">
+                      {
+                        report
+                          .split("\n")
+                          .filter((line) => line.match(/^[A-Za-z\s]+: \d+$/))
+                          .length
+                      }
+                    </div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">
+                      {t("scenarios.scoresGenerated", "Scores Generated")}
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
-
-            {/* <div className="mt-6 flex justify-end">
-              <button
-                onClick={() => window.print()}
-                className="inline-flex items-center justify-center rounded-md bg-meta-3 py-2 px-4 text-white hover:bg-opacity-90 mr-3"
-              >
-                {t("scenarios.printReport")}
-              </button>
-              <button
-                onClick={() => navigate(`/scenarios/${id}`)}
-                className="inline-flex items-center justify-center rounded-md bg-primary py-2 px-4 text-white hover:bg-opacity-90"
-              >
-                {t("scenarios.backToScenario")}
-              </button>
-            </div> */}
           </div>
         )}
 
         {/* Saved Reports Section */}
         {savedReports.length > 0 && (
-          <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark p-6">
-            <h3 className="text-xl font-semibold mb-4">
-              {t("scenarios.savedReports")}
-            </h3>
+          <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
+            <div className="border-b border-stroke py-4 px-6.5 dark:border-strokedark">
+              <h3 className="text-xl font-semibold text-black dark:text-white">
+                {t("scenarios.savedReports")}
+              </h3>
+              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                {savedReports.length}{" "}
+                {t("scenarios.reportsAvailable", "reports available")}
+              </p>
+            </div>
 
-            <div className="grid gap-4">
-              {savedReports.map((report) => (
-                <div
-                  key={report.id}
-                  className="border rounded-md p-4 hover:border-primary"
-                  onClick={() => setSelectedReport(report)}
-                >
-                  <div className="flex justify-between items-center mb-2">
-                    <h4 className="font-medium">{report.title}</h4>
-                    <div className="flex flex-col">
-                      <div className="flex gap-2">
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedReport(report);
-                            exportToPdf();
-                          }}
-                          className="px-2 py-1 text-xs text-white bg-red-500 rounded hover:bg-opacity-90"
-                        >
-                          PDF
-                        </button>
-                        {/* <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedReport(report);
-                            exportToWord();
-                          }}
-                          className="px-2 py-1 text-xs text-white bg-blue-700 rounded hover:bg-opacity-90"
-                        >
-                          Word
-                        </button> */}
+            <div className="p-6">
+              <div className="grid gap-4">
+                {savedReports.map((report) => (
+                  <div
+                    key={report.id}
+                    className="group border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:border-primary hover:shadow-md transition-all duration-200 cursor-pointer bg-white dark:bg-gray-800"
+                    onClick={() => setSelectedReport(report)}
+                  >
+                    <div className="flex justify-between items-start mb-4">
+                      <div className="flex-1">
+                        <h4 className="text-lg font-semibold text-gray-900 dark:text-white mb-2 group-hover:text-primary transition-colors">
+                          {report.title}
+                        </h4>
+                        <div className="flex flex-wrap gap-4 text-sm text-gray-600 dark:text-gray-400">
+                          <span className="flex items-center">
+                            <svg
+                              className="w-4 h-4 mr-1"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                            {new Date(report.created_at).toLocaleString()}
+                          </span>
+                          <span className="flex items-center">
+                            <svg
+                              className="w-4 h-4 mr-1"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                              />
+                            </svg>
+                            {report.user?.name || "Unknown"}
+                          </span>
+                          <span className="flex items-center">
+                            <svg
+                              className="w-4 h-4 mr-1"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M8 7V3a2 2 0 012-2h4a2 2 0 012 2v4m-6 9l2 2 4-4m6-2a9 9 0 11-18 0 9 9 0 0118 0z"
+                              />
+                            </svg>
+                            {report.conversations_ids?.length || 0}{" "}
+                            conversations
+                          </span>
+                        </div>
                       </div>
-                      <div className="flex pt-6">
-                        {/* Add toggle to show/hide report for user */}
+
+                      <div className="flex flex-col items-end gap-3">
+                        <div className="flex gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedReport(report);
+                              exportToPdf();
+                            }}
+                            className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors duration-200"
+                          >
+                            <svg
+                              className="w-3 h-3 mr-1"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                              />
+                            </svg>
+                            PDF
+                          </button>
+                        </div>
+
                         <div className="flex items-center gap-2">
                           <span className="text-xs text-gray-600 dark:text-gray-400">
                             {t("scenarios.showToUser")}
@@ -972,14 +1222,12 @@ Based on the evaluation, this candidate ${Math.random() > 0.5 ? "shows promise a
                             id={`report-visibility-${report.id}`}
                             initialValue={report.show_to_user}
                             onChange={(value) => {
-                              // Update the report's show_to_user property
                               updateReportShowToUserRequest(
                                 id!,
                                 report.id,
                                 value,
                               )
                                 .then((response) => {
-                                  // Update the report in the state
                                   setSavedReports((prev) =>
                                     prev.map((r) =>
                                       r.id === report.id
@@ -999,15 +1247,36 @@ Based on the evaluation, this candidate ${Math.random() > 0.5 ? "shows promise a
                         </div>
                       </div>
                     </div>
+
+                    {/* Report preview */}
+                    <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-900 rounded-md">
+                      <p className="text-sm text-gray-600 dark:text-gray-400 line-clamp-2">
+                        {report.content.substring(0, 150)}...
+                      </p>
+                    </div>
+
+                    {/* Status indicator */}
+                    <div className="mt-3 flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div
+                          className={`w-2 h-2 rounded-full mr-2 ${report.show_to_user ? "bg-green-500" : "bg-gray-400"}`}
+                        ></div>
+                        <span className="text-xs text-gray-600 dark:text-gray-400">
+                          {report.show_to_user
+                            ? t("scenarios.visibleToUsers", "Visible to users")
+                            : t(
+                                "scenarios.hiddenFromUsers",
+                                "Hidden from users",
+                              )}
+                        </span>
+                      </div>
+                      <span className="text-xs text-gray-500 dark:text-gray-500">
+                        Click to view full report
+                      </span>
+                    </div>
                   </div>
-                  <div className="text-sm text-gray-500">
-                    {t("scenarios.savedAt")}:{" "}
-                    {new Date(report.created_at).toLocaleString()}
-                    <br />
-                    {t("scenarios.savedBy")}: {report.user?.name || "Unknown"}
-                  </div>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
         )}

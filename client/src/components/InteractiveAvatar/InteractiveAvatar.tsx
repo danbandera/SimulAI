@@ -693,20 +693,16 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
             className={`px-4 py-2 rounded-lg ${
               isTimeOver
                 ? "bg-red-600 animate-pulse"
-                : !isConversationActive && !stream
-                  ? "bg-gray-500"
-                  : timeRemaining > 300
-                    ? "bg-green-500"
-                    : timeRemaining > 60
-                      ? "bg-yellow-500"
-                      : "bg-red-500 animate-pulse"
+                : timeRemaining > 300
+                  ? "bg-green-500"
+                  : timeRemaining > 60
+                    ? "bg-yellow-500"
+                    : "bg-red-500 animate-pulse"
             } text-white font-bold`}
           >
             {isTimeOver
               ? t("scenarios.timeExpired", "Time Expired")
-              : !isConversationActive && !stream
-                ? t("scenarios.sessionEnded", "Session Ended")
-                : `${t("scenarios.timeRemaining", "Time Remaining")}: ${formatTime(timeRemaining)}`}
+              : `${t("scenarios.timeRemaining", "Time Remaining")}: ${formatTime(timeRemaining)}`}
           </div>
         )}
 

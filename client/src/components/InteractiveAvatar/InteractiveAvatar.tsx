@@ -76,90 +76,6 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
     }
   };
 
-  // Face Detection component modify later
-  const FaceDetection = () => {
-    const videoRef = useRef<HTMLVideoElement>(null);
-
-    useEffect(() => {
-      const loadModels = async () => {
-        try {
-          const MODEL_URL =
-            "https://raw.githubusercontent.com/justadudewhohacks/face-api.js/master/weights";
-          await Promise.all([
-            // faceapi.nets.ssdMobilenetv1.loadFromUri(MODEL_URL),
-            faceapi.nets.faceExpressionNet.loadFromUri(MODEL_URL),
-            // faceapi.nets.tinyFaceDetector.loadFromUri(MODEL_URL),
-          ]);
-          startVideo();
-        } catch (error) {
-          console.error("Error loading models:", error);
-        }
-      };
-
-      const startVideo = () => {
-        navigator.mediaDevices
-          .getUserMedia({ video: true, audio: false })
-          .then((stream) => {
-            if (videoRef.current) {
-              videoRef.current.srcObject = stream;
-            }
-          })
-          .catch((err) => {
-            console.error("Error accessing camera:", err);
-          });
-      };
-
-      loadModels();
-
-      return () => {
-        if (videoRef.current && videoRef.current.srcObject) {
-          const stream = videoRef.current.srcObject as MediaStream;
-          stream.getTracks().forEach((track) => track.stop());
-        }
-      };
-    }, []);
-
-    useEffect(() => {
-      if (!videoRef.current) return;
-
-      const video = videoRef.current;
-
-      video.addEventListener("play", () => {
-        const interval = setInterval(async () => {
-          const detections = await faceapi
-            .detectSingleFace(video)
-            .withFaceExpressions();
-
-          if (detections) {
-            // Store facial expressions with timestamp
-            setFacialExpressions((prev) => [
-              ...prev,
-              {
-                timestamp: new Date().toISOString(),
-                expressions: detections.expressions,
-              },
-            ]);
-          }
-        }, 1000);
-
-        return () => clearInterval(interval);
-      });
-    }, []);
-
-    return (
-      <div className="relative">
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
-          width="320"
-          height="240"
-          className="rounded-lg"
-        />
-      </div>
-    );
-  };
-
   // get scenarioId from InteractiveAvatarProps
   const { scenarioId } = props;
 
@@ -771,9 +687,6 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
             </button>
           ) : (
             <div className="relative w-full h-full" ref={containerRef}>
-              <div className="absolute bottom-0 right-0 z-9">
-                <FaceDetection />
-              </div>
               <video
                 ref={mediaStream}
                 autoPlay

@@ -477,12 +477,6 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
     stopTimer();
     setIsConversationActive(false);
 
-    // Save elapsed time to localStorage
-    localStorage.setItem(
-      `scenario_${scenarioId}_elapsed_time`,
-      elapsedTimeRef.current.toString(),
-    );
-
     setIsSavingConversation(true);
 
     // Save conversation history to database if there are messages
@@ -582,16 +576,6 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   useEffect(() => {
     const handleBeforeUnload = (e: BeforeUnloadEvent) => {
       if (isConversationActive) {
-        // Save current elapsed time to localStorage for recovery
-        if (startTimeRef.current !== null) {
-          const currentElapsedTime =
-            elapsedTimeRef.current + (Date.now() - startTimeRef.current) / 1000;
-          localStorage.setItem(
-            `scenario_${scenarioId}_elapsed_time`,
-            currentElapsedTime.toString(),
-          );
-        }
-
         // Standard way to show a confirmation dialog
         e.preventDefault();
         e.returnValue = t(
@@ -604,31 +588,6 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
 
     window.addEventListener("beforeunload", handleBeforeUnload);
 
-    // Check if there's saved elapsed time from a previous session
-    const savedElapsedTime = localStorage.getItem(
-      `scenario_${scenarioId}_elapsed_time`,
-    );
-    if (savedElapsedTime) {
-      elapsedTimeRef.current = parseFloat(savedElapsedTime);
-      // Update the timeRemaining based on the elapsed time
-      if (timeRemaining !== null) {
-        const newTimeRemaining = Math.max(
-          0,
-          ((scenario?.timeLimit as number) || 0) * 60 - elapsedTimeRef.current,
-        );
-        setTimeRemaining(newTimeRemaining);
-
-        if (newTimeRemaining <= 0) {
-          toast.error(
-            t(
-              "scenarios.timeExpired",
-              "Your allotted time for this scenario has expired.",
-            ),
-          );
-        }
-      }
-    }
-
     return () => {
       window.removeEventListener("beforeunload", handleBeforeUnload);
     };
@@ -639,9 +598,6 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
     try {
       // Call the server-side API to reset the timer (deletes all conversations)
       await resetScenarioTimer(scenarioId);
-
-      // Clear the timer from localStorage
-      localStorage.removeItem(`scenario_${scenarioId}_elapsed_time`);
 
       // Reset the elapsed time
       elapsedTimeRef.current = 0;

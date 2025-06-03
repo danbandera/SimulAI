@@ -1,4 +1,4 @@
-import { Outlet, Route, Routes } from "react-router-dom";
+import { Outlet, Route, Routes, Navigate } from "react-router-dom";
 import PageTitle from "./components/PageTitle";
 import ECommerce from "./pages/Dashboard/ECommerce";
 import Profile from "./pages/Profile";
@@ -44,13 +44,7 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
 
   // Check admin privileges after loading is complete
   if (currentUser?.role !== "admin") {
-    return (
-      <div className="flex justify-center items-center h-60">
-        <div className="text-lg text-red-500">
-          Access denied. Admin privileges required.
-        </div>
-      </div>
-    );
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;
@@ -71,13 +65,7 @@ const AdminOrCompanyRoute = ({ children }: { children: React.ReactNode }) => {
 
   // Check admin or company privileges after loading is complete
   if (currentUser?.role !== "admin" && currentUser?.role !== "company") {
-    return (
-      <div className="flex justify-center items-center h-60">
-        <div className="text-lg text-red-500">
-          Access denied. Admin or Company privileges required.
-        </div>
-      </div>
-    );
+    return <Navigate to="/" replace />;
   }
 
   return <>{children}</>;

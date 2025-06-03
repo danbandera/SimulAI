@@ -56,7 +56,8 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   const [isConversationActive, setIsConversationActive] = useState(false);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const startTimeRef = useRef<number | null>(null);
-  const elapsedTimeRef = useRef<number>(0);
+  const sessionStartTimeRef = useRef<number>(0); // Track when this session started
+  const databaseBaselineRef = useRef<number>(0); // Database baseline - never changes during session
 
   const containerRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
@@ -128,8 +129,8 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
         } else {
           // Store the remaining time
           setTimeRemaining(timeData.remaining_time);
-          // Store the elapsed time
-          elapsedTimeRef.current = timeData.total_elapsed_time;
+          // Store the database baseline elapsed time
+          databaseBaselineRef.current = timeData.total_elapsed_time;
         }
         setHasCheckedTimeStatus(true);
       } catch (error) {
@@ -152,8 +153,10 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   const knowledgeBase = settings?.promt_for_virtual_avatar.replace(
     "CONTEXT_FOR_PERSONA",
     scenario?.context || "",
+    // "use this file as context for the avatar" +
+    // "https://bucket-simulai.s3.us-east-2.amazonaws.com/documents/200ce259626f1e60433390e8a52c1c60.pdf",
   );
-
+  console.log("knowledgeBase", knowledgeBase);
   let sessionStartTime: number;
   let timerInterval: NodeJS.Timeout;
 
@@ -180,7 +183,7 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
           const elapsedTime = Math.floor(
             (Date.now() - sessionStartTime) / 1000,
           );
-          console.log(`Elapsed time: ${elapsedTime} seconds`);
+          // console.log(`Elapsed time: ${elapsedTime} seconds`);
         }, 1000);
       }
 
@@ -195,10 +198,16 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   const startTimer = () => {
     if (timeRemaining === null || timeRemaining <= 0 || isTimerRunning) return;
 
+    console.log(
+      "Starting timer with database baseline:",
+      databaseBaselineRef.current,
+    );
+
     setIsTimerRunning(true);
     setIsConversationActive(true);
-    startTimeRef.current = Date.now();
-    let updateCounter = 0; // Counter to track when to update parent
+    const now = Date.now();
+    startTimeRef.current = now;
+    sessionStartTimeRef.current = now;
 
     timerIntervalRef.current = setInterval(() => {
       if (startTimeRef.current === null || !scenario?.timeLimit) return;
@@ -206,21 +215,14 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
       // Calculate elapsed time since this session started
       const sessionElapsed = (Date.now() - startTimeRef.current) / 1000;
 
-      // Calculate total elapsed time (previous sessions + current session)
-      const totalElapsed = elapsedTimeRef.current + sessionElapsed;
+      // Calculate total elapsed time (database baseline + current session time)
+      const totalElapsed = databaseBaselineRef.current + sessionElapsed;
 
       // Calculate remaining time based on the scenario's total time limit
       const totalTimeInSeconds = (scenario.timeLimit as number) * 60;
       const newTimeRemaining = Math.max(0, totalTimeInSeconds - totalElapsed);
 
       setTimeRemaining(newTimeRemaining);
-
-      // Update parent component every 5 seconds to keep progress bar in sync
-      updateCounter++;
-      if (updateCounter >= 5 && props.onTimeUpdate) {
-        props.onTimeUpdate();
-        updateCounter = 0;
-      }
 
       if (newTimeRemaining <= 0) {
         setIsTimeOver(true);
@@ -240,12 +242,6 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
     if (timerIntervalRef.current) {
       clearInterval(timerIntervalRef.current);
       timerIntervalRef.current = null;
-    }
-
-    if (startTimeRef.current !== null) {
-      const elapsed = (Date.now() - startTimeRef.current) / 1000;
-      elapsedTimeRef.current += elapsed;
-      startTimeRef.current = null;
     }
 
     setIsTimerRunning(false);
@@ -309,6 +305,9 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
       return;
     }
 
+    // Stop any existing timer before starting a new session
+    stopTimer();
+
     setIsLoadingSession(true);
     setConversationHistory([]);
     setFacialExpressions([]);
@@ -328,10 +327,16 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
         return;
       }
 
-      // Initialize timer with the remaining time from the API
+      // Initialize timer with fresh data from the API
       setTimeRemaining(timeData.remaining_time);
-      // Reset elapsed time to what's already been used
-      elapsedTimeRef.current = timeData.total_elapsed_time;
+      // Set the database baseline time (what's already been used from previous sessions)
+      databaseBaselineRef.current = timeData.total_elapsed_time;
+
+      console.log("Starting session with:", {
+        remaining_time: timeData.remaining_time,
+        total_elapsed_time: timeData.total_elapsed_time,
+        database_baseline: databaseBaselineRef.current,
+      });
 
       // Immediately update parent component to sync progress bar
       if (props.onTimeUpdate) {
@@ -477,6 +482,18 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
     stopTimer();
     setIsConversationActive(false);
 
+    // Calculate session elapsed time for debugging
+    const sessionElapsed =
+      sessionStartTimeRef.current > 0
+        ? (Date.now() - sessionStartTimeRef.current) / 1000
+        : 0;
+
+    console.log("Ending session:", {
+      sessionElapsed: Math.floor(sessionElapsed),
+      databaseBaseline: databaseBaselineRef.current,
+      totalElapsed: Math.floor(databaseBaselineRef.current + sessionElapsed),
+    });
+
     setIsSavingConversation(true);
 
     // Save conversation history to database if there are messages
@@ -499,7 +516,9 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
           conversationForApi,
           activeUser?.id,
           facialExpressions,
-          elapsedTimeRef.current, // Pass the elapsed time
+          startTimeRef.current && sessionStartTimeRef.current
+            ? (Date.now() - sessionStartTimeRef.current) / 1000
+            : 0, // Pass the elapsed time for this session
         );
         console.log("Conversation saved successfully");
       } catch (error) {
@@ -519,12 +538,11 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
 
     // Update the remaining time to reflect the actual time used
     // This ensures the display shows the correct remaining time after the session
-    if (scenario?.timeLimit) {
+    if (scenario?.timeLimit && sessionStartTimeRef.current > 0) {
+      const sessionElapsed = (Date.now() - sessionStartTimeRef.current) / 1000;
+      const totalElapsed = databaseBaselineRef.current + sessionElapsed;
       const totalTimeInSeconds = (scenario.timeLimit as number) * 60;
-      const newTimeRemaining = Math.max(
-        0,
-        totalTimeInSeconds - elapsedTimeRef.current,
-      );
+      const newTimeRemaining = Math.max(0, totalTimeInSeconds - totalElapsed);
       setTimeRemaining(newTimeRemaining);
     }
 
@@ -599,8 +617,10 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
       // Call the server-side API to reset the timer (deletes all conversations)
       await resetScenarioTimer(scenarioId);
 
-      // Reset the elapsed time
-      elapsedTimeRef.current = 0;
+      // Reset the timer variables
+      startTimeRef.current = null;
+      sessionStartTimeRef.current = 0;
+      databaseBaselineRef.current = 0;
 
       // Get the original time limit from the scenario
       if (scenario?.timeLimit) {
@@ -624,7 +644,7 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
       try {
         const timeData = await getScenarioElapsedTime(scenarioId);
         setTimeRemaining(timeData.remaining_time);
-        elapsedTimeRef.current = timeData.total_elapsed_time;
+        databaseBaselineRef.current = timeData.total_elapsed_time;
         setHasCheckedTimeStatus(true);
 
         if (timeData.remaining_time <= 0) {

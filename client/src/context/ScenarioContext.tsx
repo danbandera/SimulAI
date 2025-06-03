@@ -6,6 +6,7 @@ import {
   createScenarioRequest,
   updateScenarioRequest,
   deleteScenarioRequest,
+  bulkDeleteScenariosRequest,
   Conversation,
   saveConversationRequest,
   getConversationsRequest,
@@ -42,6 +43,11 @@ interface ScenarioContextValue {
   loadScenarios: () => Promise<void>;
   createScenario: (scenarioData: FormData) => Promise<void>;
   deleteScenario: (id: number) => Promise<void>;
+  bulkDeleteScenarios: (scenarioIds: number[]) => Promise<{
+    deleted: number;
+    denied: number;
+    deniedScenarios: Array<{ id: number; reason: string }>;
+  }>;
   getScenario: (id: number) => Promise<Scenario>;
   updateScenario: (id: number, scenarioData: FormData) => Promise<void>;
   saveConversation: (
@@ -112,6 +118,21 @@ export const ScenarioProvider = ({ children }: ScenarioProviderProps) => {
       console.error("Error deleting scenario:", error);
       toast.error("Error deleting scenario");
       throw error;
+    }
+  };
+
+  const bulkDeleteScenarios = async (scenarioIds: number[]) => {
+    try {
+      const response = await bulkDeleteScenariosRequest(scenarioIds);
+      setScenarios(
+        scenarios.filter((scenario) => !scenarioIds.includes(scenario.id!)),
+      );
+      return response;
+    } catch (error: any) {
+      console.error("Error bulk deleting scenarios:", error);
+      throw new Error(
+        error.response?.data?.message || "Error deleting scenarios",
+      );
     }
   };
 
@@ -211,6 +232,7 @@ export const ScenarioProvider = ({ children }: ScenarioProviderProps) => {
         loadScenarios,
         createScenario,
         deleteScenario,
+        bulkDeleteScenarios,
         getScenario,
         updateScenario,
         saveConversation,

@@ -1,8 +1,10 @@
 import { Link } from "react-router-dom";
 import { useUsers } from "../../context/UserContext";
+import { useScenarios } from "../../context/ScenarioContext";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
 import { getSettings } from "../../api/settings.api";
+import Swal from "sweetalert2";
 
 interface User {
   id: number;
@@ -167,8 +169,7 @@ const SearchFilters = ({ onFilterChange }: SearchFiltersProps) => {
 
 const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
   const { t } = useTranslation();
-  // const navigate = useNavigate();
-  // const { deleteScenario } = useScenarios();
+  const { bulkDeleteScenarios } = useScenarios();
   const { currentUser } = useUsers();
   const [filteredScenarios, setFilteredScenarios] = useState<Scenario[]>([]);
 
@@ -177,7 +178,15 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [paginatedScenarios, setPaginatedScenarios] = useState<Scenario[]>([]);
 
+  // Bulk selection state
+  const [selectedScenarios, setSelectedScenarios] = useState<Set<number>>(
+    new Set(),
+  );
+  const [selectAll, setSelectAll] = useState(false);
+
   const isAdmin = currentUser?.role === "admin";
+  const canBulkDelete =
+    currentUser?.role === "admin" || currentUser?.role === "company";
 
   useEffect(() => {
     // Initial filtering
@@ -200,6 +209,12 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
   useEffect(() => {
     setCurrentPage(1);
   }, [filteredScenarios.length]);
+
+  // Reset selections when scenarios change
+  useEffect(() => {
+    setSelectedScenarios(new Set());
+    setSelectAll(false);
+  }, [paginatedScenarios]);
 
   const filterScenarios = (filters: {
     search: string;
@@ -289,6 +304,104 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
     setFilteredScenarios(filtered);
   };
 
+  // Bulk selection handlers
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedScenarios(new Set());
+    } else {
+      const currentPageScenarioIds = paginatedScenarios
+        .filter((scenario) => canDeleteScenario(scenario))
+        .map((scenario) => scenario.id);
+      setSelectedScenarios(new Set(currentPageScenarioIds));
+    }
+    setSelectAll(!selectAll);
+  };
+
+  const handleSelectScenario = (scenarioId: number) => {
+    const newSelected = new Set(selectedScenarios);
+    if (newSelected.has(scenarioId)) {
+      newSelected.delete(scenarioId);
+    } else {
+      newSelected.add(scenarioId);
+    }
+    setSelectedScenarios(newSelected);
+
+    // Update select all state
+    const selectableScenarios = paginatedScenarios.filter((scenario) =>
+      canDeleteScenario(scenario),
+    );
+    const selectableIds = selectableScenarios.map((scenario) => scenario.id);
+    const allSelectableSelected = selectableIds.every((id) =>
+      newSelected.has(id),
+    );
+    setSelectAll(allSelectableSelected && selectableIds.length > 0);
+  };
+
+  const canDeleteScenario = (scenario: Scenario) => {
+    if (currentUser?.role === "admin") {
+      return true;
+    }
+    if (currentUser?.role === "company") {
+      return scenario.created_by.id === Number(currentUser?.id);
+    }
+    return false;
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedScenarios.size === 0) return;
+
+    const result = await Swal.fire({
+      title: t("scenarios.bulkDeleteConfirmTitle"),
+      text: t("scenarios.bulkDeleteConfirmMessage", {
+        count: selectedScenarios.size,
+      }),
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3C50E0",
+      cancelButtonColor: "#D34053",
+      confirmButtonText: t("alerts.yes"),
+      cancelButtonText: t("alerts.cancel"),
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const scenarioIdsArray = Array.from(selectedScenarios);
+        const response = await bulkDeleteScenarios(scenarioIdsArray);
+
+        if (response.deleted > 0) {
+          await Swal.fire({
+            title: t("scenarios.bulkDeleteSuccessTitle"),
+            text: t("scenarios.bulkDeleteSuccessMessage", {
+              count: response.deleted,
+            }),
+            icon: "success",
+            confirmButtonColor: "#3C50E0",
+          });
+        }
+
+        if (response.denied > 0) {
+          await Swal.fire({
+            title: t("alerts.warning"),
+            text: `${response.denied} scenarios could not be deleted due to insufficient permissions.`,
+            icon: "warning",
+            confirmButtonColor: "#3C50E0",
+          });
+        }
+
+        // Reset selections
+        setSelectedScenarios(new Set());
+        setSelectAll(false);
+      } catch (error: any) {
+        Swal.fire({
+          title: t("scenarios.bulkDeleteErrorTitle"),
+          text: error.message || t("scenarios.bulkDeleteErrorMessage"),
+          icon: "error",
+          confirmButtonColor: "#D34053",
+        });
+      }
+    }
+  };
+
   // Pagination helper functions
   const totalPages = Math.ceil(filteredScenarios.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage + 1;
@@ -345,18 +458,58 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
 
   return (
     <div className="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
-      <h4 className="mb-6 text-xl font-semibold text-black dark:text-white px-5">
-        {t("scenarios.title")}
-      </h4>
+      <div className="flex items-center justify-between mb-6 px-5">
+        <h4 className="text-xl font-semibold text-black dark:text-white">
+          {t("scenarios.title")}
+        </h4>
+
+        {/* Bulk Delete Button */}
+        {canBulkDelete && selectedScenarios.size > 0 && (
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              {selectedScenarios.size} {t("scenarios.selected")}
+            </span>
+            <button
+              onClick={handleBulkDelete}
+              className="inline-flex items-center justify-center rounded-md bg-danger py-2 px-4 text-center font-medium text-white hover:bg-opacity-90"
+            >
+              {t("scenarios.deleteSelected")}
+            </button>
+          </div>
+        )}
+      </div>
 
       <SearchFilters onFilterChange={filterScenarios} />
 
       <div className="flex flex-col">
         <div
           className={`grid rounded-sm bg-gray-2 dark:bg-meta-4 gap-2 ${
-            isAdmin ? "grid-cols-4" : "grid-cols-3"
+            canBulkDelete
+              ? isAdmin
+                ? "grid-cols-5"
+                : "grid-cols-4"
+              : isAdmin
+                ? "grid-cols-4"
+                : "grid-cols-3"
           }`}
         >
+          {/* Select All Checkbox - Only for admin and company users */}
+          {canBulkDelete && (
+            <div className="p-2.5 xl:p-5">
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={selectAll}
+                  onChange={handleSelectAll}
+                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+                />
+                <span className="ml-2 text-sm font-medium uppercase xsm:text-base">
+                  {t("scenarios.selectAll")}
+                </span>
+              </div>
+            </div>
+          )}
+
           <div className="p-2.5 xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
               {t("scenarios.title")}
@@ -385,13 +538,34 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
 
         {paginatedScenarios.map((scenario, key) => (
           <div
-            className={`grid gap-4 ${isAdmin ? "grid-cols-4" : "grid-cols-3"} ${
+            className={`grid gap-4 ${
+              canBulkDelete
+                ? isAdmin
+                  ? "grid-cols-5"
+                  : "grid-cols-4"
+                : isAdmin
+                  ? "grid-cols-4"
+                  : "grid-cols-3"
+            } ${
               key === paginatedScenarios.length - 1
                 ? ""
                 : "border-b border-stroke dark:border-strokedark"
             }`}
             key={key}
           >
+            {/* Scenario Checkbox - Only for admin and company users */}
+            {canBulkDelete && (
+              <div className="flex items-center p-2.5 xl:p-5">
+                <input
+                  type="checkbox"
+                  checked={selectedScenarios.has(scenario.id)}
+                  onChange={() => handleSelectScenario(scenario.id)}
+                  disabled={!canDeleteScenario(scenario)}
+                  className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary disabled:opacity-50"
+                />
+              </div>
+            )}
+
             <div className="flex items-center gap-3 p-2.5 xl:p-5">
               <Link
                 to={`/scenarios/${scenario.id}`}

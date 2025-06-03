@@ -73,6 +73,13 @@ export const deleteScenarioRequest = async (id: number) => {
   return response.data;
 };
 
+export const bulkDeleteScenariosRequest = async (scenarioIds: number[]) => {
+  const response = await axios.delete("/scenarios/bulk", {
+    data: { scenarioIds },
+  });
+  return response.data;
+};
+
 export const getScenarioRequest = async (id: number) => {
   const response = await axios.get(`/scenarios/${id}`);
   return response.data;

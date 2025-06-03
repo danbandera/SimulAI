@@ -70,9 +70,9 @@
     "selected": "selected",
     "deleteSelected": "Delete Selected",
     "bulkDeleteConfirmTitle": "Delete Multiple Users",
-    "bulkDeleteConfirmMessage": "Are you sure you want to delete {count} users? This action cannot be undone.",
+    "bulkDeleteConfirmMessage": "Are you sure you want to delete {{count}} users? This action cannot be undone.",
     "bulkDeleteSuccessTitle": "Users Deleted",
-    "bulkDeleteSuccessMessage": "{count} users have been deleted successfully.",
+    "bulkDeleteSuccessMessage": "{{count}} users have been deleted successfully.",
     "bulkDeleteErrorTitle": "Error",
     "bulkDeleteErrorMessage": "Some users could not be deleted. Please try again."
   },
@@ -84,9 +84,9 @@
     "selected": "selected",
     "deleteSelected": "Delete Selected",
     "bulkDeleteConfirmTitle": "Delete Multiple Companies",
-    "bulkDeleteConfirmMessage": "Are you sure you want to delete {count} companies? This action cannot be undone.",
+    "bulkDeleteConfirmMessage": "Are you sure you want to delete {{count}} companies? This action cannot be undone.",
     "bulkDeleteSuccessTitle": "Companies Deleted",
-    "bulkDeleteSuccessMessage": "{count} companies have been deleted successfully.",
+    "bulkDeleteSuccessMessage": "{{count}} companies have been deleted successfully.",
     "bulkDeleteErrorTitle": "Error",
     "bulkDeleteErrorMessage": "Some companies could not be deleted. Please try again."
   },
@@ -206,7 +206,16 @@
     "enterPrompt": "Enter prompt",
     "noContextAvailable": "No context available",
     "noAspectsAvailable": "No aspects available",
-    "audioNotSupported": "Your browser does not support the audio element."
+    "audioNotSupported": "Your browser does not support the audio element.",
+    "selectAll": "Select All",
+    "selected": "selected",
+    "deleteSelected": "Delete Selected",
+    "bulkDeleteConfirmTitle": "Delete Multiple Scenarios",
+    "bulkDeleteConfirmMessage": "Are you sure you want to delete {{count}} scenarios? This action cannot be undone.",
+    "bulkDeleteSuccessTitle": "Scenarios Deleted",
+    "bulkDeleteSuccessMessage": "{{count}} scenarios have been deleted successfully.",
+    "bulkDeleteErrorTitle": "Error",
+    "bulkDeleteErrorMessage": "Some scenarios could not be deleted. Please try again."
   },
   "console": {
     "startConversation": "Start Conversation",

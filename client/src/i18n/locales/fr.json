@@ -70,9 +70,9 @@
     "selected": "sélectionnés",
     "deleteSelected": "Supprimer Sélectionnés",
     "bulkDeleteConfirmTitle": "Supprimer Plusieurs Utilisateurs",
-    "bulkDeleteConfirmMessage": "Êtes-vous sûr de vouloir supprimer {count} utilisateurs ? Cette action ne peut pas être annulée.",
+    "bulkDeleteConfirmMessage": "Êtes-vous sûr de vouloir supprimer {{count}} utilisateurs ? Cette action ne peut pas être annulée.",
     "bulkDeleteSuccessTitle": "Utilisateurs Supprimés",
-    "bulkDeleteSuccessMessage": "{count} utilisateurs ont été supprimés avec succès.",
+    "bulkDeleteSuccessMessage": "{{count}} utilisateurs ont été supprimés avec succès.",
     "bulkDeleteErrorTitle": "Erreur",
     "bulkDeleteErrorMessage": "Certains utilisateurs n'ont pas pu être supprimés. Veuillez réessayer."
   },
@@ -193,7 +193,16 @@
     "enterPrompt": "Entrez le prompt",
     "noContextAvailable": "Aucun contexte disponible",
     "noAspectsAvailable": "Aucun aspect disponible",
-    "audioNotSupported": "Votre navigateur ne supporte pas l'élément audio."
+    "audioNotSupported": "Votre navigateur ne supporte pas l'élément audio.",
+    "selectAll": "Tout Sélectionner",
+    "selected": "sélectionnés",
+    "deleteSelected": "Supprimer Sélectionnés",
+    "bulkDeleteConfirmTitle": "Supprimer Plusieurs Scénarios",
+    "bulkDeleteConfirmMessage": "Êtes-vous sûr de vouloir supprimer {{count}} scénarios ? Cette action ne peut pas être annulée.",
+    "bulkDeleteSuccessTitle": "Scénarios Supprimés",
+    "bulkDeleteSuccessMessage": "{{count}} scénarios ont été supprimés avec succès.",
+    "bulkDeleteErrorTitle": "Erreur",
+    "bulkDeleteErrorMessage": "Certains scénarios n'ont pas pu être supprimés. Veuillez réessayer."
   },
   "console": {
     "startConversation": "Démarrer la Conversation",
@@ -298,9 +307,9 @@
     "selected": "sélectionnées",
     "deleteSelected": "Supprimer Sélectionnées",
     "bulkDeleteConfirmTitle": "Supprimer Plusieurs Entreprises",
-    "bulkDeleteConfirmMessage": "Êtes-vous sûr de vouloir supprimer {count} entreprises ? Cette action ne peut pas être annulée.",
+    "bulkDeleteConfirmMessage": "Êtes-vous sûr de vouloir supprimer {{count}} entreprises ? Cette action ne peut pas être annulée.",
     "bulkDeleteSuccessTitle": "Entreprises Supprimées",
-    "bulkDeleteSuccessMessage": "{count} entreprises ont été supprimées avec succès.",
+    "bulkDeleteSuccessMessage": "{{count}} entreprises ont été supprimées avec succès.",
     "bulkDeleteErrorTitle": "Erreur",
     "bulkDeleteErrorMessage": "Certaines entreprises n'ont pas pu être supprimées. Veuillez réessayer."
   }

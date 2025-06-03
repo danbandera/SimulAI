@@ -5,6 +5,7 @@ import {
   getScenarioById,
   updateScenario,
   deleteScenario,
+  bulkDeleteScenarios,
   getScenarioByUserId,
   saveConversation,
   getConversations,
@@ -71,6 +72,8 @@ router.post("/scenarios", authRequired, createScenario);
 router.get("/scenarios/:id", authRequired, getScenarioById);
 // Let the controller handle the file upload middleware
 router.put("/scenarios/:id", authRequired, updateScenario);
+// DELETE /scenarios/bulk - Bulk delete scenarios
+router.delete("/scenarios/bulk", authRequired, bulkDeleteScenarios);
 router.delete("/scenarios/:id", authRequired, deleteScenario);
 router.get("/scenarios/user/:id", authRequired, getScenarioByUserId);
 

@@ -572,6 +572,158 @@ export const deleteScenario = async (req, res) => {
   }
 };
 
+export const bulkDeleteScenarios = async (req, res) => {
+  try {
+    const { scenarioIds } = req.body;
+
+    if (
+      !scenarioIds ||
+      !Array.isArray(scenarioIds) ||
+      scenarioIds.length === 0
+    ) {
+      return res.status(400).json({ message: "No scenario IDs provided" });
+    }
+
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    // Get the deleting user's information to enforce permissions
+    const { data: deletingUser, error: deletingUserError } = await connectSqlDB
+      .from("users")
+      .select("role, company_id")
+      .eq("id", req.user.id)
+      .single();
+
+    if (deletingUserError) {
+      console.error("Error fetching deleting user:", deletingUserError);
+      return res
+        .status(500)
+        .json({ message: "Error validating user permissions" });
+    }
+
+    // Get scenarios to be deleted to check permissions
+    const { data: scenariosToDelete, error: fetchError } = await connectSqlDB
+      .from("scenarios")
+      .select("id, created_by, files")
+      .in("id", scenarioIds);
+
+    if (fetchError) {
+      console.error("Error fetching scenarios to delete:", fetchError);
+      return res.status(500).json({ message: "Error fetching scenarios" });
+    }
+
+    // Filter scenarios based on permissions
+    const allowedScenarioIds = [];
+    const deniedScenarios = [];
+
+    for (const scenario of scenariosToDelete) {
+      let canDelete = false;
+
+      if (deletingUser.role === "admin") {
+        // Admin can delete any scenario
+        canDelete = true;
+      } else if (deletingUser.role === "company") {
+        // Company users can only delete scenarios they created
+        canDelete = scenario.created_by === req.user.id;
+      } else if (deletingUser.role === "user") {
+        // Regular users cannot delete scenarios
+        canDelete = false;
+      }
+
+      if (canDelete) {
+        allowedScenarioIds.push(scenario.id);
+      } else {
+        deniedScenarios.push(scenario);
+      }
+    }
+
+    if (allowedScenarioIds.length === 0) {
+      return res.status(403).json({
+        message:
+          "You don't have permission to delete any of the selected scenarios",
+      });
+    }
+
+    console.log(`Bulk deleting scenarios: ${allowedScenarioIds}`);
+
+    // Get scenarios with files to delete from S3
+    const scenariosWithFiles = scenariosToDelete.filter(
+      (scenario) => allowedScenarioIds.includes(scenario.id) && scenario.files
+    );
+
+    // Delete files from S3 for allowed scenarios
+    for (const scenario of scenariosWithFiles) {
+      if (scenario.files && Array.isArray(scenario.files)) {
+        for (const fileUrl of scenario.files) {
+          try {
+            await deleteFromS3(fileUrl);
+            console.log(`Successfully deleted file: ${fileUrl}`);
+          } catch (fileDeleteError) {
+            console.error(`Error deleting file ${fileUrl}:`, fileDeleteError);
+            // Continue with scenario deletion even if file deletion fails
+          }
+        }
+      }
+    }
+
+    // Delete related conversations first (foreign key constraint)
+    const { error: conversationsDeleteError } = await connectSqlDB
+      .from("conversations")
+      .delete()
+      .in("scenario_id", allowedScenarioIds);
+
+    if (conversationsDeleteError) {
+      console.error("Error deleting conversations:", conversationsDeleteError);
+      // Continue with scenario deletion even if conversation deletion fails
+    } else {
+      console.log("Successfully deleted related conversations");
+    }
+
+    // Delete related reports
+    const { error: reportsDeleteError } = await connectSqlDB
+      .from("reports")
+      .delete()
+      .in("scenario_id", allowedScenarioIds);
+
+    if (reportsDeleteError) {
+      console.error("Error deleting reports:", reportsDeleteError);
+      // Continue with scenario deletion even if report deletion fails
+    } else {
+      console.log("Successfully deleted related reports");
+    }
+
+    // Delete scenarios
+    const { error: deleteError } = await connectSqlDB
+      .from("scenarios")
+      .delete()
+      .in("id", allowedScenarioIds);
+
+    if (deleteError) {
+      console.error("Error deleting scenarios:", deleteError);
+      return res.status(500).json({ message: "Error deleting scenarios" });
+    }
+
+    console.log("Successfully deleted scenarios");
+
+    res.json({
+      message: "Bulk delete completed",
+      deleted: allowedScenarioIds.length,
+      denied: deniedScenarios.length,
+      deniedScenarios: deniedScenarios.map((s) => ({
+        id: s.id,
+        reason: "Insufficient permissions",
+      })),
+    });
+  } catch (error) {
+    console.error("Bulk Delete Scenarios Error:", error);
+    res.status(500).json({
+      message: "Error deleting scenarios",
+      error: error.message,
+    });
+  }
+};
+
 // Save Conversation in sql database
 export const saveConversation = async (req, res) => {
   try {
@@ -1300,20 +1452,20 @@ export const exportReportToPdf = async (req, res) => {
       .fillColor(colors.secondary)
       .fontSize(10)
       .font("Helvetica-Bold")
-      .text(t.generatedBy, 60, metadataY + 40);
+      .text(t.generatedBy, 300, metadataY);
 
     doc
       .fillColor(colors.dark)
       .fontSize(12)
       .font("Helvetica")
-      .text(report.user?.name || t.unknown, 60, metadataY + 55);
+      .text(report.user?.name || t.unknown, 300, metadataY + 15);
 
     // Right column metadata
     doc
       .fillColor(colors.secondary)
       .fontSize(10)
       .font("Helvetica-Bold")
-      .text(t.dateGenerated, 300, metadataY);
+      .text(t.dateGenerated, 300, metadataY + 40);
 
     doc
       .fillColor(colors.dark)

@@ -70,9 +70,9 @@
     "selected": "seleccionados",
     "deleteSelected": "Eliminar Seleccionados",
     "bulkDeleteConfirmTitle": "Eliminar Múltiples Usuarios",
-    "bulkDeleteConfirmMessage": "¿Estás seguro de que quieres eliminar {count} usuarios? Esta acción no se puede deshacer.",
+    "bulkDeleteConfirmMessage": "¿Estás seguro de que quieres eliminar {{count}} usuarios? Esta acción no se puede deshacer.",
     "bulkDeleteSuccessTitle": "Usuarios Eliminados",
-    "bulkDeleteSuccessMessage": "{count} usuarios han sido eliminados exitosamente.",
+    "bulkDeleteSuccessMessage": "{{count}} usuarios han sido eliminados exitosamente.",
     "bulkDeleteErrorTitle": "Error",
     "bulkDeleteErrorMessage": "Algunos usuarios no pudieron ser eliminados. Por favor intenta de nuevo."
   },
@@ -84,9 +84,9 @@
     "selected": "seleccionadas",
     "deleteSelected": "Eliminar Seleccionadas",
     "bulkDeleteConfirmTitle": "Eliminar Múltiples Empresas",
-    "bulkDeleteConfirmMessage": "¿Estás seguro de que quieres eliminar {count} empresas? Esta acción no se puede deshacer.",
+    "bulkDeleteConfirmMessage": "¿Estás seguro de que quieres eliminar {{count}} empresas? Esta acción no se puede deshacer.",
     "bulkDeleteSuccessTitle": "Empresas Eliminadas",
-    "bulkDeleteSuccessMessage": "{count} empresas han sido eliminadas exitosamente.",
+    "bulkDeleteSuccessMessage": "{{count}} empresas han sido eliminadas exitosamente.",
     "bulkDeleteErrorTitle": "Error",
     "bulkDeleteErrorMessage": "Algunas empresas no pudieron ser eliminadas. Por favor intenta de nuevo."
   },
@@ -205,7 +205,16 @@
     "enterPrompt": "Ingrese prompt",
     "noContextAvailable": "No hay contexto disponible",
     "noAspectsAvailable": "No hay aspectos disponibles",
-    "audioNotSupported": "Su navegador no soporta el elemento de audio."
+    "audioNotSupported": "Su navegador no soporta el elemento de audio.",
+    "selectAll": "Seleccionar Todo",
+    "selected": "seleccionados",
+    "deleteSelected": "Eliminar Seleccionados",
+    "bulkDeleteConfirmTitle": "Eliminar Múltiples Escenarios",
+    "bulkDeleteConfirmMessage": "¿Estás seguro de que quieres eliminar {{count}} escenarios? Esta acción no se puede deshacer.",
+    "bulkDeleteSuccessTitle": "Escenarios Eliminados",
+    "bulkDeleteSuccessMessage": "{{count}} escenarios han sido eliminados exitosamente.",
+    "bulkDeleteErrorTitle": "Error",
+    "bulkDeleteErrorMessage": "Algunos escenarios no pudieron ser eliminados. Por favor intenta de nuevo."
   },
   "console": {
     "startConversation": "Iniciar Conversación",

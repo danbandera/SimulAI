@@ -187,13 +187,20 @@ const ECommerce: React.FC = () => {
                     : t("scenarios.noReportsAvailable")
                 }
                 description={
-                  scenario.users && scenario.users.length > 0
+                  // Only show user assignment info to admin and company users
+                  (currentUser?.role === "admin" ||
+                    currentUser?.role === "company") &&
+                  scenario.users &&
+                  scenario.users.length > 0
                     ? `${scenario.users.length} ${
                         scenario.users.length === 1
-                          ? t("scenarios.userAssigned", "user assigned")
-                          : t("scenarios.usersAssigned", "users assigned")
+                          ? t("scenarios.userAssigned")
+                          : t("scenarios.usersAssigned")
                       }`
-                    : t("scenarios.noUsersAssigned", "No users assigned")
+                    : currentUser?.role === "admin" ||
+                        currentUser?.role === "company"
+                      ? t("scenarios.noUsersAssigned")
+                      : "" // Empty string for regular users
                 }
               />
             </Link>

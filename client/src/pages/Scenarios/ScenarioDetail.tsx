@@ -1,13 +1,13 @@
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useScenarios } from "../../context/ScenarioContext";
 import { useUsers } from "../../context/UserContext";
 import Breadcrumb from "../../components/Breadcrumbs/Breadcrumb";
-import { ConsolePage } from "./ConsolePage";
+// import { ConsolePage } from "./ConsolePage";
 import InteractiveAvatar from "../../components/InteractiveAvatar/InteractiveAvatar";
 import Swal from "sweetalert2";
 import { useTranslation } from "react-i18next";
-import { User } from "../../api/users.api";
+// import { User } from "../../api/users.api";
 
 // Define a local interface that matches what we get from the API
 interface ScenarioDetail {
@@ -31,6 +31,7 @@ interface ScenarioDetail {
   avatar_language?: string;
   timeLimit?: number;
   users?: number[];
+  pdf_contents?: string;
 }
 
 interface TimeInfo {
@@ -50,8 +51,8 @@ const ScenarioDetail = () => {
   const [scenario, setScenario] = useState<ScenarioDetail | null>(null);
   const [timeInfo, setTimeInfo] = useState<TimeInfo | null>(null);
   // get the aspects from the scenario as string
-  const aspects = scenario?.aspects || "";
-  const context = scenario?.context || "";
+  // const aspects = scenario?.aspects || "";
+  // const context = scenario?.context || "";
 
   // Format time helper function
   const formatTime = (seconds: number): string => {

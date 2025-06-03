@@ -1,7 +1,4 @@
-import { useNavigate, useLocation } from "react-router-dom";
-import { useScenarios } from "../../context/ScenarioContext";
 import { Link } from "react-router-dom";
-import Swal from "sweetalert2";
 import { useUsers } from "../../context/UserContext";
 import { useTranslation } from "react-i18next";
 import { useState, useEffect } from "react";
@@ -170,8 +167,8 @@ const SearchFilters = ({ onFilterChange }: SearchFiltersProps) => {
 
 const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
   const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { deleteScenario } = useScenarios();
+  // const navigate = useNavigate();
+  // const { deleteScenario } = useScenarios();
   const { currentUser } = useUsers();
   const [filteredScenarios, setFilteredScenarios] = useState<Scenario[]>([]);
 
@@ -292,63 +289,6 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
     setFilteredScenarios(filtered);
   };
 
-  const handleEdit = (e: React.MouseEvent, scenarioId: number) => {
-    e.preventDefault(); // Prevent the Link navigation
-    navigate(`/scenarios/edit/${scenarioId}`);
-  };
-
-  const handleDelete = async (e: React.MouseEvent, scenarioId: number) => {
-    e.preventDefault(); // Prevent the Link navigation
-
-    const result = await Swal.fire({
-      title: t("alerts.deleteConfirmTitle"),
-      text: t("alerts.deleteConfirmMessage"),
-      icon: "warning",
-      showCancelButton: true,
-      confirmButtonColor: "#3C50E0",
-      cancelButtonColor: "#D34053",
-      confirmButtonText: t("alerts.yes"),
-      cancelButtonText: t("alerts.cancel"),
-    });
-
-    if (result.isConfirmed) {
-      try {
-        await deleteScenario(scenarioId);
-        Swal.fire({
-          title: t("alerts.deleteSuccessTitle"),
-          text: t("alerts.scenarioDeletedMessage"),
-          icon: "success",
-          confirmButtonColor: "#3C50E0",
-        });
-      } catch (error) {
-        Swal.fire({
-          title: t("alerts.deleteErrorTitle"),
-          text: t("alerts.scenarioDeleteErrorMessage"),
-          icon: "error",
-          confirmButtonColor: "#D34053",
-        });
-      }
-    }
-  };
-
-  const handleConversations = (e: React.MouseEvent, scenarioId: number) => {
-    e.preventDefault(); // Prevent the Link navigation
-    navigate(`/scenarios/${scenarioId}/conversations`);
-  };
-
-  const handleDuplicate = (e: React.MouseEvent, scenario: Scenario) => {
-    e.preventDefault();
-    navigate("/scenarios/new", {
-      state: {
-        duplicateData: {
-          title: scenario.title,
-          context: scenario.context,
-          status: scenario.status,
-        },
-      },
-    });
-  };
-
   // Pagination helper functions
   const totalPages = Math.ceil(filteredScenarios.length / itemsPerPage);
   const startIndex = (currentPage - 1) * itemsPerPage + 1;
@@ -424,7 +364,9 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
           </div>
           <div className="p-2.5 text-center xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              {t("scenarios.assignedTo", "Assigned to")}
+              {currentUser?.role === "admin" || currentUser?.role === "company"
+                ? t("scenarios.assignedTo", "Assigned to")
+                : t("scenarios.status", "Status")}
             </h5>
           </div>
           {isAdmin && (
@@ -460,14 +402,30 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
             </div>
 
             <div className="flex items-center gap-3">
-              {scenario.users && scenario.users.length > 0 ? (
-                <span>
-                  {scenario.users.length}{" "}
-                  {scenario.users.length === 1 ? "user" : "users"}
-                </span>
+              {/* Only show user assignment info to admin and company users */}
+              {currentUser?.role === "admin" ||
+              currentUser?.role === "company" ? (
+                scenario.users && scenario.users.length > 0 ? (
+                  <span>
+                    {scenario.users.length}{" "}
+                    {scenario.users.length === 1 ? "user" : "users"}
+                  </span>
+                ) : (
+                  <span className="text-gray-400">
+                    {t("scenarios.notAssigned", "Not assigned")}
+                  </span>
+                )
               ) : (
-                <span className="text-gray-400">
-                  {t("scenarios.notAssigned", "Not assigned")}
+                <span
+                  className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    scenario.status === "published"
+                      ? "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200"
+                      : scenario.status === "draft"
+                        ? "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200"
+                        : "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200"
+                  }`}
+                >
+                  {t(`scenarios.${scenario.status}`, scenario.status)}
                 </span>
               )}
             </div>

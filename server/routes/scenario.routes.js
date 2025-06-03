@@ -299,7 +299,13 @@ router.post(
 
       // Build the system context using scenario data
       const aspectsText =
-        scenario.aspects && Array.isArray(scenario.aspects)
+        scenario.aspects && typeof scenario.aspects === "string"
+          ? scenario.aspects
+              .split(",")
+              .map((aspect) => aspect.trim())
+              .filter(Boolean)
+              .join(", ")
+          : scenario.aspects && Array.isArray(scenario.aspects)
           ? scenario.aspects
               .map((aspect) => aspect.label || aspect.value || aspect)
               .join(", ")

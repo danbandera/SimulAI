@@ -11,7 +11,7 @@ import { setupChromaKey } from "./chromaKey";
 import { useScenarios } from "../../context/ScenarioContext";
 import ScenarioDetail from "../../pages/Scenarios/ScenarioDetail";
 import { useAuth } from "../../context/AuthContext";
-import * as faceapi from "face-api.js";
+// import * as faceapi from "face-api.js";
 import { useTranslation } from "react-i18next";
 import { toast } from "react-hot-toast";
 
@@ -150,13 +150,12 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
     loadSettingsFn();
   }, [loadSettings]);
 
-  const knowledgeBase = settings?.promt_for_virtual_avatar.replace(
+  let knowledgeBase = settings?.promt_for_virtual_avatar.replace(
     "CONTEXT_FOR_PERSONA",
-    scenario?.context || "",
+    scenario?.context + " " + scenario?.pdf_contents || "",
     // "use this file as context for the avatar" +
     // "https://bucket-simulai.s3.us-east-2.amazonaws.com/documents/200ce259626f1e60433390e8a52c1c60.pdf",
   );
-  console.log("knowledgeBase", knowledgeBase);
   let sessionStartTime: number;
   let timerInterval: NodeJS.Timeout;
 

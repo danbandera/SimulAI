@@ -187,12 +187,21 @@ const ScenarioReport = () => {
           setScenarioTitle(scenarioData.title);
           setScenarioContext(scenarioData.context || "");
 
-          // Extract aspects
-          if (scenarioData.aspects && Array.isArray(scenarioData.aspects)) {
-            const aspectLabels = scenarioData.aspects
-              .map((aspect) => aspect.label || aspect.value || "")
-              .filter(Boolean);
+          // Extract aspects - fix the logic to handle string format
+          if (scenarioData.aspects) {
+            let aspectLabels: string[] = [];
+
+            if (typeof scenarioData.aspects === "string") {
+              // If aspects is a string (comma-separated), split it
+              aspectLabels = scenarioData.aspects
+                .split(",")
+                .map((aspect) => aspect.trim())
+                .filter(Boolean);
+            }
+
             setScenarioAspects(aspectLabels);
+          } else {
+            setScenarioAspects([]);
           }
 
           // Load conversations

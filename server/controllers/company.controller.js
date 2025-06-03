@@ -200,13 +200,19 @@ export const updateCompany = async (req, res) => {
     }
 
     // Update company
+    const updateData = {
+      logo: logoUrl,
+      updated_at: new Date().toISOString(),
+    };
+
+    // Only update name if it's provided (admin users)
+    if (name !== undefined && name !== null) {
+      updateData.name = name;
+    }
+
     const { data: updatedCompany, error: companyError } = await connectSqlDB
       .from("companies")
-      .update({
-        name,
-        logo: logoUrl,
-        updated_at: new Date().toISOString(),
-      })
+      .update(updateData)
       .eq("id", id)
       .select()
       .single();

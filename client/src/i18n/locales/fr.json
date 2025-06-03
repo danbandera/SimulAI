@@ -33,7 +33,8 @@
     "allScenarios": "Tous les Scénarios",
     "newScenario": "Nouveau Scénario",
     "conversations": "Conversations",
-    "settings": "Paramètres"
+    "settings": "Paramètres",
+    "editDepartments": "Modifier les Départements"
   },
   "users": {
     "title": "Utilisateurs",

@@ -195,7 +195,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                                 {t("sidebar.newUser")}
                               </NavLink>
                             </li>
-                            {/* Company menu items - Only for Admin */}
+                            {/* Company menu items - Different for Admin vs Company users */}
                             {currentUser?.role === "admin" && (
                               <>
                                 <li>
@@ -221,6 +221,22 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                                   </NavLink>
                                 </li>
                               </>
+                            )}
+                            {currentUser?.role === "company" && (
+                              <li>
+                                <NavLink
+                                  to={`/companies/edit/${currentUser?.company_id}`}
+                                  className={({ isActive }) =>
+                                    "group relative flex items-center gap-2.5 rounded-md px-4 font-medium text-bodydark2 duration-300 ease-in-out hover:text-white " +
+                                    (isActive && "!text-white")
+                                  }
+                                >
+                                  {t(
+                                    "sidebar.editDepartments",
+                                    "Edit Departments",
+                                  )}
+                                </NavLink>
+                              </li>
                             )}
                           </ul>
                         </div>

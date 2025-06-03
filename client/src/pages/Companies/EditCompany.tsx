@@ -35,6 +35,17 @@ const EditCompany: React.FC = () => {
       try {
         if (id) {
           const company = await getCompany(Number(id));
+
+          // Check if company user is trying to edit their own company
+          if (
+            currentUser?.role === "company" &&
+            currentUser?.company_id !== Number(id)
+          ) {
+            toast.error("You can only edit your own company");
+            navigate("/");
+            return;
+          }
+
           setFormData({
             name: company.name,
             departments:
@@ -59,7 +70,7 @@ const EditCompany: React.FC = () => {
     };
 
     loadCompany();
-  }, [id, getCompany, navigate]);
+  }, [id, getCompany, navigate, currentUser]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
@@ -150,8 +161,11 @@ const EditCompany: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    // Validate that company name is provided
-    if (!formData.name.trim()) {
+    // For company users, don't validate or update company name
+    const isCompanyUser = currentUser?.role === "company";
+
+    // Validate that company name is provided (only for admin users)
+    if (!isCompanyUser && !formData.name.trim()) {
       toast.error("Company name is required");
       return;
     }
@@ -170,21 +184,34 @@ const EditCompany: React.FC = () => {
       // If there's a new logo file, use FormData, otherwise use regular object
       if (logoFile) {
         const submitData = new FormData();
-        submitData.append("name", formData.name);
+        // Only include name for admin users
+        if (!isCompanyUser) {
+          submitData.append("name", formData.name);
+        }
         submitData.append("departments", JSON.stringify(validDepartments));
         submitData.append("logo", logoFile);
 
         await updateCompany(Number(id), submitData);
       } else {
-        await updateCompany(Number(id), {
-          name: formData.name,
+        const updateData: any = {
           departments: validDepartments,
           created_by: Number(currentUser?.id),
-        });
+        };
+
+        // Only include name for admin users
+        if (!isCompanyUser) {
+          updateData.name = formData.name;
+        }
+
+        await updateCompany(Number(id), updateData);
       }
 
-      toast.success("Company updated successfully!");
-      navigate("/companies");
+      toast.success(
+        isCompanyUser
+          ? "Departments and logo updated successfully!"
+          : "Company updated successfully!",
+      );
+      navigate(isCompanyUser ? "/" : "/companies");
     } catch (error: any) {
       console.error("Error updating company:", error);
       toast.error(error.message || "Error updating company");
@@ -201,21 +228,30 @@ const EditCompany: React.FC = () => {
 
   return (
     <>
-      <Breadcrumb pageName="Edit Company" />
+      <Breadcrumb
+        pageName={
+          currentUser?.role === "company" ? "Edit Departments" : "Edit Company"
+        }
+      />
 
       <div className="grid grid-cols-1 gap-12">
         <div className="flex flex-col gap-12">
           <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
             <div className="border-b border-stroke py-4 px-6.5 dark:border-strokedark">
               <h3 className="font-medium text-black dark:text-white">
-                Edit Company
+                {currentUser?.role === "company"
+                  ? "Edit Departments & Logo"
+                  : "Edit Company"}
               </h3>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="p-6.5">
                 <div className="mb-4.5">
                   <label className="mb-2.5 block text-black dark:text-white">
-                    Company Name <span className="text-meta-1">*</span>
+                    Company Name{" "}
+                    {currentUser?.role !== "company" && (
+                      <span className="text-meta-1">*</span>
+                    )}
                   </label>
                   <input
                     type="text"
@@ -224,8 +260,14 @@ const EditCompany: React.FC = () => {
                     onChange={handleChange}
                     placeholder="Enter company name"
                     className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
-                    required
+                    required={currentUser?.role !== "company"}
+                    disabled={currentUser?.role === "company"}
                   />
+                  {currentUser?.role === "company" && (
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                      Company name cannot be changed by company users
+                    </p>
+                  )}
                 </div>
 
                 <div className="mb-4.5">
@@ -248,7 +290,7 @@ const EditCompany: React.FC = () => {
                       <div key={index} className="flex items-center gap-3">
                         <input
                           type="text"
-                          value={department.name}
+                          value={department.id + " - " + department.name}
                           onChange={(e) =>
                             handleDepartmentChange(index, e.target.value)
                           }
@@ -319,7 +361,9 @@ const EditCompany: React.FC = () => {
                   type="submit"
                   className="flex w-full justify-center rounded bg-primary p-3 font-medium text-gray hover:bg-opacity-90"
                 >
-                  Update Company
+                  {currentUser?.role === "company"
+                    ? "Update Departments & Logo"
+                    : "Update Company"}
                 </button>
               </div>
             </form>

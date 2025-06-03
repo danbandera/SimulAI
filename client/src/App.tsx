@@ -56,6 +56,33 @@ const AdminRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
+const AdminOrCompanyRoute = ({ children }: { children: React.ReactNode }) => {
+  const { currentUser } = useUsers();
+  const { user, loading } = useAuth();
+
+  // Show loading while authentication or user data is being loaded
+  if (loading || (user && !currentUser)) {
+    return (
+      <div className="flex justify-center items-center h-60">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
+
+  // Check admin or company privileges after loading is complete
+  if (currentUser?.role !== "admin" && currentUser?.role !== "company") {
+    return (
+      <div className="flex justify-center items-center h-60">
+        <div className="text-lg text-red-500">
+          Access denied. Admin or Company privileges required.
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+};
+
 function App() {
   return (
     <AuthProvider>
@@ -136,9 +163,9 @@ function App() {
                     element={
                       <>
                         <PageTitle title="Edit Company | Admin Dashboard" />
-                        <AdminRoute>
+                        <AdminOrCompanyRoute>
                           <EditCompany />
-                        </AdminRoute>
+                        </AdminOrCompanyRoute>
                       </>
                     }
                   />

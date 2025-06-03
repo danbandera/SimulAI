@@ -33,7 +33,8 @@
     "allScenarios": "All Scenarios",
     "newScenario": "New Scenario",
     "conversations": "Conversations",
-    "settings": "Settings"
+    "settings": "Settings",
+    "editDepartments": "Edit Departments"
   },
   "users": {
     "title": "Users",

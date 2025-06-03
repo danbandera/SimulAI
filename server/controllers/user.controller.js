@@ -428,6 +428,21 @@ export const importUsersFromCSV = async (req, res) => {
       return res.status(401).json({ message: "Authentication required" });
     }
 
+    // Get the importing user's information to enforce company rules
+    const { data: importingUser, error: importingUserError } =
+      await connectSqlDB
+        .from("users")
+        .select("role, company_id")
+        .eq("id", req.user.id)
+        .single();
+
+    if (importingUserError) {
+      console.error("Error fetching importing user:", importingUserError);
+      return res
+        .status(500)
+        .json({ message: "Error validating user permissions" });
+    }
+
     const fileContent = req.file.buffer.toString();
     const records = parse(fileContent, {
       columns: true,
@@ -451,7 +466,41 @@ export const importUsersFromCSV = async (req, res) => {
         if (!record.name || !record.lastname || !record.email || !record.role) {
           results.skipped.push({
             row: record,
-            reason: "Missing required fields",
+            reason: "Missing required fields (name, lastname, email, role)",
+          });
+          continue;
+        }
+
+        // Determine company_id and role based on importing user's permissions
+        let finalCompanyId = null;
+        let finalRole = record.role;
+
+        // Enforce company rules for company users
+        if (importingUser.role === "company") {
+          finalCompanyId = importingUser.company_id; // Force same company as importer
+          finalRole = "user"; // Company users can only import regular users
+        } else if (importingUser.role === "admin") {
+          // Admin can specify company_id from CSV or leave null
+          finalCompanyId = record.company_id
+            ? parseInt(record.company_id)
+            : null;
+          // Admin can import any role
+        } else {
+          results.skipped.push({
+            row: record,
+            reason: "Insufficient permissions to import users",
+          });
+          continue;
+        }
+
+        // Validate role assignment - only admins can import company/admin users
+        if (
+          (finalRole === "company" || finalRole === "admin") &&
+          importingUser.role !== "admin"
+        ) {
+          results.skipped.push({
+            row: record,
+            reason: "Only administrators can import company or admin users",
           });
           continue;
         }
@@ -481,8 +530,8 @@ export const importUsersFromCSV = async (req, res) => {
           .insert({
             name: record.name,
             lastname: record.lastname,
-            company_id: record.company_id || null,
-            role: record.role,
+            company_id: finalCompanyId,
+            role: finalRole,
             email: record.email,
             password: hashedPassword,
             created_by: req.user.id,
@@ -500,7 +549,7 @@ export const importUsersFromCSV = async (req, res) => {
         }
 
         // Handle department_ids if provided (comma-separated string)
-        if (record.department_ids && record.company_id) {
+        if (record.department_ids && finalCompanyId) {
           try {
             const departmentIds = record.department_ids
               .split(",")
@@ -508,14 +557,34 @@ export const importUsersFromCSV = async (req, res) => {
               .filter((id) => !isNaN(id));
 
             if (departmentIds.length > 0) {
-              const userDepartments = departmentIds.map((deptId) => ({
-                user_id: newUser.id,
-                department_id: deptId,
-              }));
+              // Verify that departments belong to the assigned company
+              const { data: validDepartments } = await connectSqlDB
+                .from("departments")
+                .select("id")
+                .eq("company_id", finalCompanyId)
+                .in("id", departmentIds);
 
-              await connectSqlDB
-                .from("user_departments")
-                .insert(userDepartments);
+              const validDepartmentIds = validDepartments.map(
+                (dept) => dept.id
+              );
+
+              if (validDepartmentIds.length > 0) {
+                const userDepartments = validDepartmentIds.map((deptId) => ({
+                  user_id: newUser.id,
+                  department_id: deptId,
+                }));
+
+                await connectSqlDB
+                  .from("user_departments")
+                  .insert(userDepartments);
+              }
+
+              // Log if some departments were invalid
+              if (validDepartmentIds.length !== departmentIds.length) {
+                console.warn(
+                  `Some departments were invalid for user ${newUser.email}. Valid: ${validDepartmentIds}, Requested: ${departmentIds}`
+                );
+              }
             }
           } catch (deptError) {
             console.error("Error inserting departments for user:", deptError);

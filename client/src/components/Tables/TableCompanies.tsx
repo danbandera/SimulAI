@@ -359,7 +359,7 @@ const TableCompanies = ({ companies }: { companies: Company[] }) => {
                         key={index}
                         className="inline-block bg-primary bg-opacity-10 text-primary rounded px-2 py-1 text-xs"
                       >
-                        {dept.name}
+                        {dept.id} - {dept.name}
                       </span>
                     ))}
                   </div>

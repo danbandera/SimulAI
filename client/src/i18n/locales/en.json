@@ -59,7 +59,13 @@
     "user": "User",
     "passsword": "Password",
     "passwordEdit": "Password (leave empty to keep current)",
-    "importCSV": "Import CSV"
+    "importCSV": "Import CSV",
+    "downloadCSVExample": "Download CSV Example",
+    "csvImportTooltip": "Upload a CSV file to import multiple users at once. The CSV should contain columns: name, lastname, email, role, company_id (optional), department_ids (optional, comma-separated). Click 'Download CSV Example' to see the format.",
+    "searchPlaceholder": "Search by name or email...",
+    "allCompanies": "All Companies",
+    "allDepartments": "All Departments",
+    "allRoles": "All Roles"
   },
   "scenarios": {
     "title": "Scenarios",

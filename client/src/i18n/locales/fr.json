@@ -59,7 +59,13 @@
     "user": "Utilisateur",
     "passsword": "Mot de passe",
     "passwordEdit": "Mot de passe (laisser vide pour conserver l'actuel)",
-    "importCSV": "Importer CSV"
+    "importCSV": "Importer CSV",
+    "downloadCSVExample": "Télécharger Exemple CSV",
+    "csvImportTooltip": "Téléchargez un fichier CSV pour importer plusieurs utilisateurs à la fois. Le CSV doit contenir les colonnes : name, lastname, email, role, company_id (optionnel), department_ids (optionnel, séparés par des virgules). Cliquez sur 'Télécharger Exemple CSV' pour voir le format.",
+    "searchPlaceholder": "Rechercher par nom ou email...",
+    "allCompanies": "Toutes les Entreprises",
+    "allDepartments": "Tous les Départements",
+    "allRoles": "Tous les Rôles"
   },
   "scenarios": {
     "title": "Scénarios",

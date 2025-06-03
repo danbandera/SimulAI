@@ -48,6 +48,7 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
   const [stopChromaKeyProcessing, setStopChromaKeyProcessing] = useState<
     (() => void) | null
   >(null);
+  // Chroma key is always enabled - no toggle needed
 
   // Timer related states
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null); // in seconds
@@ -254,6 +255,35 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
     const minutes = Math.floor(seconds / 60);
     const remainingSeconds = Math.floor(seconds % 60);
     return `${minutes}:${remainingSeconds.toString().padStart(2, "0")}`;
+  };
+
+  // Function to update chroma key state
+  const updateChromaKeyState = () => {
+    if (!mediaStream.current || !canvasRef.current || !stream) return;
+
+    // Stop any existing chroma key processing
+    if (stopChromaKeyProcessing) {
+      stopChromaKeyProcessing();
+      setStopChromaKeyProcessing(null);
+    }
+
+    // Always enable chroma key - show canvas, hide video
+    if (canvasRef.current) canvasRef.current.style.display = "block";
+    if (mediaStream.current) mediaStream.current.style.display = "none";
+
+    // Start chroma key processing
+    const stopProcessing = setupChromaKey(
+      mediaStream.current,
+      canvasRef.current,
+      {
+        minHue: 60,
+        maxHue: 180,
+        minSaturation: 0.1,
+        threshold: 1.0,
+      },
+    );
+
+    setStopChromaKeyProcessing(() => stopProcessing);
   };
 
   async function startSession() {
@@ -529,34 +559,18 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
       mediaStream.current.srcObject = stream;
       mediaStream.current.onloadedmetadata = () => {
         mediaStream.current?.play();
+        // Setup chroma key after video is loaded
+        updateChromaKeyState();
       };
     }
   }, [stream]);
 
-  // Setup chroma key when stream is available
+  // Update chroma key when chromaKeyEnabled changes
   useEffect(() => {
-    if (!mediaStream.current || !canvasRef.current) return;
-
-    // Stop any existing chroma key processing
-    if (stopChromaKeyProcessing) {
-      stopChromaKeyProcessing();
-      setStopChromaKeyProcessing(null);
+    if (stream) {
+      updateChromaKeyState();
     }
-
-    // Start chroma key processing
-    const stopProcessing = setupChromaKey(
-      mediaStream.current,
-      canvasRef.current,
-      {
-        minHue: 60,
-        maxHue: 180,
-        minSaturation: 0.1,
-        threshold: 1.0,
-      },
-    );
-
-    setStopChromaKeyProcessing(() => stopProcessing);
-  }, [mediaStream.current, canvasRef.current]);
+  }, [stream]);
 
   useEffect(() => {
     return () => {
@@ -748,6 +762,7 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
             </button>
           ) : (
             <div className="relative w-full h-full" ref={containerRef}>
+              {/* Video element - hidden when chroma key is enabled */}
               <video
                 ref={mediaStream}
                 autoPlay
@@ -760,22 +775,26 @@ const InteractiveAvatar: React.FC<InteractiveAvatarProps> = (props) => {
               >
                 <track kind="captions" />
               </video>
-              {scenario?.generated_image_url && scenario?.show_image_prompt && (
-                <canvas
-                  ref={canvasRef}
-                  style={{
-                    width: "100%",
-                    height: "100%",
-                    objectFit: "contain",
-                    position: "absolute",
-                    top: 0,
-                    left: 0,
-                    backgroundImage: `url(${scenario.generated_image_url})`,
-                    backgroundSize: "cover",
-                    backgroundPosition: "center",
-                  }}
-                />
-              )}
+
+              {/* Canvas element - always shown with chroma key enabled */}
+              <canvas
+                ref={canvasRef}
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "contain",
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  ...(scenario?.generated_image_url &&
+                    scenario?.show_image_prompt && {
+                      backgroundImage: `url(${scenario.generated_image_url})`,
+                      backgroundSize: "cover",
+                      backgroundPosition: "center",
+                    }),
+                }}
+              />
+
               <button
                 onClick={endSession}
                 disabled={isSavingConversation}

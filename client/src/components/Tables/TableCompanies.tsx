@@ -421,36 +421,38 @@ const TableCompanies = ({ companies }: { companies: Company[] }) => {
           </div>
 
           <div className="p-2.5 xl:p-5">
-            <h5 className="text-sm font-medium uppercase xsm:text-base">ID</h5>
-          </div>
-          <div className="p-2.5 xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Logo
+              {t("companies.id")}
             </h5>
           </div>
           <div className="p-2.5 xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Company Name
+              {t("companies.logo")}
+            </h5>
+          </div>
+          <div className="p-2.5 xl:p-5">
+            <h5 className="text-sm font-medium uppercase xsm:text-base">
+              {t("companies.companyName")}
             </h5>
           </div>
           <div className="p-2.5 text-center xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Departments
+              {t("companies.departments")}
             </h5>
           </div>
           <div className="p-2.5 text-center xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Created At
+              {t("companies.createdAt")}
             </h5>
           </div>
           <div className="hidden p-2.5 text-center sm:block xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Edit
+              {t("companies.edit")}
             </h5>
           </div>
           <div className="hidden p-2.5 text-center sm:block xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
-              Delete
+              {t("companies.delete")}
             </h5>
           </div>
         </div>
@@ -490,7 +492,7 @@ const TableCompanies = ({ companies }: { companies: Company[] }) => {
               ) : (
                 <div className="h-10 w-10 bg-gray-200 dark:bg-gray-600 rounded flex items-center justify-center">
                   <span className="text-xs text-gray-500 dark:text-gray-400">
-                    No Logo
+                    {t("companies.noLogo")}
                   </span>
                 </div>
               )}
@@ -514,7 +516,9 @@ const TableCompanies = ({ companies }: { companies: Company[] }) => {
                     ))}
                   </div>
                 ) : (
-                  <span className="text-gray-500">No departments</span>
+                  <span className="text-gray-500">
+                    {t("companies.noDepartments")}
+                  </span>
                 )}
               </div>
             </div>
@@ -533,7 +537,7 @@ const TableCompanies = ({ companies }: { companies: Company[] }) => {
                 onClick={(e) => handleEdit(e, company.id!)}
                 className="inline-flex items-center justify-center rounded-md bg-primary py-2 px-4 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
               >
-                Edit
+                {t("companies.edit")}
               </Link>
             </div>
             <div className="flex items-center justify-center p-2.5 xl:p-5">
@@ -542,7 +546,7 @@ const TableCompanies = ({ companies }: { companies: Company[] }) => {
                 onClick={(e) => handleDelete(e, company.id!)}
                 className="inline-flex items-center justify-center rounded-md bg-danger py-2 px-4 text-center font-medium text-white hover:bg-opacity-90 lg:px-8 xl:px-10"
               >
-                Delete
+                {t("companies.delete")}
               </Link>
             </div>
           </div>

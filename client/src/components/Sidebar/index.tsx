@@ -206,7 +206,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                                       (isActive && "!text-white")
                                     }
                                   >
-                                    All Companies
+                                    {t("sidebar.allCompanies")}
                                   </NavLink>
                                 </li>
                                 <li>
@@ -217,7 +217,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }: SidebarProps) => {
                                       (isActive && "!text-white")
                                     }
                                   >
-                                    New Company
+                                    {t("sidebar.newCompany")}
                                   </NavLink>
                                 </li>
                               </>

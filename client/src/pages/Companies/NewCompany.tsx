@@ -37,13 +37,13 @@ const NewCompany: React.FC = () => {
     if (file) {
       // Validate file type
       if (!file.type.startsWith("image/")) {
-        toast.error("Please select an image file");
+        toast.error(t("companies.pleaseSelectImageFile"));
         return;
       }
 
       // Validate file size (5MB limit)
       if (file.size > 5 * 1024 * 1024) {
-        toast.error("Logo file size must be less than 5MB");
+        toast.error(t("companies.logoFileSizeLimit"));
         return;
       }
 
@@ -103,7 +103,7 @@ const NewCompany: React.FC = () => {
 
     // Validate that company name is provided
     if (!formData.name.trim()) {
-      toast.error("Company name is required");
+      toast.error(t("companies.companyNameRequired"));
       return;
     }
 
@@ -113,7 +113,7 @@ const NewCompany: React.FC = () => {
     );
 
     if (validDepartments.length === 0) {
-      toast.error("At least one department is required");
+      toast.error(t("companies.atLeastOneDepartmentRequired"));
       return;
     }
 
@@ -130,38 +130,39 @@ const NewCompany: React.FC = () => {
 
       await createCompany(submitData);
 
-      toast.success("Company created successfully!");
+      toast.success(t("companies.companyCreatedSuccessfully"));
       navigate("/companies");
     } catch (error: any) {
       console.error("Error creating company:", error);
-      toast.error(error.message || "Error creating company");
+      toast.error(error.message || t("companies.errorCreatingCompany"));
     }
   };
 
   return (
     <>
-      <Breadcrumb pageName="New Company" />
+      <Breadcrumb pageName={t("companies.newCompany")} />
 
       <div className="grid grid-cols-1 gap-12">
         <div className="flex flex-col gap-12">
           <div className="rounded-sm border border-stroke bg-white shadow-default dark:border-strokedark dark:bg-boxdark">
             <div className="border-b border-stroke py-4 px-6.5 dark:border-strokedark">
               <h3 className="font-medium text-black dark:text-white">
-                Create New Company
+                {t("companies.createNewCompany")}
               </h3>
             </div>
             <form onSubmit={handleSubmit}>
               <div className="p-6.5">
                 <div className="mb-4.5">
                   <label className="mb-2.5 block text-black dark:text-white">
-                    Company Name <span className="text-meta-1">*</span>
+                    {t("companies.companyName")}{" "}
+                    <span className="text-meta-1">*</span>
                   </label>
                   <input
                     type="text"
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
-                    placeholder="Enter company name"
+                    placeholder={t("companies.enterCompanyName")}
                     className="w-full rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
                     required
                   />
@@ -170,7 +171,8 @@ const NewCompany: React.FC = () => {
                 <div className="mb-4.5">
                   <div className="flex items-center justify-between mb-2.5">
                     <label className="block text-black dark:text-white">
-                      Departments <span className="text-meta-1">*</span>
+                      {t("companies.departments")}{" "}
+                      <span className="text-meta-1">*</span>
                     </label>
                     <button
                       type="button"
@@ -178,7 +180,7 @@ const NewCompany: React.FC = () => {
                       className="inline-flex items-center gap-2 rounded bg-primary py-2 px-4 text-sm font-medium text-white hover:bg-opacity-90"
                     >
                       <FiPlus size={16} />
-                      Add Department
+                      {t("companies.addDepartment")}
                     </button>
                   </div>
 
@@ -191,7 +193,9 @@ const NewCompany: React.FC = () => {
                           onChange={(e) =>
                             handleDepartmentChange(index, e.target.value)
                           }
-                          placeholder={`Department ${index + 1} name`}
+                          placeholder={t("companies.departmentName", {
+                            number: index + 1,
+                          })}
                           className="flex-1 rounded border-[1.5px] border-stroke bg-transparent py-3 px-5 text-black outline-none transition focus:border-primary active:border-primary disabled:cursor-default disabled:bg-whiter dark:border-form-strokedark dark:bg-form-input dark:text-white dark:focus:border-primary"
                         />
                         {formData.departments.length > 1 && (
@@ -210,7 +214,7 @@ const NewCompany: React.FC = () => {
 
                 <div className="mb-4.5">
                   <label className="mb-2.5 block text-black dark:text-white">
-                    Company Logo
+                    {t("companies.companyLogo")}
                   </label>
 
                   {logoPreview ? (
@@ -218,7 +222,7 @@ const NewCompany: React.FC = () => {
                       <div className="relative inline-block">
                         <img
                           src={logoPreview}
-                          alt="Logo preview"
+                          alt={t("companies.logoPreview")}
                           className="h-20 w-20 object-contain rounded border border-stroke dark:border-strokedark"
                         />
                         <button
@@ -237,7 +241,7 @@ const NewCompany: React.FC = () => {
                         className="flex cursor-pointer items-center justify-center gap-2 rounded border-2 border-dashed border-stroke bg-gray py-6 px-4 text-center dark:border-strokedark dark:bg-meta-4"
                       >
                         <FiUpload size={20} />
-                        <span>Click to upload logo</span>
+                        <span>{t("companies.clickToUploadLogo")}</span>
                       </label>
                     </div>
                   )}
@@ -250,7 +254,7 @@ const NewCompany: React.FC = () => {
                     className="hidden"
                   />
                   <p className="text-sm text-gray-500 dark:text-gray-400">
-                    Supported formats: JPG, PNG, GIF. Max size: 5MB
+                    {t("companies.supportedFormats")}
                   </p>
                 </div>
 
@@ -258,7 +262,7 @@ const NewCompany: React.FC = () => {
                   type="submit"
                   className="flex w-full justify-center rounded bg-primary p-3 font-medium text-gray hover:bg-opacity-90"
                 >
-                  Create Company
+                  {t("companies.createCompany")}
                 </button>
               </div>
             </form>

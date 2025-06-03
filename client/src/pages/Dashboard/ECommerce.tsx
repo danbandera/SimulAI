@@ -130,6 +130,17 @@ const ECommerce: React.FC = () => {
         return false;
       }
 
+      // For users with role "user", only show published scenarios they're assigned to
+      if (currentUser.role === "user") {
+        const userId = Number(currentUser.id);
+        const isAssigned =
+          scenario.users &&
+          Array.isArray(scenario.users) &&
+          scenario.users.includes(userId);
+        const isPublished = scenario.status === "published";
+        return isAssigned && isPublished;
+      }
+
       // Regular user only sees scenarios they're explicitly assigned to
       const userId = Number(currentUser.id);
 

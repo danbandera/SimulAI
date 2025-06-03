@@ -221,6 +221,17 @@ const TableScenarios = ({ scenarios }: { scenarios: Scenario[] }) => {
         return scenario.created_by.id === Number(currentUser?.id);
       }
 
+      if (currentUser?.role === "user") {
+        const userId = Number(currentUser?.id);
+        const isAssigned =
+          scenario.users &&
+          Array.isArray(scenario.users) &&
+          scenario.users.includes(userId);
+        const isPublished = scenario.status === "published";
+        return isAssigned && isPublished;
+      }
+
+      // Fallback for other roles
       const userId = Number(currentUser?.id);
       if (scenario.users && Array.isArray(scenario.users)) {
         return scenario.users.includes(userId);

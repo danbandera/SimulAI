@@ -52,22 +52,30 @@ router.patch(
   updateReportShowToUser
 );
 
-router.post("/scenarios/:id/conversations", saveConversation);
-router.get("/scenarios/conversations", getAllConversations);
-router.get("/scenarios/:scenarioId/conversations", getConversations);
-router.get("/scenarios/:id/conversations/:conversationId", getConversation);
+router.post("/scenarios/:id/conversations", authRequired, saveConversation);
+router.get("/scenarios/conversations", authRequired, getAllConversations);
+router.get(
+  "/scenarios/:scenarioId/conversations",
+  authRequired,
+  getConversations
+);
+router.get(
+  "/scenarios/:id/conversations/:conversationId",
+  authRequired,
+  getConversation
+);
 
-router.get("/scenarios", getScenarios);
+router.get("/scenarios", authRequired, getScenarios);
 // Let the controller handle the file upload middleware
-router.post("/scenarios", createScenario);
-router.get("/scenarios/:id", getScenarioById);
+router.post("/scenarios", authRequired, createScenario);
+router.get("/scenarios/:id", authRequired, getScenarioById);
 // Let the controller handle the file upload middleware
-router.put("/scenarios/:id", updateScenario);
-router.delete("/scenarios/:id", deleteScenario);
-router.get("/scenarios/user/:id", getScenarioByUserId);
+router.put("/scenarios/:id", authRequired, updateScenario);
+router.delete("/scenarios/:id", authRequired, deleteScenario);
+router.get("/scenarios/user/:id", authRequired, getScenarioByUserId);
 
 // Add a new route to get PDF contents for a specific scenario
-router.get("/scenarios/:id/pdf-contents", async (req, res) => {
+router.get("/scenarios/:id/pdf-contents", authRequired, async (req, res) => {
   try {
     const { id } = req.params;
 

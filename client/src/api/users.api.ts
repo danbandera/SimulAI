@@ -68,3 +68,10 @@ export const importUsersFromCSVRequest = async (file: File) => {
   });
   return response.data;
 };
+
+export const bulkDeleteUsersRequest = async (userIds: number[]) => {
+  const response = await axios.delete("/users/bulk", {
+    data: { userIds },
+  });
+  return response.data;
+};

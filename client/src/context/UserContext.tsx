@@ -13,6 +13,7 @@ import {
   getUserRequest,
   updateUserProfileImageRequest,
   importUsersFromCSVRequest,
+  bulkDeleteUsersRequest,
 } from "../api/users.api";
 import { useAuth } from "./AuthContext";
 
@@ -43,6 +44,11 @@ interface UserContextType {
     created_at: string;
   }>;
   deleteUser: (id: number) => Promise<void>;
+  bulkDeleteUsers: (userIds: number[]) => Promise<{
+    deleted: number;
+    denied: number;
+    deniedUsers: Array<{ id: number; reason: string }>;
+  }>;
   updateUser: (id: number, user: User) => Promise<User>;
   getUser: (id: number) => Promise<User>;
   updateUserProfileImage: (id: number, file: File) => Promise<void>;
@@ -121,6 +127,18 @@ export const UserProvider = ({ children }: UserProviderProps) => {
     }
   };
 
+  const bulkDeleteUsers = async (userIds: number[]) => {
+    try {
+      const response = await bulkDeleteUsersRequest(userIds);
+      // Remove deleted users from state
+      setUsers(users.filter((user) => !userIds.includes(user.id!)));
+      return response;
+    } catch (error: any) {
+      console.error("Error bulk deleting users:", error);
+      throw new Error(error.response?.data?.message || "Error deleting users");
+    }
+  };
+
   const updateUser = async (id: number, user: User) => {
     try {
       const response = await updateUserRequest(id, user);
@@ -182,6 +200,7 @@ export const UserProvider = ({ children }: UserProviderProps) => {
         getUsers,
         createUser,
         deleteUser,
+        bulkDeleteUsers,
         updateUser,
         getUser,
         updateUserProfileImage,

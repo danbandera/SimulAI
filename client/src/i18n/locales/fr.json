@@ -65,7 +65,16 @@
     "searchPlaceholder": "Rechercher par nom ou email...",
     "allCompanies": "Toutes les Entreprises",
     "allDepartments": "Tous les Départements",
-    "allRoles": "Tous les Rôles"
+    "allRoles": "Tous les Rôles",
+    "selectAll": "Tout Sélectionner",
+    "selected": "sélectionnés",
+    "deleteSelected": "Supprimer Sélectionnés",
+    "bulkDeleteConfirmTitle": "Supprimer Plusieurs Utilisateurs",
+    "bulkDeleteConfirmMessage": "Êtes-vous sûr de vouloir supprimer {count} utilisateurs ? Cette action ne peut pas être annulée.",
+    "bulkDeleteSuccessTitle": "Utilisateurs Supprimés",
+    "bulkDeleteSuccessMessage": "{count} utilisateurs ont été supprimés avec succès.",
+    "bulkDeleteErrorTitle": "Erreur",
+    "bulkDeleteErrorMessage": "Certains utilisateurs n'ont pas pu être supprimés. Veuillez réessayer."
   },
   "scenarios": {
     "title": "Scénarios",
@@ -280,5 +289,19 @@
     "importErrorMessage": "Erreur lors de l'importation des utilisateurs",
     "passwordMismatchTitle": "Oops...",
     "passwordMismatchMessage": "Les nouveaux mots de passe ne correspondent pas !"
+  },
+  "companies": {
+    "title": "Entreprises",
+    "noCompanies": "Aucune entreprise trouvée",
+    "searchPlaceholder": "Rechercher des entreprises...",
+    "selectAll": "Tout Sélectionner",
+    "selected": "sélectionnées",
+    "deleteSelected": "Supprimer Sélectionnées",
+    "bulkDeleteConfirmTitle": "Supprimer Plusieurs Entreprises",
+    "bulkDeleteConfirmMessage": "Êtes-vous sûr de vouloir supprimer {count} entreprises ? Cette action ne peut pas être annulée.",
+    "bulkDeleteSuccessTitle": "Entreprises Supprimées",
+    "bulkDeleteSuccessMessage": "{count} entreprises ont été supprimées avec succès.",
+    "bulkDeleteErrorTitle": "Erreur",
+    "bulkDeleteErrorMessage": "Certaines entreprises n'ont pas pu être supprimées. Veuillez réessayer."
   }
 }

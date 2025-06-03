@@ -181,7 +181,7 @@ const SearchFilters = ({
 const TableUsers = ({ users }: { users: any }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { deleteUser } = useUsers();
+  const { deleteUser, bulkDeleteUsers } = useUsers();
   const { currentUser } = useUsers();
   const { companies, getCompanies } = useCompanies();
   const [filteredUsers, setFilteredUsers] = useState<any[]>([]);
@@ -190,6 +190,10 @@ const TableUsers = ({ users }: { users: any }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [paginatedUsers, setPaginatedUsers] = useState<any[]>([]);
+
+  // Bulk selection state
+  const [selectedUsers, setSelectedUsers] = useState<Set<number>>(new Set());
+  const [selectAll, setSelectAll] = useState(false);
 
   useEffect(() => {
     getCompanies();
@@ -216,6 +220,12 @@ const TableUsers = ({ users }: { users: any }) => {
   useEffect(() => {
     setCurrentPage(1);
   }, [filteredUsers.length]);
+
+  // Reset selections when users change
+  useEffect(() => {
+    setSelectedUsers(new Set());
+    setSelectAll(false);
+  }, [paginatedUsers]);
 
   // Helper function to get company name
   const getCompanyName = (companyId: number) => {
@@ -310,6 +320,34 @@ const TableUsers = ({ users }: { users: any }) => {
     setFilteredUsers(filtered);
   };
 
+  // Bulk selection handlers
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedUsers(new Set());
+    } else {
+      const currentPageUserIds = paginatedUsers.map((user) => user.id);
+      setSelectedUsers(new Set(currentPageUserIds));
+    }
+    setSelectAll(!selectAll);
+  };
+
+  const handleSelectUser = (userId: number) => {
+    const newSelected = new Set(selectedUsers);
+    if (newSelected.has(userId)) {
+      newSelected.delete(userId);
+    } else {
+      newSelected.add(userId);
+    }
+    setSelectedUsers(newSelected);
+
+    // Update select all state
+    const currentPageUserIds = paginatedUsers.map((user) => user.id);
+    const allCurrentPageSelected = currentPageUserIds.every((id) =>
+      newSelected.has(id),
+    );
+    setSelectAll(allCurrentPageSelected && currentPageUserIds.length > 0);
+  };
+
   const handleEdit = (e: React.MouseEvent, userId: number) => {
     e.preventDefault(); // Prevent the Link navigation
     navigate(`/users/edit/${userId}`);
@@ -342,6 +380,59 @@ const TableUsers = ({ users }: { users: any }) => {
         Swal.fire({
           title: t("alerts.deleteErrorTitle"),
           text: t("alerts.userDeleteErrorMessage"),
+          icon: "error",
+          confirmButtonColor: "#D34053",
+        });
+      }
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedUsers.size === 0) return;
+
+    const result = await Swal.fire({
+      title: t("users.bulkDeleteConfirmTitle"),
+      text: t("users.bulkDeleteConfirmMessage", { count: selectedUsers.size }),
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3C50E0",
+      cancelButtonColor: "#D34053",
+      confirmButtonText: t("alerts.yes"),
+      cancelButtonText: t("alerts.cancel"),
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const userIdsArray = Array.from(selectedUsers);
+        const response = await bulkDeleteUsers(userIdsArray);
+
+        if (response.deleted > 0) {
+          await Swal.fire({
+            title: t("users.bulkDeleteSuccessTitle"),
+            text: t("users.bulkDeleteSuccessMessage", {
+              count: response.deleted,
+            }),
+            icon: "success",
+            confirmButtonColor: "#3C50E0",
+          });
+        }
+
+        if (response.denied > 0) {
+          await Swal.fire({
+            title: t("alerts.warning"),
+            text: `${response.denied} users could not be deleted due to insufficient permissions.`,
+            icon: "warning",
+            confirmButtonColor: "#3C50E0",
+          });
+        }
+
+        // Reset selections
+        setSelectedUsers(new Set());
+        setSelectAll(false);
+      } catch (error: any) {
+        Swal.fire({
+          title: t("users.bulkDeleteErrorTitle"),
+          text: error.message || t("users.bulkDeleteErrorMessage"),
           icon: "error",
           confirmButtonColor: "#D34053",
         });
@@ -402,9 +493,26 @@ const TableUsers = ({ users }: { users: any }) => {
 
   return (
     <div className="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
-      <h4 className="mb-6 text-xl font-semibold text-black dark:text-white px-5">
-        {t("users.title")}
-      </h4>
+      <div className="flex items-center justify-between mb-6 px-5">
+        <h4 className="text-xl font-semibold text-black dark:text-white">
+          {t("users.title")}
+        </h4>
+
+        {/* Bulk Delete Button */}
+        {selectedUsers.size > 0 && (
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              {selectedUsers.size} {t("users.selected")}
+            </span>
+            <button
+              onClick={handleBulkDelete}
+              className="inline-flex items-center justify-center rounded-md bg-danger py-2 px-4 text-center font-medium text-white hover:bg-opacity-90"
+            >
+              {t("users.deleteSelected")}
+            </button>
+          </div>
+        )}
+      </div>
 
       <SearchFilters
         onFilterChange={filterUsers}
@@ -413,7 +521,22 @@ const TableUsers = ({ users }: { users: any }) => {
       />
 
       <div className="flex flex-col">
-        <div className="grid grid-cols-3 rounded-sm bg-gray-2 dark:bg-meta-4 sm:grid-cols-6">
+        <div className="grid grid-cols-4 rounded-sm bg-gray-2 dark:bg-meta-4 sm:grid-cols-7">
+          {/* Select All Checkbox */}
+          <div className="p-2.5 xl:p-5">
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                checked={selectAll}
+                onChange={handleSelectAll}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <span className="ml-2 text-sm font-medium uppercase xsm:text-base">
+                {t("users.selectAll")}
+              </span>
+            </div>
+          </div>
+
           <div className="p-2.5 xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">
               {t("users.name")}
@@ -450,13 +573,23 @@ const TableUsers = ({ users }: { users: any }) => {
 
         {paginatedUsers.map((user: any, key: any) => (
           <div
-            className={`grid grid-cols-3 sm:grid-cols-6 ${
+            className={`grid grid-cols-4 sm:grid-cols-7 ${
               key === paginatedUsers.length - 1
                 ? ""
                 : "border-b border-stroke dark:border-strokedark"
             }`}
             key={key}
           >
+            {/* User Checkbox */}
+            <div className="flex items-center p-2.5 xl:p-5">
+              <input
+                type="checkbox"
+                checked={selectedUsers.has(user.id)}
+                onChange={() => handleSelectUser(user.id)}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+            </div>
+
             <div className="flex items-center gap-3 p-2.5 xl:p-5">
               <p className="hidden text-black dark:text-white sm:block">
                 {user.name} {user.lastname}

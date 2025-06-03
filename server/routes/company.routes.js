@@ -5,6 +5,7 @@ import {
   createCompany,
   updateCompany,
   deleteCompany,
+  bulkDeleteCompanies,
 } from "../controllers/company.controller.js";
 import { authRequired } from "../middlewares/validateToken.js";
 import multer from "multer";
@@ -41,6 +42,9 @@ router.post("/", upload.single("logo"), createCompany);
 
 // PUT /api/companies/:id - Update a company
 router.put("/:id", upload.single("logo"), updateCompany);
+
+// DELETE /api/companies/bulk - Bulk delete companies
+router.delete("/bulk", bulkDeleteCompanies);
 
 // DELETE /api/companies/:id - Delete a company
 router.delete("/:id", deleteCompany);

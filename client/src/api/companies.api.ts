@@ -55,3 +55,10 @@ export const deleteCompanyRequest = async (id: number) => {
   const response = await axios.delete(`/companies/${id}`);
   return response.data;
 };
+
+export const bulkDeleteCompaniesRequest = async (companyIds: number[]) => {
+  const response = await axios.delete("/companies/bulk", {
+    data: { companyIds },
+  });
+  return response.data;
+};

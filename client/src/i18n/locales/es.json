@@ -65,7 +65,30 @@
     "searchPlaceholder": "Buscar por nombre o email...",
     "allCompanies": "Todas las Empresas",
     "allDepartments": "Todos los Departamentos",
-    "allRoles": "Todos los Roles"
+    "allRoles": "Todos los Roles",
+    "selectAll": "Seleccionar Todo",
+    "selected": "seleccionados",
+    "deleteSelected": "Eliminar Seleccionados",
+    "bulkDeleteConfirmTitle": "Eliminar Múltiples Usuarios",
+    "bulkDeleteConfirmMessage": "¿Estás seguro de que quieres eliminar {count} usuarios? Esta acción no se puede deshacer.",
+    "bulkDeleteSuccessTitle": "Usuarios Eliminados",
+    "bulkDeleteSuccessMessage": "{count} usuarios han sido eliminados exitosamente.",
+    "bulkDeleteErrorTitle": "Error",
+    "bulkDeleteErrorMessage": "Algunos usuarios no pudieron ser eliminados. Por favor intenta de nuevo."
+  },
+  "companies": {
+    "title": "Empresas",
+    "noCompanies": "No se encontraron empresas",
+    "searchPlaceholder": "Buscar empresas...",
+    "selectAll": "Seleccionar Todo",
+    "selected": "seleccionadas",
+    "deleteSelected": "Eliminar Seleccionadas",
+    "bulkDeleteConfirmTitle": "Eliminar Múltiples Empresas",
+    "bulkDeleteConfirmMessage": "¿Estás seguro de que quieres eliminar {count} empresas? Esta acción no se puede deshacer.",
+    "bulkDeleteSuccessTitle": "Empresas Eliminadas",
+    "bulkDeleteSuccessMessage": "{count} empresas han sido eliminadas exitosamente.",
+    "bulkDeleteErrorTitle": "Error",
+    "bulkDeleteErrorMessage": "Algunas empresas no pudieron ser eliminadas. Por favor intenta de nuevo."
   },
   "scenarios": {
     "title": "Escenarios",

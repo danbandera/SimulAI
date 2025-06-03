@@ -100,7 +100,7 @@ const SearchFilters = ({ onFilterChange }: SearchFiltersProps) => {
 const TableCompanies = ({ companies }: { companies: Company[] }) => {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { deleteCompany } = useCompanies();
+  const { deleteCompany, bulkDeleteCompanies } = useCompanies();
   const { currentUser } = useUsers();
   const [filteredCompanies, setFilteredCompanies] = useState<Company[]>([]);
 
@@ -108,6 +108,12 @@ const TableCompanies = ({ companies }: { companies: Company[] }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage, setItemsPerPage] = useState(10);
   const [paginatedCompanies, setPaginatedCompanies] = useState<Company[]>([]);
+
+  // Bulk selection state
+  const [selectedCompanies, setSelectedCompanies] = useState<Set<number>>(
+    new Set(),
+  );
+  const [selectAll, setSelectAll] = useState(false);
 
   useEffect(() => {
     // Initial filtering
@@ -129,6 +135,12 @@ const TableCompanies = ({ companies }: { companies: Company[] }) => {
   useEffect(() => {
     setCurrentPage(1);
   }, [filteredCompanies.length]);
+
+  // Reset selections when companies change
+  useEffect(() => {
+    setSelectedCompanies(new Set());
+    setSelectAll(false);
+  }, [paginatedCompanies]);
 
   const filterCompanies = (filters: {
     search: string;
@@ -279,16 +291,135 @@ const TableCompanies = ({ companies }: { companies: Company[] }) => {
     return pages;
   };
 
+  // Bulk selection handlers
+  const handleSelectAll = () => {
+    if (selectAll) {
+      setSelectedCompanies(new Set());
+    } else {
+      const currentPageCompanyIds = paginatedCompanies.map(
+        (company) => company.id!,
+      );
+      setSelectedCompanies(new Set(currentPageCompanyIds));
+    }
+    setSelectAll(!selectAll);
+  };
+
+  const handleSelectCompany = (companyId: number) => {
+    const newSelected = new Set(selectedCompanies);
+    if (newSelected.has(companyId)) {
+      newSelected.delete(companyId);
+    } else {
+      newSelected.add(companyId);
+    }
+    setSelectedCompanies(newSelected);
+
+    // Update select all state
+    const currentPageCompanyIds = paginatedCompanies.map(
+      (company) => company.id!,
+    );
+    const allCurrentPageSelected = currentPageCompanyIds.every((id) =>
+      newSelected.has(id),
+    );
+    setSelectAll(allCurrentPageSelected && currentPageCompanyIds.length > 0);
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedCompanies.size === 0) return;
+
+    const result = await Swal.fire({
+      title: t("companies.bulkDeleteConfirmTitle"),
+      text: t("companies.bulkDeleteConfirmMessage", {
+        count: selectedCompanies.size,
+      }),
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#3C50E0",
+      cancelButtonColor: "#D34053",
+      confirmButtonText: t("alerts.yes"),
+      cancelButtonText: t("alerts.cancel"),
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const companyIdsArray = Array.from(selectedCompanies);
+        const response = await bulkDeleteCompanies(companyIdsArray);
+
+        if (response.deleted > 0) {
+          await Swal.fire({
+            title: t("companies.bulkDeleteSuccessTitle"),
+            text: t("companies.bulkDeleteSuccessMessage", {
+              count: response.deleted,
+            }),
+            icon: "success",
+            confirmButtonColor: "#3C50E0",
+          });
+        }
+
+        if (response.denied > 0) {
+          await Swal.fire({
+            title: t("alerts.warning"),
+            text: `${response.denied} companies could not be deleted due to insufficient permissions.`,
+            icon: "warning",
+            confirmButtonColor: "#3C50E0",
+          });
+        }
+
+        // Reset selections
+        setSelectedCompanies(new Set());
+        setSelectAll(false);
+      } catch (error: any) {
+        Swal.fire({
+          title: t("companies.bulkDeleteErrorTitle"),
+          text: error.message || t("companies.bulkDeleteErrorMessage"),
+          icon: "error",
+          confirmButtonColor: "#D34053",
+        });
+      }
+    }
+  };
+
   return (
     <div className="rounded-sm border border-stroke bg-white px-5 pt-6 pb-2.5 shadow-default dark:border-strokedark dark:bg-boxdark sm:px-7.5 xl:pb-1">
-      <h4 className="mb-6 text-xl font-semibold text-black dark:text-white px-5">
-        Companies
-      </h4>
+      <div className="flex items-center justify-between mb-6 px-5">
+        <h4 className="text-xl font-semibold text-black dark:text-white">
+          {t("companies.title")}
+        </h4>
+
+        {/* Bulk Delete Button */}
+        {selectedCompanies.size > 0 && (
+          <div className="flex items-center gap-3">
+            <span className="text-sm text-gray-600 dark:text-gray-400">
+              {selectedCompanies.size} {t("companies.selected")}
+            </span>
+            <button
+              onClick={handleBulkDelete}
+              className="inline-flex items-center justify-center rounded-md bg-danger py-2 px-4 text-center font-medium text-white hover:bg-opacity-90"
+            >
+              {t("companies.deleteSelected")}
+            </button>
+          </div>
+        )}
+      </div>
 
       <SearchFilters onFilterChange={filterCompanies} />
 
       <div className="flex flex-col">
-        <div className="grid grid-cols-5 rounded-sm bg-gray-2 dark:bg-meta-4 sm:grid-cols-7">
+        <div className="grid grid-cols-6 rounded-sm bg-gray-2 dark:bg-meta-4 sm:grid-cols-8">
+          {/* Select All Checkbox */}
+          <div className="p-2.5 xl:p-5">
+            <div className="flex items-center">
+              <input
+                type="checkbox"
+                checked={selectAll}
+                onChange={handleSelectAll}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+              <span className="ml-2 text-sm font-medium uppercase xsm:text-base">
+                {t("companies.selectAll")}
+              </span>
+            </div>
+          </div>
+
           <div className="p-2.5 xl:p-5">
             <h5 className="text-sm font-medium uppercase xsm:text-base">ID</h5>
           </div>
@@ -326,13 +457,23 @@ const TableCompanies = ({ companies }: { companies: Company[] }) => {
 
         {paginatedCompanies.map((company: Company, key: number) => (
           <div
-            className={`grid grid-cols-5 sm:grid-cols-7 ${
+            className={`grid grid-cols-6 sm:grid-cols-8 ${
               key === paginatedCompanies.length - 1
                 ? ""
                 : "border-b border-stroke dark:border-strokedark"
             }`}
             key={key}
           >
+            {/* Company Checkbox */}
+            <div className="flex items-center p-2.5 xl:p-5">
+              <input
+                type="checkbox"
+                checked={selectedCompanies.has(company.id!)}
+                onChange={() => handleSelectCompany(company.id!)}
+                className="h-4 w-4 rounded border-gray-300 text-primary focus:ring-primary"
+              />
+            </div>
+
             <div className="flex items-center p-2.5 xl:p-5">
               <p className="text-black dark:text-white font-medium">
                 {company.id}

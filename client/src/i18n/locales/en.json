@@ -65,7 +65,30 @@
     "searchPlaceholder": "Search by name or email...",
     "allCompanies": "All Companies",
     "allDepartments": "All Departments",
-    "allRoles": "All Roles"
+    "allRoles": "All Roles",
+    "selectAll": "Select All",
+    "selected": "selected",
+    "deleteSelected": "Delete Selected",
+    "bulkDeleteConfirmTitle": "Delete Multiple Users",
+    "bulkDeleteConfirmMessage": "Are you sure you want to delete {count} users? This action cannot be undone.",
+    "bulkDeleteSuccessTitle": "Users Deleted",
+    "bulkDeleteSuccessMessage": "{count} users have been deleted successfully.",
+    "bulkDeleteErrorTitle": "Error",
+    "bulkDeleteErrorMessage": "Some users could not be deleted. Please try again."
+  },
+  "companies": {
+    "title": "Companies",
+    "noCompanies": "No companies found",
+    "searchPlaceholder": "Search companies...",
+    "selectAll": "Select All",
+    "selected": "selected",
+    "deleteSelected": "Delete Selected",
+    "bulkDeleteConfirmTitle": "Delete Multiple Companies",
+    "bulkDeleteConfirmMessage": "Are you sure you want to delete {count} companies? This action cannot be undone.",
+    "bulkDeleteSuccessTitle": "Companies Deleted",
+    "bulkDeleteSuccessMessage": "{count} companies have been deleted successfully.",
+    "bulkDeleteErrorTitle": "Error",
+    "bulkDeleteErrorMessage": "Some companies could not be deleted. Please try again."
   },
   "scenarios": {
     "title": "Scenarios",

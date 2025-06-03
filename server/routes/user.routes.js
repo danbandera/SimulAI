@@ -7,6 +7,7 @@ import {
   deleteUser,
   updateUserProfileImage,
   importUsersFromCSV,
+  bulkDeleteUsers,
 } from "../controllers/user.controller.js";
 import { validateSchema } from "../middlewares/validator.mddleware.js";
 import { registerSchema } from "../schemas/auth.schema.js";
@@ -37,5 +38,6 @@ router.post(
   upload.single("file"),
   importUsersFromCSV
 );
+router.delete("/users/bulk", authRequired, bulkDeleteUsers);
 
 export default router;

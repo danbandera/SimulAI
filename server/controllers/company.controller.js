@@ -452,3 +452,164 @@ export const deleteCompany = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+export const bulkDeleteCompanies = async (req, res) => {
+  try {
+    const { companyIds } = req.body;
+
+    if (!companyIds || !Array.isArray(companyIds) || companyIds.length === 0) {
+      return res.status(400).json({ message: "No company IDs provided" });
+    }
+
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    // Get the deleting user's information to enforce permissions
+    const { data: deletingUser, error: deletingUserError } = await connectSqlDB
+      .from("users")
+      .select("role, company_id")
+      .eq("id", req.user.id)
+      .single();
+
+    if (deletingUserError) {
+      console.error("Error fetching deleting user:", deletingUserError);
+      return res
+        .status(500)
+        .json({ message: "Error validating user permissions" });
+    }
+
+    // Get companies to be deleted to check permissions
+    const { data: companiesToDelete, error: fetchError } = await connectSqlDB
+      .from("companies")
+      .select("id, created_by, logo")
+      .in("id", companyIds);
+
+    if (fetchError) {
+      console.error("Error fetching companies to delete:", fetchError);
+      return res.status(500).json({ message: "Error fetching companies" });
+    }
+
+    // Filter companies based on permissions
+    const allowedCompanyIds = [];
+    const deniedCompanies = [];
+
+    for (const company of companiesToDelete) {
+      let canDelete = false;
+
+      if (deletingUser.role === "admin") {
+        // Admin can delete any company
+        canDelete = true;
+      } else if (deletingUser.role === "company") {
+        // Company users can only delete companies they created
+        canDelete = company.created_by === req.user.id;
+      }
+
+      if (canDelete) {
+        allowedCompanyIds.push(company.id);
+      } else {
+        deniedCompanies.push(company);
+      }
+    }
+
+    if (allowedCompanyIds.length === 0) {
+      return res.status(403).json({
+        message:
+          "You don't have permission to delete any of the selected companies",
+      });
+    }
+
+    console.log(`Bulk deleting companies: ${allowedCompanyIds}`);
+
+    // Get all departments for these companies
+    const { data: companyDepartments, error: deptError } = await connectSqlDB
+      .from("departments")
+      .select("id, company_id")
+      .in("company_id", allowedCompanyIds);
+
+    if (deptError) {
+      console.error("Error fetching company departments:", deptError);
+    }
+
+    // Remove user department assignments for all departments in these companies
+    if (companyDepartments && companyDepartments.length > 0) {
+      const departmentIds = companyDepartments.map((d) => d.id);
+      console.log(
+        `Removing user assignments for departments: ${departmentIds}`
+      );
+
+      const { error: userDeptError } = await connectSqlDB
+        .from("user_departments")
+        .delete()
+        .in("department_id", departmentIds);
+
+      if (userDeptError) {
+        console.error(
+          "Error removing user department assignments:",
+          userDeptError
+        );
+      } else {
+        console.log("Successfully removed user department assignments");
+      }
+    }
+
+    // Delete departments for these companies
+    const { error: deleteDeptError } = await connectSqlDB
+      .from("departments")
+      .delete()
+      .in("company_id", allowedCompanyIds);
+
+    if (deleteDeptError) {
+      console.error("Error deleting departments:", deleteDeptError);
+    } else {
+      console.log("Successfully deleted departments");
+    }
+
+    // Delete company logos from S3 if they exist
+    const companiesToDeleteWithLogos = companiesToDelete.filter(
+      (company) => allowedCompanyIds.includes(company.id) && company.logo
+    );
+
+    for (const company of companiesToDeleteWithLogos) {
+      try {
+        await deleteFromS3(company.logo);
+        console.log(`Successfully deleted logo for company ${company.id}`);
+      } catch (logoDeleteError) {
+        console.error(
+          `Error deleting logo for company ${company.id}:`,
+          logoDeleteError
+        );
+        // Continue with company deletion even if logo deletion fails
+      }
+    }
+
+    // Delete companies
+    const { error: deleteError } = await connectSqlDB
+      .from("companies")
+      .delete()
+      .in("id", allowedCompanyIds);
+
+    if (deleteError) {
+      console.error("Error deleting companies:", deleteError);
+      return res.status(500).json({ message: "Error deleting companies" });
+    }
+
+    console.log("Successfully deleted companies");
+
+    res.json({
+      message: "Bulk delete completed",
+      deleted: allowedCompanyIds.length,
+      denied: deniedCompanies.length,
+      deniedCompanies: deniedCompanies.map((c) => ({
+        id: c.id,
+        reason: "Insufficient permissions",
+      })),
+    });
+  } catch (error) {
+    console.error("Bulk Delete Companies Error:", error);
+    res.status(500).json({
+      message: "Error deleting companies",
+      error: error.message,
+    });
+  }
+};

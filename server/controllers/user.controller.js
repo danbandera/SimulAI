@@ -616,3 +616,112 @@ export const importUsersFromCSV = async (req, res) => {
     });
   }
 };
+
+export const bulkDeleteUsers = async (req, res) => {
+  try {
+    const { userIds } = req.body;
+
+    if (!userIds || !Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({ message: "No user IDs provided" });
+    }
+
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    // Get the deleting user's information to enforce permissions
+    const { data: deletingUser, error: deletingUserError } = await connectSqlDB
+      .from("users")
+      .select("role, company_id")
+      .eq("id", req.user.id)
+      .single();
+
+    if (deletingUserError) {
+      console.error("Error fetching deleting user:", deletingUserError);
+      return res
+        .status(500)
+        .json({ message: "Error validating user permissions" });
+    }
+
+    // Get users to be deleted to check permissions
+    const { data: usersToDelete, error: fetchError } = await connectSqlDB
+      .from("users")
+      .select("id, created_by, company_id, role")
+      .in("id", userIds);
+
+    if (fetchError) {
+      console.error("Error fetching users to delete:", fetchError);
+      return res.status(500).json({ message: "Error fetching users" });
+    }
+
+    // Filter users based on permissions
+    const allowedUserIds = [];
+    const deniedUsers = [];
+
+    for (const user of usersToDelete) {
+      let canDelete = false;
+
+      if (deletingUser.role === "admin") {
+        // Admin can delete any user except themselves
+        canDelete = user.id !== req.user.id;
+      } else if (deletingUser.role === "company") {
+        // Company users can only delete users they created in their company
+        canDelete =
+          user.created_by === req.user.id &&
+          user.company_id === deletingUser.company_id &&
+          user.role === "user"; // Company users can only delete regular users
+      }
+
+      if (canDelete) {
+        allowedUserIds.push(user.id);
+      } else {
+        deniedUsers.push(user);
+      }
+    }
+
+    if (allowedUserIds.length === 0) {
+      return res.status(403).json({
+        message:
+          "You don't have permission to delete any of the selected users",
+      });
+    }
+
+    // Delete user departments first (foreign key constraint)
+    const { error: deptDeleteError } = await connectSqlDB
+      .from("user_departments")
+      .delete()
+      .in("user_id", allowedUserIds);
+
+    if (deptDeleteError) {
+      console.error("Error deleting user departments:", deptDeleteError);
+      // Continue with user deletion even if department deletion fails
+    }
+
+    // Delete users
+    const { error: deleteError } = await connectSqlDB
+      .from("users")
+      .delete()
+      .in("id", allowedUserIds);
+
+    if (deleteError) {
+      console.error("Error deleting users:", deleteError);
+      return res.status(500).json({ message: "Error deleting users" });
+    }
+
+    res.json({
+      message: "Bulk delete completed",
+      deleted: allowedUserIds.length,
+      denied: deniedUsers.length,
+      deniedUsers: deniedUsers.map((u) => ({
+        id: u.id,
+        reason: "Insufficient permissions",
+      })),
+    });
+  } catch (error) {
+    console.error("Bulk Delete Users Error:", error);
+    res.status(500).json({
+      message: "Error deleting users",
+      error: error.message,
+    });
+  }
+};

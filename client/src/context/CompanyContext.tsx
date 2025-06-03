@@ -11,6 +11,7 @@ import {
   deleteCompanyRequest,
   updateCompanyRequest,
   getCompanyRequest,
+  bulkDeleteCompaniesRequest,
   Company,
 } from "../api/companies.api";
 import { useAuth } from "./AuthContext";
@@ -20,6 +21,11 @@ interface CompanyContextType {
   getCompanies: () => Promise<void>;
   createCompany: (company: Company | FormData) => Promise<Company>;
   deleteCompany: (id: number) => Promise<void>;
+  bulkDeleteCompanies: (companyIds: number[]) => Promise<{
+    deleted: number;
+    denied: number;
+    deniedCompanies: Array<{ id: number; reason: string }>;
+  }>;
   updateCompany: (id: number, company: Company | FormData) => Promise<Company>;
   getCompany: (id: number) => Promise<Company>;
 }
@@ -76,6 +82,22 @@ export const CompanyProvider = ({ children }: CompanyProviderProps) => {
     }
   };
 
+  const bulkDeleteCompanies = async (companyIds: number[]) => {
+    try {
+      const response = await bulkDeleteCompaniesRequest(companyIds);
+      // Remove deleted companies from state
+      setCompanies(
+        companies.filter((company) => !companyIds.includes(company.id!)),
+      );
+      return response;
+    } catch (error: any) {
+      console.error("Error bulk deleting companies:", error);
+      throw new Error(
+        error.response?.data?.message || "Error deleting companies",
+      );
+    }
+  };
+
   const updateCompany = async (id: number, company: Company | FormData) => {
     try {
       const response = await updateCompanyRequest(id, company);
@@ -107,6 +129,7 @@ export const CompanyProvider = ({ children }: CompanyProviderProps) => {
         getCompanies,
         createCompany,
         deleteCompany,
+        bulkDeleteCompanies,
         updateCompany,
         getCompany,
       }}

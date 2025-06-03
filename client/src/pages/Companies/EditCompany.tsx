@@ -288,9 +288,10 @@ const EditCompany: React.FC = () => {
                   <div className="space-y-3">
                     {formData.departments.map((department, index) => (
                       <div key={index} className="flex items-center gap-3">
+                        {department.id + " - "}
                         <input
                           type="text"
-                          value={department.id + " - " + department.name}
+                          value={department.name}
                           onChange={(e) =>
                             handleDepartmentChange(index, e.target.value)
                           }

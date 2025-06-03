@@ -18,6 +18,7 @@ const router = Router();
 
 router.get("/users", authRequired, getUsers);
 router.post("/users", authRequired, validateSchema(registerSchema), createUser);
+router.delete("/users/bulk", authRequired, bulkDeleteUsers);
 router.get("/users/:id", authRequired, getUser);
 router.put(
   "/users/:id",
@@ -38,6 +39,5 @@ router.post(
   upload.single("file"),
   importUsersFromCSV
 );
-router.delete("/users/bulk", authRequired, bulkDeleteUsers);
 
 export default router;

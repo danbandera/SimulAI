@@ -77,7 +77,14 @@
     "bulkDeleteSuccessTitle": "Utilisateurs Supprimés",
     "bulkDeleteSuccessMessage": "{{count}} utilisateurs ont été supprimés avec succès.",
     "bulkDeleteErrorTitle": "Erreur",
-    "bulkDeleteErrorMessage": "Certains utilisateurs n'ont pas pu être supprimés. Veuillez réessayer."
+    "bulkDeleteErrorMessage": "Certains utilisateurs n'ont pas pu être supprimés. Veuillez réessayer.",
+    "viewFullReport": "Voir le Rapport Complet",
+    "deleteReport": "Supprimer le Rapport",
+    "deleteReportConfirmTitle": "Supprimer le Rapport",
+    "deleteReportConfirmMessage": "Êtes-vous sûr de vouloir supprimer ce rapport ? Cette action ne peut pas être annulée.",
+    "reportDeletedSuccess": "Rapport supprimé avec succès",
+    "reportDeleteError": "Erreur lors de la suppression du rapport",
+    "clickToViewFullReport": "Cliquez pour voir le rapport complet"
   },
   "scenarios": {
     "title": "Scénarios",
@@ -205,7 +212,16 @@
     "bulkDeleteSuccessTitle": "Scénarios Supprimés",
     "bulkDeleteSuccessMessage": "{{count}} scénarios ont été supprimés avec succès.",
     "bulkDeleteErrorTitle": "Erreur",
-    "bulkDeleteErrorMessage": "Certains scénarios n'ont pas pu être supprimés. Veuillez réessayer."
+    "bulkDeleteErrorMessage": "Certains scénarios n'ont pas pu être supprimés. Veuillez réessayer.",
+    "viewFullReport": "Voir le Rapport Complet",
+    "deleteReport": "Supprimer le Rapport",
+    "deleteReportConfirmTitle": "Supprimer le Rapport",
+    "deleteReportConfirmMessage": "Êtes-vous sûr de vouloir supprimer ce rapport ? Cette action ne peut pas être annulée.",
+    "reportDeletedSuccess": "Rapport supprimé avec succès",
+    "reportDeleteError": "Erreur lors de la suppression du rapport",
+    "clickToViewFullReport": "Cliquez pour voir le rapport complet",
+    "conversation": "conversation",
+    "conversations": "conversations"
   },
   "console": {
     "startConversation": "Démarrer la Conversation",

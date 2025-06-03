@@ -252,7 +252,16 @@
     "bulkDeleteSuccessTitle": "Scenarios Deleted",
     "bulkDeleteSuccessMessage": "{{count}} scenarios have been deleted successfully.",
     "bulkDeleteErrorTitle": "Error",
-    "bulkDeleteErrorMessage": "Some scenarios could not be deleted. Please try again."
+    "bulkDeleteErrorMessage": "Some scenarios could not be deleted. Please try again.",
+    "viewFullReport": "View Full Report",
+    "deleteReport": "Delete Report",
+    "deleteReportConfirmTitle": "Delete Report",
+    "deleteReportConfirmMessage": "Are you sure you want to delete this report? This action cannot be undone.",
+    "reportDeletedSuccess": "Report deleted successfully",
+    "reportDeleteError": "Error deleting report",
+    "clickToViewFullReport": "Click to view full report",
+    "conversation": "conversation",
+    "conversations": "conversations"
   },
   "console": {
     "startConversation": "Start Conversation",

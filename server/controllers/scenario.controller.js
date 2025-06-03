@@ -2072,3 +2072,46 @@ export const updateReportShowToUser = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// Delete a specific report
+export const deleteReport = async (req, res) => {
+  try {
+    const { id, reportId } = req.params;
+
+    // Validate report exists and belongs to the scenario
+    const { data: existingReport, error: reportError } = await connectSqlDB
+      .from("reports")
+      .select("id, title")
+      .eq("id", Number(reportId))
+      .eq("scenario_id", Number(id))
+      .single();
+
+    if (reportError || !existingReport) {
+      return res.status(404).json({ message: "Report not found" });
+    }
+
+    // Delete the report
+    const { error } = await connectSqlDB
+      .from("reports")
+      .delete()
+      .eq("id", Number(reportId))
+      .eq("scenario_id", Number(id));
+
+    if (error) {
+      console.error("Error deleting report:", error);
+      return res.status(500).json({
+        message: "Failed to delete report",
+        details: error.message,
+      });
+    }
+
+    res.json({
+      message: "Report deleted successfully",
+      reportId: Number(reportId),
+      title: existingReport.title,
+    });
+  } catch (error) {
+    console.error("Error in deleteReport:", error);
+    res.status(500).json({ message: error.message });
+  }
+};

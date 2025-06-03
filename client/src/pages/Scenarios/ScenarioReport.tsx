@@ -14,8 +14,10 @@ import {
   getReportsRequest,
   getReportByIdRequest,
   updateReportShowToUserRequest,
+  deleteReportRequest,
 } from "../../api/scenarios.api";
 import SwitcherThree from "../../components/Switchers/SwitcherThree";
+import Swal from "sweetalert2";
 
 // Add custom styles for better text handling
 const customStyles = `
@@ -134,6 +136,9 @@ const ScenarioReport = () => {
   const [savedReports, setSavedReports] = useState<Report[]>([]);
   const [selectedReport, setSelectedReport] = useState<Report | null>(null);
   const [savingReport, setSavingReport] = useState<boolean>(false);
+  const [viewingFullReport, setViewingFullReport] = useState<Report | null>(
+    null,
+  );
 
   useEffect(() => {
     const loadData = async () => {
@@ -643,6 +648,56 @@ Based on the evaluation, this candidate ${Math.random() > 0.5 ? "shows promise a
     }
   };
 
+  // Delete a saved report
+  const deleteReport = async (reportToDelete: Report) => {
+    const result = await Swal.fire({
+      title: t("scenarios.deleteReportConfirmTitle"),
+      text: t("scenarios.deleteReportConfirmMessage"),
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#EF4444",
+      cancelButtonColor: "#6B7280",
+      confirmButtonText: t("alerts.yes"),
+      cancelButtonText: t("alerts.cancel"),
+    });
+
+    if (result.isConfirmed) {
+      try {
+        await deleteReportRequest(id!, reportToDelete.id);
+
+        // Remove from saved reports list
+        setSavedReports((prev) =>
+          prev.filter((r) => r.id !== reportToDelete.id),
+        );
+
+        // Clear selected report if it was the one being deleted
+        if (selectedReport?.id === reportToDelete.id) {
+          setSelectedReport(null);
+        }
+
+        // Clear viewing full report if it was the one being deleted
+        if (viewingFullReport?.id === reportToDelete.id) {
+          setViewingFullReport(null);
+        }
+
+        Swal.fire({
+          title: t("alerts.deleteSuccessTitle"),
+          text: t("scenarios.reportDeletedSuccess"),
+          icon: "success",
+          confirmButtonColor: "#10B981",
+        });
+      } catch (error) {
+        console.error("Error deleting report:", error);
+        Swal.fire({
+          title: t("alerts.deleteErrorTitle"),
+          text: t("scenarios.reportDeleteError"),
+          icon: "error",
+          confirmButtonColor: "#EF4444",
+        });
+      }
+    }
+  };
+
   if (loading) {
     return (
       <>
@@ -1135,8 +1190,7 @@ Based on the evaluation, this candidate ${Math.random() > 0.5 ? "shows promise a
                 {savedReports.map((report) => (
                   <div
                     key={report.id}
-                    className="group border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:border-primary hover:shadow-md transition-all duration-200 cursor-pointer bg-white dark:bg-gray-800"
-                    onClick={() => setSelectedReport(report)}
+                    className="group border border-gray-200 dark:border-gray-700 rounded-lg p-6 hover:border-primary hover:shadow-md transition-all duration-200 bg-white dark:bg-gray-800"
                   >
                     <div className="flex justify-between items-start mb-4">
                       <div className="flex-1">
@@ -1191,13 +1245,43 @@ Based on the evaluation, this candidate ${Math.random() > 0.5 ? "shows promise a
                               />
                             </svg>
                             {report.conversations_ids?.length || 0}{" "}
-                            conversations
+                            {(report.conversations_ids?.length || 0) === 1
+                              ? t("scenarios.conversation")
+                              : t("scenarios.conversations")}
                           </span>
                         </div>
                       </div>
 
                       <div className="flex flex-col items-end gap-3">
                         <div className="flex gap-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setViewingFullReport(report);
+                            }}
+                            className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors duration-200"
+                          >
+                            <svg
+                              className="w-3 h-3 mr-1"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                              />
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                              />
+                            </svg>
+                            {t("scenarios.viewFullReport")}
+                          </button>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1220,6 +1304,28 @@ Based on the evaluation, this candidate ${Math.random() > 0.5 ? "shows promise a
                               />
                             </svg>
                             PDF
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              deleteReport(report);
+                            }}
+                            className="inline-flex items-center px-3 py-1.5 text-xs font-medium text-white bg-gray-600 rounded-md hover:bg-gray-700 transition-colors duration-200"
+                          >
+                            <svg
+                              className="w-3 h-3 mr-1"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                              />
+                            </svg>
+                            {t("scenarios.deleteReport")}
                           </button>
                         </div>
 
@@ -1279,12 +1385,198 @@ Based on the evaluation, this candidate ${Math.random() > 0.5 ? "shows promise a
                               )}
                         </span>
                       </div>
-                      <span className="text-xs text-gray-500 dark:text-gray-500">
-                        Click to view full report
-                      </span>
                     </div>
                   </div>
                 ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Full Report Viewer Modal */}
+        {viewingFullReport && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+            <div className="bg-white dark:bg-boxdark rounded-lg max-w-4xl w-full max-h-[90vh] overflow-hidden">
+              <div className="border-b border-stroke py-4 px-6 dark:border-strokedark flex justify-between items-center">
+                <h3 className="text-xl font-semibold text-black dark:text-white">
+                  {viewingFullReport.title}
+                </h3>
+                <button
+                  onClick={() => setViewingFullReport(null)}
+                  className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M6 18L18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
+
+              <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
+                <div className="max-w-none prose prose-lg dark:prose-invert">
+                  {viewingFullReport.content.split("\n").map((line, i) => {
+                    // Enhanced Markdown-like styling with better typography
+                    if (line.startsWith("# ")) {
+                      return (
+                        <h1
+                          key={i}
+                          className="text-3xl font-bold text-gray-900 dark:text-white mb-6 mt-8 first:mt-0 pb-3 border-b-2 border-gray-200 dark:border-gray-700"
+                        >
+                          {line.replace("# ", "")}
+                        </h1>
+                      );
+                    } else if (line.startsWith("## ")) {
+                      return (
+                        <h2
+                          key={i}
+                          className="text-2xl font-semibold text-gray-800 dark:text-gray-100 mb-4 mt-8 first:mt-0"
+                        >
+                          {line.replace("## ", "")}
+                        </h2>
+                      );
+                    } else if (line.startsWith("### ")) {
+                      return (
+                        <h3
+                          key={i}
+                          className="text-xl font-medium text-gray-700 dark:text-gray-200 mb-3 mt-6 first:mt-0"
+                        >
+                          {line.replace("### ", "")}
+                        </h3>
+                      );
+                    } else if (line.match(/^[A-Za-z\s]+: \d+$/)) {
+                      // Enhanced aspect scores with visual indicators
+                      const [aspect, score] = line
+                        .split(":")
+                        .map((s) => s.trim());
+                      const scoreNum = parseInt(score);
+                      const scoreColor =
+                        scoreNum >= 80
+                          ? "text-green-600 dark:text-green-400"
+                          : scoreNum >= 60
+                            ? "text-blue-600 dark:text-blue-400"
+                            : "text-red-600 dark:text-red-400";
+
+                      const bgColor =
+                        scoreNum >= 80
+                          ? "bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800"
+                          : scoreNum >= 60
+                            ? "bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800"
+                            : "bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800";
+
+                      return (
+                        <div
+                          key={i}
+                          className={`flex items-center justify-between p-4 mb-3 rounded-lg border ${bgColor}`}
+                        >
+                          <div className="flex items-center">
+                            <div
+                              className={`w-3 h-3 rounded-full mr-3 ${scoreNum >= 80 ? "bg-green-500" : scoreNum >= 60 ? "bg-blue-500" : "bg-red-500"}`}
+                            ></div>
+                            <span className="font-medium text-gray-900 dark:text-white">
+                              {aspect}
+                            </span>
+                          </div>
+                          <div className="flex items-center">
+                            <span
+                              className={`text-2xl font-bold ${scoreColor} mr-3`}
+                            >
+                              {score}
+                            </span>
+                            <div className="w-20 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                              <div
+                                className={`h-2 rounded-full ${scoreNum >= 80 ? "bg-green-500" : scoreNum >= 60 ? "bg-blue-500" : "bg-red-500"}`}
+                                style={{ width: `${scoreNum}%` }}
+                              ></div>
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    } else if (line.trim() === "") {
+                      return <div key={i} className="h-4" />;
+                    } else if (line.startsWith("- ") || line.startsWith("• ")) {
+                      // Enhanced bullet points
+                      return (
+                        <div key={i} className="flex items-start mb-2">
+                          <div className="w-2 h-2 bg-primary rounded-full mt-2 mr-3 flex-shrink-0"></div>
+                          <p className="text-gray-700 dark:text-gray-300 leading-relaxed">
+                            {line.replace(/^[-•]\s*/, "")}
+                          </p>
+                        </div>
+                      );
+                    } else {
+                      // Regular paragraphs with better typography
+                      return (
+                        <p
+                          key={i}
+                          className="text-gray-700 dark:text-gray-300 leading-relaxed mb-4 text-justify"
+                        >
+                          {line}
+                        </p>
+                      );
+                    }
+                  })}
+                </div>
+              </div>
+
+              <div className="border-t border-stroke py-4 px-6 dark:border-strokedark flex justify-end gap-3">
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(viewingFullReport.content);
+                  }}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-md hover:bg-blue-700 transition-colors duration-200"
+                >
+                  <svg
+                    className="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z"
+                    />
+                  </svg>
+                  {t("scenarios.copyReport")}
+                </button>
+                <button
+                  onClick={() => {
+                    setSelectedReport(viewingFullReport);
+                    exportToPdf();
+                  }}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors duration-200"
+                >
+                  <svg
+                    className="w-4 h-4 mr-2"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  {t("scenarios.exportToPdf")}
+                </button>
+                <button
+                  onClick={() => setViewingFullReport(null)}
+                  className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded-md hover:bg-gray-300 dark:bg-gray-600 dark:text-gray-200 dark:hover:bg-gray-500 transition-colors duration-200"
+                >
+                  {t("alerts.cancel")}
+                </button>
               </div>
             </div>
           </div>

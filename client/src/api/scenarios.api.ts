@@ -314,6 +314,21 @@ export const updateReportShowToUserRequest = async (
   }
 };
 
+export const deleteReportRequest = async (
+  scenarioId: number | string,
+  reportId: number | string,
+) => {
+  try {
+    const response = await axios.delete(
+      `/scenarios/${scenarioId}/reports/${reportId}`,
+    );
+    return response.data;
+  } catch (error) {
+    console.error("Error deleting report:", error);
+    throw error;
+  }
+};
+
 export const getScenarioElapsedTimeRequest = async (id: number) => {
   const response = await axios.get(`/scenarios/${id}/elapsed-time`);
   return response.data;

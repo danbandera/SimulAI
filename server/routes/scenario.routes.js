@@ -20,6 +20,7 @@ import {
   exportReportToPdf,
   exportReportToWord,
   updateReportShowToUser,
+  deleteReport,
 } from "../controllers/scenario.controller.js";
 import multer from "multer";
 import { authRequired } from "../middlewares/validateToken.js";
@@ -46,6 +47,7 @@ router.post("/api/openai/generate-report", generateReportWithAssistant);
 router.post("/scenarios/:id/reports", saveReport);
 router.get("/scenarios/:id/reports", getReports);
 router.get("/scenarios/:id/reports/:reportId", getReportById);
+router.delete("/scenarios/:id/reports/:reportId", deleteReport);
 router.get("/scenarios/:id/reports/:reportId/export/pdf", exportReportToPdf);
 router.get("/scenarios/:id/reports/:reportId/export/word", exportReportToWord);
 router.patch(

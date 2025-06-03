@@ -251,7 +251,16 @@
     "bulkDeleteSuccessTitle": "Escenarios Eliminados",
     "bulkDeleteSuccessMessage": "{{count}} escenarios han sido eliminados exitosamente.",
     "bulkDeleteErrorTitle": "Error",
-    "bulkDeleteErrorMessage": "Algunos escenarios no pudieron ser eliminados. Por favor intenta de nuevo."
+    "bulkDeleteErrorMessage": "Algunos escenarios no pudieron ser eliminados. Por favor intenta de nuevo.",
+    "viewFullReport": "Ver Reporte Completo",
+    "deleteReport": "Eliminar Reporte",
+    "deleteReportConfirmTitle": "Eliminar Reporte",
+    "deleteReportConfirmMessage": "¿Estás seguro de que quieres eliminar este reporte? Esta acción no se puede deshacer.",
+    "reportDeletedSuccess": "Reporte eliminado exitosamente",
+    "reportDeleteError": "Error al eliminar el reporte",
+    "clickToViewFullReport": "Haz clic para ver el reporte completo",
+    "conversation": "conversación",
+    "conversations": "conversaciones"
   },
   "console": {
     "startConversation": "Iniciar Conversación",
